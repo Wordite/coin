@@ -69,7 +69,7 @@ services:
       - backend-network
 
   backend:
-    image: ghcr.io/your-username/coin/backend:latest
+    image: ghcr.io/Wordite/coin/backend:latest
     container_name: backend-prod
     ports:
       - "3000:3000"
@@ -104,7 +104,7 @@ services:
       - backend-network
 
   admin:
-    image: ghcr.io/your-username/coin/admin:latest
+    image: ghcr.io/Wordite/coin/admin:latest
     container_name: admin-prod
     ports:
       - "3001:80"
@@ -118,7 +118,7 @@ services:
       - frontend-network
 
   frontend:
-    image: ghcr.io/your-username/coin/frontend:latest
+    image: ghcr.io/Wordite/coin/frontend:latest
     container_name: frontend-prod
     ports:
       - "3002:80"
@@ -132,7 +132,7 @@ services:
       - frontend-network
 
   docs:
-    image: ghcr.io/your-username/coin/docs:latest
+    image: ghcr.io/Wordite/coin/docs:latest
     container_name: docs-prod
     ports:
       - "5175:80"
