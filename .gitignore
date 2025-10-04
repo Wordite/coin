@@ -1,0 +1,210 @@
+# ===========================================
+# ROOT PROJECT .GITIGNORE
+# ===========================================
+
+# Environment Variables (CRITICAL!)
+# ===========================================
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+.env.*.local
+
+# Vault Configuration (SECURITY!)
+# ===========================================
+vault/vault.env
+vault/vault.env.*
+vault/data/
+vault/logs/
+vault/audit/
+vault/scripts/vault.env.generated
+
+# Node.js
+# ===========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons
+build/Release
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+storybook-static
+
+# Temporary folders
+tmp/
+temp/
+
+# Logs
+logs
+*.log
+
+# Database
+# ===========================================
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+# ===========================================
+.dockerignore
+docker-compose.override.yml
+docker-manage.sh
+
+# IDE and Editor files
+# ===========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+# ===========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build outputs
+# ===========================================
+dist/
+build/
+out/
+
+# Uploads and user content
+# ===========================================
+uploads/
+public/uploads/
+
+# SSL certificates
+# ===========================================
+*.pem
+*.key
+*.crt
+*.csr
+ssl/
+
+# Backup files
+# ===========================================
+*.bak
+*.backup
+*.old
+
+# Package manager lock files (keep package-lock.json)
+# ===========================================
+yarn.lock
+pnpm-lock.yaml
+
+# Prisma
+# ===========================================
+prisma/migrations/
+.env.prisma
+
+# Testing
+# ===========================================
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Documentation build
+# ===========================================
+docs/build/
+docs/dist/
+
+# Local development
+# ===========================================
+.local/
+local/
+
+# Security and secrets
+# ===========================================
+secrets/
+*.secret
+*.private
+private/
+
+# Monitoring and analytics
+# ===========================================
+monitoring/
+analytics/

@@ -1,0 +1,31 @@
+{
+  "storage": {
+    "file": {
+      "path": "/vault/data"
+    }
+  },
+  "listener": {
+    "tcp": {
+      "address": "0.0.0.0:8200",
+      "tls_disable": true
+    }
+  },
+  "api_addr": "http://0.0.0.0:8200",
+  "cluster_addr": "http://0.0.0.0:8201",
+  "ui": true,
+  "log_level": "INFO",
+  "log_format": "json",
+  "disable_mlock": true,
+  "default_lease_ttl": "168h",
+  "max_lease_ttl": "720h",
+  "raw_storage_endpoint": true,
+  "disable_sealwrap": true,
+  "disable_performance_standby": true,
+  "disable_clustering": false,
+  "cluster_name": "vault-cluster",
+  "seal": {
+    "awskms": {
+      "disabled": true
+    }
+  }
+}

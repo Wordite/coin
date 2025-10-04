@@ -1,0 +1,115 @@
+version: '3.9'
+services:
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: vault
+    ports:
+      - "8200:8200"
+    env_file:
+      - ./vault/vault.env
+    environment:
+      - VAULT_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN}
+      - VAULT_API_ADDR=http://0.0.0.0:8200
+      - VAULT_CLUSTER_ADDR=http://0.0.0.0:8201
+    volumes:
+      - vault_data:/vault/data
+      - ./vault/config:/vault/config
+      - ./vault/scripts:/vault/scripts
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+    command: vault server -config=/vault/config/vault.json
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=mydb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: backend-dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    environment:
+      - DOCKER=true
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mydb?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-secret-key-here
+      - JWT_EXPIRES_IN=7d
+      - PORT=3000
+      - NODE_ENV=development
+      - VAULT_URL=http://vault:8200
+      - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./docs/content:/app/docs-content
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    restart: unless-stopped
+    command: sh -c "npx prisma db push --accept-data-loss && npm run start:dev"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile.dev
+    container_name: docs
+    ports:
+      - "5175:5175"
+    environment:
+      - NODE_ENV=development
+      - VITE_BACKEND_URL=http://localhost:3000/api
+    volumes:
+      - ./docs:/app
+      - /app/node_modules
+      - ./docs/content:/app/content
+    command: npm run dev
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  backend_uploads:
+  vault_data:
