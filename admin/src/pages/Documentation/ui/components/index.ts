@@ -1,0 +1,6 @@
+export { BasicInfoSection } from './BasicInfoSection'
+export { ImagesSection } from './ImagesSection'
+export { NavbarSection } from './NavbarSection'
+export { FooterSection } from './FooterSection'
+export { HomepageSection } from './HomepageSection'
+export { ActionsSection } from './ActionsSection'

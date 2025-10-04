@@ -1,0 +1,120 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    title Email Confirmation
+    style.
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+        color: #333;
+      }
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px 20px;
+        text-align: center;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+      }
+      .content {
+        padding: 40px 30px;
+      }
+      .greeting {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #2c3e50;
+      }
+      .message {
+        font-size: 16px;
+        margin-bottom: 30px;
+        color: #555;
+      }
+      .button-container {
+        text-align: center;
+        margin: 30px 0;
+      }
+      .verify-button {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-decoration: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+      .verify-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+      .footer {
+        background-color: #f8f9fa;
+        padding: 20px 30px;
+        border-top: 1px solid #e9ecef;
+        font-size: 14px;
+        color: #6c757d;
+      }
+      .warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 20px;
+        color: #856404;
+      }
+      .link-fallback {
+        word-break: break-all;
+        color: #667eea;
+        text-decoration: none;
+      }
+      @media (max-width: 600px) {
+        .container {
+          margin: 10px;
+        }
+        .content {
+          padding: 20px;
+        }
+        .header {
+          padding: 20px;
+        }
+      }
+  body
+    .container
+      .header
+        h1 Email Confirmation
+      .content
+        .greeting Hello #{name},
+        .message
+          | Thank you for registering with our platform! To complete your registration and activate your account, please click the button below to verify your email address.
+        .button-container
+          a.verify-button(href=`${verificationLink}` target="_blank") Confirm Email Address
+        .message
+          | If the button above doesn't work, you can copy and paste the following link into your browser:
+          br
+          a.link-fallback(href=`${verificationLink}` target="_blank") #{verificationLink}
+        .warning
+          strong Important: 
+          | If you didn't create this account or didn't request this email, please ignore this message. Your email address will not be verified unless you click the confirmation link above.
+      .footer
+        p
+          | This is an automated message, please do not reply to this email.
+          br
+          | If you have any questions, please contact our support team.

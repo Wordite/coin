@@ -1,0 +1,49 @@
+
+.modalOverlay {
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+}
+
+.modalOverlay.open {
+  opacity: 1;
+}
+
+.modalContent {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.9) translateY(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modalContent.open {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1) translateY(0);
+}
+
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+.walletList {
+  scroll-behavior: smooth;
+  
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  
+  &::-webkit-scrollbar-track {
+    display: none;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    display: none;
+  }
+  
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+  
+  overscroll-behavior: contain;
+}

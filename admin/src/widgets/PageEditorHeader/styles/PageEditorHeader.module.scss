@@ -1,0 +1,731 @@
+// PageEditorHeader Dark Theme Styles
+.pageEditorHeader {
+  margin-bottom: 2.5rem;
+  position: relative; // Добавляем позиционирование
+  z-index: 10; // Увеличиваем z-index для стабильности
+}
+
+.headerContent {
+  position: relative; // Добавляем позиционирование
+  z-index: 1; // Устанавливаем z-index для контента
+  
+  .titleSection {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    
+    .mainTitle {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #60a5fa 0%, #a855f7 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .subtitle {
+      font-size: 1.125rem;
+      color: #a1a1aa;
+      max-width: 42rem;
+      margin: 0 auto;
+      line-height: 1.7;
+      font-weight: 400;
+    }
+  }
+  
+  .infoGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    
+    @media (min-width: 1024px) {
+      grid-template-columns: 2fr 1fr;
+    }
+    
+    .contentEditorCard {
+      background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+      border: 1px solid #2a2a2a;
+      border-radius: 1rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      padding: 1.5rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative; // Добавляем позиционирование
+      z-index: 2; // Устанавливаем z-index для карточки
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+        border-color: #3a3a3a;
+      }
+      
+      .cardTitle {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin: 0 0 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: relative;
+        
+        &:hover {
+          .editButton {
+            opacity: 1;
+          }
+        }
+        
+        .editButton {
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+        
+        .iconWrapper {
+          width: 2rem;
+          height: 2rem;
+          border-radius: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          backdrop-filter: blur(10px);
+          
+          &.primary {
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            
+            svg {
+              color: #60a5fa;
+            }
+          }
+          
+          svg {
+            width: 1.25rem;
+            height: 1.25rem;
+          }
+        }
+      }
+      
+      .contentEditorContent {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        position: relative; // Добавляем позиционирование
+        z-index: 3; // Устанавливаем z-index для контента
+        
+        .quickActions {
+          h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0 0 1rem 0;
+          }
+          
+          .actionButtons {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            
+            .actionButton {
+              background: rgba(59, 130, 246, 0.1);
+              color: #60a5fa;
+              border: 1px solid rgba(59, 130, 246, 0.2);
+              border-radius: 0.5rem;
+              padding: 0.5rem 1rem;
+              font-size: 0.875rem;
+              font-weight: 500;
+              transition: all 0.2s ease;
+              
+              &:hover {
+                background: rgba(59, 130, 246, 0.2);
+                border-color: rgba(59, 130, 246, 0.4);
+                transform: translateY(-1px);
+              }
+              
+              svg {
+                width: 1rem;
+                height: 1rem;
+              }
+            }
+          }
+          
+          .apiUrlSection {
+            label {
+              display: block;
+              font-size: 0.875rem;
+              font-weight: 500;
+              color: #d4d4d8;
+              margin-bottom: 0.5rem;
+              
+              .urlModifiedIndicator {
+                margin-left: 0.5rem;
+                color: #fbbf24;
+                font-size: 0.75rem;
+                font-weight: 400;
+                font-style: italic;
+              }
+            }
+            
+            .urlInputWrapper {
+              display: flex;
+              gap: 0.5rem;
+              align-items: center;
+              position: relative;
+              
+              // Стили для кнопки Cancel
+              button:last-child {
+                animation: slideIn 0.3s ease-out;
+                
+                @keyframes slideIn {
+                  from {
+                    opacity: 0;
+                    transform: translateX(-10px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateX(0);
+                  }
+                }
+              }
+              
+              .urlInput {
+                flex: 1;
+                
+                :global(.input) {
+                  background: #1a1a1a;
+                  border: 1px solid #2a2a2a;
+                  color: #ffffff;
+                  font-size: 0.875rem;
+                  
+                  &:focus {
+                    border-color: #3b82f6;
+                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                  }
+                  
+                  &::placeholder {
+                    color: #6b7280;
+                  }
+                }
+                
+                :global(.inputWrapper) {
+                  background: #1a1a1a;
+                  border: 1px solid #2a2a2a;
+                  
+                  &:focus-within {
+                    border-color: #3b82f6;
+                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                  }
+                }
+                
+
+              }
+            }
+            
+
+          }
+        }
+        
+        .contentStats {
+          h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin: 0 0 1rem 0;
+          }
+          
+          .statsGrid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            
+            .statCard {
+              background: rgba(59, 130, 246, 0.1);
+              border: 1px solid rgba(59, 130, 246, 0.2);
+              border-radius: 0.75rem;
+              padding: 1rem;
+              text-align: center;
+              transition: all 0.2s ease;
+              
+              &:hover {
+                transform: translateY(-2px);
+                background: rgba(59, 130, 246, 0.15);
+                border-color: rgba(59, 130, 246, 0.3);
+              }
+              
+              .statNumber {
+                display: block;
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #60a5fa;
+                margin-bottom: 0.25rem;
+              }
+              
+              .statLabel {
+                font-size: 0.75rem;
+                color: #a1a1aa;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+              }
+            }
+          }
+          
+          .analyticsSection {
+            margin-top: 1.5rem;
+            
+            h4 {
+              font-size: 0.875rem;
+              font-weight: 600;
+              color: hsl(var(--foreground));
+              margin-bottom: 0.75rem;
+            }
+          }
+
+          .analyticsGrid {
+            display: flex;
+            flex-direction: row;
+            gap: 0.5rem;
+          }
+
+          .analyticsItem {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 0.5rem;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            
+            &:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            }
+          }
+
+          .analyticsLabel {
+            font-size: 0.625rem;
+            font-weight: 500;
+            color: #ffffff;
+            margin-bottom: 0.25rem;
+          }
+
+          .analyticsValue {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #ffffff;
+          }
+        }
+      }
+    }
+    
+    .sidebarCards {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: fit-content;
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      
+      .progressCard,
+      .tipsCard {
+        background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+        border: 1px solid #2a2a2a;
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        padding: 1.5rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+          border-color: #3a3a3a;
+        }
+        
+        .cardSubtitle {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #ffffff;
+          margin: 0 0 1rem 0;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          
+          .iconWrapper {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 0.375rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            
+            &.success {
+              background: rgba(34, 197, 94, 0.15);
+              border: 1px solid rgba(34, 197, 94, 0.3);
+              
+              svg {
+                color: #22c55e;
+              }
+            }
+            
+            &.primary {
+              background: rgba(59, 130, 246, 0.15);
+              border: 1px solid rgba(59, 130, 246, 0.3);
+              
+              svg {
+                color: #60a5fa;
+              }
+            }
+            
+            svg {
+              width: 1rem;
+              height: 1rem;
+            }
+          }
+        }
+      }
+      
+      .progressCard {
+        background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--card-foreground/0.05)) 100%);
+        border: 1px solid hsl(var(--border));
+        border-radius: 1rem;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .progressContent {
+          .progressHeader {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            
+            .progressLabel {
+              font-size: 0.875rem;
+              font-weight: 500;
+              color: hsl(var(--foreground));
+            }
+            
+            .progressValue {
+              font-size: 1.125rem;
+              font-weight: 700;
+              color: hsl(var(--success));
+            }
+          }
+          
+          .progressBar {
+            margin-bottom: 1rem;
+          }
+          
+          .progressFooter {
+            .progressText {
+              font-size: 0.875rem;
+              color: hsl(var(--muted-foreground));
+            }
+          }
+        }
+      }
+      
+      .tipsCard {
+        .tipsList {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          
+          .tipItem {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            
+            &:hover {
+              transform: translateX(4px);
+            }
+            
+            .tipDot {
+              width: 0.5rem;
+              height: 0.5rem;
+              border-radius: 50%;
+              margin-top: 0.5rem;
+              flex-shrink: 0;
+            }
+            
+            .tipText {
+              font-size: 0.875rem;
+              color: #d4d4d8;
+              line-height: 1.5;
+            }
+            
+            &.primaryTip {
+              background: rgba(59, 130, 246, 0.1);
+              border-color: rgba(59, 130, 246, 0.2);
+              
+              .tipDot {
+                background: #60a5fa;
+              }
+              
+              .tipText {
+                color: #93c5fd;
+              }
+            }
+            
+            &.successTip {
+              background: rgba(34, 197, 94, 0.1);
+              border-color: rgba(34, 197, 94, 0.2);
+              
+              .tipDot {
+                background: #22c55e;
+              }
+              
+              .tipText {
+                color: #86efac;
+              }
+            }
+            
+            &.warningTip {
+              background: rgba(245, 158, 11, 0.1);
+              border-color: rgba(245, 158, 11, 0.2);
+              
+              .tipDot {
+                background: #f59e0b;
+              }
+              
+              .tipText {
+                color: #fbbf24;
+              }
+            }
+            
+            &.infoTip {
+              background: rgba(6, 182, 212, 0.1);
+              border-color: rgba(6, 182, 212, 0.2);
+              
+              .tipDot {
+                background: #06b6d4;
+              }
+              
+              .tipText {
+                color: #67e8f9;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Custom Progress Bar Styles
+.progressTrack {
+  background: #374151 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.progressIndicator {
+  background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%) !important;
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+  .headerContent {
+    .titleSection {
+      .mainTitle {
+        font-size: 2rem;
+      }
+      
+      .subtitle {
+        font-size: 1rem;
+      }
+    }
+    
+    .infoGrid {
+      .contentEditorCard {
+        padding: 1.25rem;
+        
+        .cardTitle {
+          font-size: 1.25rem;
+        }
+        
+        .contentEditorContent {
+          gap: 1.5rem;
+          
+          .quickActions {
+            .actionButtons {
+              flex-direction: column;
+              
+              .actionButton {
+                width: 100%;
+              }
+            }
+          }
+          
+          .contentStats {
+            .statsGrid {
+              grid-template-columns: repeat(2, 1fr);
+            }
+          }
+        }
+      }
+      
+      .sidebarCards {
+        .progressCard,
+        .tipsCard {
+          padding: 1.25rem;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .headerContent {
+    .titleSection {
+      margin-bottom: 2rem;
+      
+      .mainTitle {
+        font-size: 1.75rem;
+      }
+      
+      .subtitle {
+        font-size: 0.875rem;
+      }
+    }
+    
+    .infoGrid {
+      gap: 1.5rem;
+      
+      .contentEditorCard {
+        padding: 1rem;
+        
+        .cardTitle {
+          font-size: 1.125rem;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
+        }
+        
+        .contentEditorContent {
+          gap: 1.25rem;
+          
+          .quickActions {
+            .actionButtons {
+              flex-direction: column;
+              
+              .actionButton {
+                width: 100%;
+              }
+            }
+            
+            .apiUrlSection {
+              .urlInputWrapper {
+                flex-direction: column;
+                align-items: stretch;
+                
+                .urlInput {
+                  width: 100%;
+                }
+              }
+            }
+          }
+          
+          .contentStats {
+            .statsGrid {
+              grid-template-columns: 1fr;
+            }
+            
+            .analyticsSection {
+              .analyticsGrid {
+                .analyticsItem {
+                  flex-direction: column;
+                  align-items: flex-start;
+                  gap: 0.25rem;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      .sidebarCards {
+        .progressCard,
+        .tipsCard {
+          padding: 1rem;
+          
+          .cardSubtitle {
+            font-size: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Animation keyframes
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.pageEditorHeader {
+  animation: fadeInUp 0.6s ease-out;
+  
+  .headerContent {
+    .titleSection {
+      animation: slideInLeft 0.6s ease-out 0.1s both;
+    }
+    
+    .infoGrid {
+      .contentEditorCard {
+        animation: slideInLeft 0.6s ease-out 0.2s both;
+      }
+      
+      .sidebarCards {
+        animation: slideInRight 0.6s ease-out 0.3s both;
+      }
+    }
+  }
+} 

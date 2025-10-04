@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+
+body, html {
+    --color-gray-transparent-70: rgba(25, 24, 24, 0.7);
+    --color-gray-transparent-10: rgba(47, 42, 42, 0.1);
+    --color-gray-transparent-50: rgba(47, 42, 42, 0.5);
+
+    --color-stroke-dark: #323232;
+    --color-stroke-light: rgba(255, 255, 255, 0.25);
+
+    --border-1: .063rem;
+    --radius-sm: .38rem;
+    --radius-md: .875rem;
+    --radius-xl: 1.25rem;
+    --radius-xxl: 2rem;
+}

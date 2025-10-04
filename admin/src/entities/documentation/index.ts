@@ -1,0 +1,1 @@
+export type { Documentation, CreateDocumentationDto, UpdateDocumentationDto } from './model/types'

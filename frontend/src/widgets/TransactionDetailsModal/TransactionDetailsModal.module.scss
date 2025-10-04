@@ -1,0 +1,30 @@
+.modalOverlay {
+  opacity: 0;
+  transition: opacity 0.3s;
+  backdrop-filter: blur(.5rem);
+}
+
+.modalOverlay.open {
+  opacity: 1;
+}
+
+.modalContent {
+  opacity: 0;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.9) translateY(1.25rem);
+  transition: all 0.3s;
+}
+
+.modalContent.open {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1) translateY(0);
+}
+
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}

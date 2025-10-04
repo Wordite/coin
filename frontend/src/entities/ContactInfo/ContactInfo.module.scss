@@ -1,0 +1,26 @@
+.social svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  transition: all 0.3s ease;
+
+  @media (max-width: 768px) {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+
+.social path {
+  fill: var(--color-white-transparent-35);
+  transition: all 0.3s ease;
+}
+
+.social:hover path {
+  fill: white;
+  transition: all 0.3s ease;
+}
+
+.social:hover p {
+  color: white;
+  transition: all 0.3s ease;
+}

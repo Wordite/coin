@@ -1,0 +1,122 @@
+.banner {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  
+  width: 90%;
+  max-width: 60rem;
+  
+  background: var(--color-gray-transparent-70);
+  backdrop-filter: blur(1rem);
+  -webkit-backdrop-filter: blur(1rem);
+  
+  border: var(--border-1) solid var(--color-stroke-light);
+  border-radius: var(--radius-md);
+  
+  padding: 1.5rem 2rem;
+  
+  opacity: 0;
+  transform: translateX(-50%) translateY(100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  
+  &.hide {
+    opacity: 0;
+    transform: translateX(-50%) translateY(100%);
+  }
+  
+  @media (max-width: 768px) {
+    bottom: 1rem;
+    width: 95%;
+    padding: 1.2rem 1.5rem;
+    border-radius: var(--radius-sm);
+  }
+}
+
+.content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1.2rem;
+    text-align: center;
+    align-items: stretch;
+  }
+}
+
+.text {
+  flex: 1;
+}
+
+.message {
+  color: var(--color-white-transparent-75);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+  
+  @media (max-width: 768px) {
+    font-size: 1.4rem;
+    line-height: 1.4;
+  }
+}
+
+.link {
+  color: var(--color-purple-600);
+  text-decoration: underline;
+  transition: color 0.3s ease;
+  
+  &:hover {
+    color: var(--color-purple-400);
+  }
+}
+
+.actions {
+  flex-shrink: 0;
+}
+
+.acceptButton {
+  min-width: 8rem;
+  height: 2.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    min-width: auto;
+    height: 4rem;
+    font-size: 1.4rem;
+    font-weight: 500;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(100%);
+  }
+}

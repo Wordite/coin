@@ -1,0 +1,51 @@
+.item {
+  width: 32.75rem;
+  transition: .3s;
+
+  &:hover {
+    transform: translateX(-1rem);
+    transition: .3s;
+
+    .percentage {
+      filter: drop-shadow(0 0 0.5px currentColor);
+    }
+
+    .subtitle {
+      filter: drop-shadow(0 0 0.5px white);
+    }
+
+    .underline {
+      background: radial-gradient(
+        circle,
+        var(--hover-color) 0%,
+        var(--hover-color) 50%,
+        transparent 100%
+      );
+    }
+  }
+
+  @media (max-width: 768px) {
+    width: 100%;
+    
+    .percentage {
+      color: var(--hover-color);
+      font-weight: normal;
+      // filter: drop-shadow(0 0 0.5px currentColor);
+    }
+
+    .subtitle {
+      color: white !important;
+      font-weight: normal;
+      // filter: drop-shadow(0 0 0.5px white);
+    }
+
+    .underline {
+      background: radial-gradient(
+        circle,
+        var(--hover-color) 0%,
+        var(--hover-color) 50%,
+        transparent 100%
+      ) !important;
+    }
+  }
+}

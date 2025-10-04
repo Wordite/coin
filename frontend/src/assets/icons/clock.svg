@@ -1,0 +1,31 @@
+<svg viewBox="0 0 16 16" fill="none">
+  <!-- Циферблат -->
+  <circle cx="8" cy="8" r="7.5" stroke="white" stroke-width="1" />
+
+  <!-- Центральная точка -->
+  <circle cx="8" cy="8" r="0.5" fill="white" />
+
+  <!-- Часовая стрелка -->
+  <line x1="8" y1="8" x2="8" y2="4.5" stroke="white" stroke-width="1">
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      from="0 8 8"
+      to="360 8 8"
+      dur="720s"
+      repeatCount="indefinite"
+    />
+  </line>
+
+  <!-- Минутная стрелка -->
+  <line x1="8" y1="8" x2="8" y2="2.5" stroke="white" stroke-width="1">
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      from="90 8 8"
+      to="450 8 8"
+      dur="60s"
+      repeatCount="indefinite"
+    />
+  </line>
+</svg>

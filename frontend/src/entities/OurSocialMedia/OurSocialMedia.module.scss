@@ -1,0 +1,21 @@
+.icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  transition: all 0.3s ease;
+
+  @media (max-width: 768px) {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  & path {
+    fill: var(--color-white-transparent-35);
+    transition: all 0.3s ease;
+  }
+
+  &:hover {
+    & path {
+      fill: white;
+    }
+  }
+}

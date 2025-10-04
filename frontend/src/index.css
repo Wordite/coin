@@ -1,0 +1,131 @@
+@import 'tailwindcss';
+@import './app/styles/scrollbar.css';
+@source not inline('container');
+
+:root,
+body,
+html {
+  overflow-x: hidden;
+  font-size: calc(6px + (16 - 6) * ((100vw - 600px) / (1920 - 600)));
+}
+
+/* @media screen and (max-width: 1024px) {
+  :root,
+  body,
+  html {
+    overflow-x: hidden;
+    font-size: 16px;
+  }
+} */
+
+* {
+  backface-visibility: hidden !important;
+}
+
+
+
+@theme {
+  --color-background: #0D0D0F;
+  --color-gradient-purple-blue: linear-gradient(90deg, #9823DD 0%, #CDE0EC 75%);
+  --color-gradient-purple-blue-2: linear-gradient(0deg, var(--color-purple-600) 0%, var(--color-purple-500) 93%);
+  --color-gradient-purple-blue-3: linear-gradient(90deg, var(--color-purple-600) 0%, var(--color-purple-400) 93%);
+  --color-gradient-purple-blue-5: linear-gradient(90deg, var(--color-purple-800) 0%, var(--color-purple-600) 93%);
+  --color-gradient-purple-blue-4: radial-gradient(circle, var(--color-purple-600) 0%, rgba(152, 35, 221, 0) 100%);
+  --color-gradient-green: radial-gradient(circle, #3BEA3B 0%, #218421 100%);
+  --color-gradient-white-dark: radial-gradient(circle, #212524 0%, rgba(255, 255, 255, 0) 100%);
+  --color-gradient-white: radial-gradient(circle, #ffffff 0%, rgba(255, 255, 255, 0) 100%);
+  --color-gradient-white-gray: linear-gradient(90deg, #ffffff 0%, var(--color-gray-100) 90%);
+  --color-gradient-dark-linear: linear-gradient(180deg, rgba(9, 9, 9, 30%) 0%, rgba(9, 9, 9, 30%) 100%);
+  --color-gradient-white-linear: linear-gradient(180deg, #ffffff -60%, rgba(255, 255, 255, 0) 75%);
+
+  --color-dark-100: #0B0B0C;
+  --color-dark-200: #171414;
+
+
+  --color-purple-800: #521377; /* Очень темный фиолетовый */
+  --color-purple-700: #7d50ce; /* Темный фиолетово-синий */
+  --color-purple-600: #9823dd; /* Основной насыщенный фиолетовый */
+  --color-purple-500: #a000ff; /* Яркий электрический фиолетовый */
+  --color-purple-400: #b866e8; /* Светлый фиолетовый */
+
+  --color-gray-100: #565656;
+  --color-gray-200: #323232;
+  --color-gray-300: #262626;
+
+  --color-green: #2BD59D;
+
+  /* --color-background-light-purple: #9223D4; */
+  --color-background-light-purple: rgba(146, 35, 212, 0.25);
+  --color-background-light-green: rgba(43, 213, 157, 0.35);
+
+  --color-gray-transparent-70: rgba(25, 24, 24, 0.7);
+  --color-gray-transparent-10: rgba(47, 42, 42, 0.1);
+  --color-gray-transparent-50: rgba(47, 42, 42, 0.5);
+
+  --color-white-transparent-75: rgba(255, 255, 255, 0.75);
+  --color-white-transparent-50: rgba(255, 255, 255, 0.5);
+  --color-white-transparent-35: rgba(255, 255, 255, 0.35);
+  --color-white-transparent-10: rgba(255, 255, 255, 0.1);
+
+  --color-stroke-dark: #323232;
+  --color-stroke-light: rgba(255, 255, 255, 0.25);
+
+  --border-1: .063rem;
+  --radius-sm: .38rem;
+  --radius-md: .875rem;
+  --radius-xl: 1.25rem;
+  --radius-xxl: 2rem;
+
+  --breakpoint-md: 768px;
+}
+
+
+body {
+  background: var(--color-background);
+  color: white;
+  font-family: 'Inter';
+}
+
+w3m-modal {
+  font-family: 'Inter' !important;
+}
+
+.container {
+  width: 88.75rem;
+  max-width: 88.75rem;
+
+  margin: auto;
+}
+
+
+@media screen and (max-width: 768px) {
+  :root,
+  body,
+  html {
+    font-size: calc(6px + (16 - 6) * ((100vw - 200px) / (768 - 200)));
+  }
+
+  .container {
+    width: 90%;
+    max-width: 90%;
+  }
+}
+
+
+
+
+
+.react-loading-skeleton {
+  opacity: 0;
+  animation: showSkeleton 0.5s ease-in-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes showSkeleton {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+@plugin './hero.ts';
+/* Note: You may need to change the path to fit your project structure */
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@custom-variant dark (&:is(.dark *));
+@config "../tailwind.config.js";
+
+body {
+  min-height: 100vh;
+}
+
+/* Force dark theme for all elements */
+* {
+  color-scheme: dark;
+}
+
+html {
+  color-scheme: dark;
+}
+
+:root,
+body,
+html {
+  overflow-x: hidden;
+  font-size: calc(6px + (16 - 6) * ((100vw - 600px) / (1920 - 600)));
+}

@@ -1,0 +1,4 @@
+.pressed:not(.disabled) {
+  transition: 0.3s;
+  transform: scale3d(1.06, 0.9, 1) !important;
+}

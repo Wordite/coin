@@ -1,0 +1,271 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  email         String?   @unique @map("email")
+  password      String?   @map("password")
+  role          Role      @default(USER)
+  walletAddress String?   @unique @map("wallet_address")
+  transactions  Json?     @default("[]") @map("transactions")
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Session {
+  id                     String                @id @default(cuid())
+  userId                 String?
+  user                   User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+  refreshToken           String?               @unique @map("refresh_token")
+  activationLink         ActivationLink?       @relation(fields: [activationLinkId], references: [id], onDelete: SetNull)
+  activationLinkId       String?               @unique @map("activation_link_id")
+  fingerprint            String
+  isActivated            Boolean               @default(false) @map("is_activated")
+  authorizationRequest   AuthorizationRequest? @relation(fields: [authorizationRequestId], references: [id], onDelete: SetNull)
+  authorizationRequestId String?               @unique @map("authorization_request_id")
+
+  @@map("sessions")
+}
+
+model AuthorizationRequest {
+  id               String          @id @default(cuid())
+  email            String
+  password         String
+  createdAt        DateTime        @default(now())
+  activationLink   ActivationLink?
+  activationLinkId String?         @unique @map("activation_link_id")
+  session          Session?
+  isRegistration   Boolean         @default(false) @map("is_registration")
+
+  @@map("authorization_requests")
+}
+
+model ActivationLink {
+  id                     String                @id @default(cuid())
+  createdAt              DateTime              @default(now()) @map("created_at")
+  updatedAt              DateTime              @updatedAt @map("updated_at")
+  link                   String                @unique @map("link")
+  isSent                 Boolean               @default(false) @map("is_sent")
+  session                Session?
+  authorizationRequest   AuthorizationRequest? @relation(fields: [authorizationRequestId], references: [id], onDelete: SetNull)
+  authorizationRequestId String?               @unique @map("authorization_request_id")
+
+  @@map("activation_links")
+}
+
+enum Role {
+  USER
+  MANAGER
+  ADMIN
+}
+
+model Section {
+  id            String       @id @default(cuid())
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  name          String       @unique
+  link          String       @unique
+  content       Json         @default("{}")
+  sectionTypeId String?      @map("section_type_id")
+  sectionType   SectionType? @relation(fields: [sectionTypeId], references: [id])
+
+  @@map("sections")
+}
+
+model SectionType {
+  id          String         @id @default(cuid())
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  name        String         @unique
+  description String?
+  color       String?        @default("default")
+  sections    Section[]
+  fields      SectionField[]
+
+  @@map("section_types")
+}
+
+model SectionField {
+  id            String      @id @default(cuid())
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  name          String
+  type          FieldType
+  description   String?
+  required      Boolean     @default(false)
+  multiple      Boolean     @default(false)
+  withImage     Boolean     @default(false) @map("with_image")
+  maxSelection  Int?        @map("max_selection")
+  defaultValue  String?
+  validation    Json?       @default("{}")
+  textFieldsCount Int?      @map("text_fields_count")
+  order         Int         @default(0)
+  sectionTypeId String      @map("section_type_id")
+  sectionType   SectionType @relation(fields: [sectionTypeId], references: [id], onDelete: Cascade)
+
+  @@map("section_fields")
+}
+
+enum FieldType {
+  CONTENT
+  IMAGES
+  MARKDOWN
+  COMPLEX
+}
+
+model Media {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  filename     String
+  originalName String   @map("original_name")
+  mimeType     String   @map("mime_type")
+  size         Int
+  path         String
+  url          String
+  width        Int?
+  height       Int?
+  alt          String?
+  description  String?
+
+  @@map("media")
+}
+
+model Settings {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  siteName          String   @default("CryptoHomayak") @map("site_name")
+  siteLogo          String?  @map("site_logo")
+  siteDescription   String?  @map("site_description")
+  
+  presaleEndDateTime DateTime? @map("presale_end_date_time")
+  presaleActive     Boolean  @default(false) @map("presale_active")
+  
+  usdtToCoinRate    Float    @default(0.001) @map("usdt_to_coin_rate")
+  solToCoinRate     Float    @default(0.0001) @map("sol_to_coin_rate")
+
+  @@map("settings")
+}
+
+model DocsConfig {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  title             String   @default("My Site")
+  tagline           String   @default("Dinosaurs are cool")
+  navbarTitle       String   @default("My Site") @map("navbar_title")
+  navbarLogoSrc     String   @default("img/logo.svg") @map("navbar_logo_src")
+  
+  // Настройки карточек на главной странице
+  feature1Title     String?  @map("feature1_title")
+  feature1Text      String?  @map("feature1_text")
+  feature1Image     String?  @map("feature1_image")
+  
+  feature2Title     String?  @map("feature2_title")
+  feature2Text      String?  @map("feature2_text")
+  feature2Image     String?  @map("feature2_image")
+  
+  feature3Title     String?  @map("feature3_title")
+  feature3Text      String?  @map("feature3_text")
+  feature3Image     String?  @map("feature3_image")
+  
+  buttonText        String   @default("Read More") @map("button_text")
+  buttonLink        String   @default("/docs") @map("button_link")
+
+  @@map("docs_config")
+}
+
+model Coin {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  status CoinStatus @default(PRESALE)
+
+  soldAmount Float @default(0) @map("sold_amount")
+  currentAmount Float @default(0) @map("current_amount")
+  totalAmount Float @default(0) @map("total_amount")
+
+  stage Int @default(0) @map("stage")
+  name String @default("Coin") @map("name")
+  decimals Int @default(6) @map("decimals")
+  minBuyAmount Float @default(100) @map("min_buy_amount")
+  maxBuyAmount Float @default(1000000) @map("max_buy_amount")
+  mintAddress String? @map("mint_address")
+  
+  @@map("coin")
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  name        String   @map("name")
+  lastName    String   @map("last_name")
+  email       String   @map("email")
+  phone       String?  @map("phone")
+  message     String   @map("message")
+  isRead      Boolean  @default(false) @map("is_read")
+  fingerprint String   @map("fingerprint")
+
+  @@map("contacts")
+}
+
+enum CoinStatus {
+  PRESALE
+  SOLD
+  ACTIVE
+}
+
+model Documentation {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  title       String   @map("title")
+  slug        String   @unique @map("slug")
+  content     String   @map("content")
+  description String?  @map("description")
+  isPublished Boolean  @default(true) @map("is_published")
+  order       Int      @default(0) @map("order")
+  type        DocType  @default(DOCUMENT) @map("type")
+  categoryId  String?  @map("category_id")
+  category    Documentation? @relation("CategoryDocuments", fields: [categoryId], references: [id], onDelete: SetNull)
+  documents   Documentation[] @relation("CategoryDocuments")
+  
+  // Поля для синхронизации с файловой системой
+  filePath    String?  @map("file_path")        // Путь к файлу в файловой системе
+  fileHash    String?  @map("file_hash")        // Хеш файла для отслеживания изменений
+  lastSyncedAt DateTime? @map("last_synced_at") // Когда последний раз синхронизировался с файлом
+  isFileBased Boolean  @default(false) @map("is_file_based") // Создан ли из файла или через UI
+
+  @@map("documentation")
+}
+
+enum DocType {
+  DOCUMENT
+  CATEGORY
+}
+
+
+
+
+

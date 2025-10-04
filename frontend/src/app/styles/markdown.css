@@ -1,0 +1,525 @@
+/* Markdown Content Styles */
+.markdown {
+  color: white;
+  line-height: 1.7;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Container for better content flow */
+.markdown > *:first-child {
+  margin-top: 0;
+}
+
+.markdown > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Typography */
+.markdown h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 3rem 0 2rem 0;
+  color: white;
+}
+
+.markdown h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 2.5rem 0 1.5rem 0;
+  color: white;
+}
+
+.markdown h3 {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 2rem 0 1.25rem 0;
+  color: white;
+}
+
+.markdown h4 {
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1.75rem 0 1rem 0;
+  color: white;
+}
+
+.markdown h5 {
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 1.5rem 0 0.875rem 0;
+  color: white;
+}
+
+.markdown h6 {
+  font-size: clamp(0.875rem, 1.25vw, 1.125rem);
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 1.25rem 0 0.75rem 0;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-gray-100);
+}
+
+/* Paragraphs */
+.markdown p {
+  font-size: clamp(0.875rem, 1.5vw, 1.125rem);
+  line-height: 1.7;
+  margin: 1.5rem 0;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: justify;
+  hyphens: auto;
+}
+
+.markdown p:first-of-type {
+  font-size: clamp(1rem, 1.75vw, 1.25rem);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 500;
+}
+
+/* Links */
+.markdown a {
+  color: var(--color-purple-400);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.markdown a:hover {
+  color: var(--color-purple-300);
+  text-decoration-color: var(--color-purple-400);
+}
+
+.markdown a:focus {
+  outline: 2px solid var(--color-purple-400);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Lists */
+.markdown ul,
+.markdown ol {
+  margin: 2rem 0;
+  padding-left: 2rem;
+}
+
+.markdown li {
+  margin: 0.75rem 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(0.875rem, 1.5vw, 1.125rem);
+  line-height: 1.7;
+  position: relative;
+}
+
+.markdown ul li {
+  list-style: none;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.markdown ul li::before {
+  content: '•';
+  color: var(--color-purple-400);
+  font-weight: bold;
+  position: absolute;
+  left: -1.5rem;
+  font-size: 1.2em;
+}
+
+.markdown ol li {
+  list-style: none;
+  color: rgba(255, 255, 255, 0.9);
+  counter-increment: item;
+}
+
+.markdown ol {
+  counter-reset: item;
+}
+
+.markdown ol li::before {
+  content: counter(item) '.';
+  color: var(--color-purple-400);
+  font-weight: 600;
+  position: absolute;
+  left: -2rem;
+  min-width: 1.5rem;
+}
+
+/* Nested lists */
+.markdown ul ul,
+.markdown ol ol,
+.markdown ul ol,
+.markdown ol ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.markdown ul ul li::before {
+  content: '◦';
+  font-size: 1em;
+}
+
+.markdown ul ul ul li::before {
+  content: '▪';
+  font-size: 0.8em;
+}
+
+/* Blockquotes */
+.markdown blockquote {
+  margin: 2.5rem 0;
+  padding: 2rem 2.5rem;
+  border-left: 4px solid var(--color-purple-400);
+  background: linear-gradient(135deg, rgba(152, 35, 221, 0.08) 0%, rgba(152, 35, 221, 0.03) 100%);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.markdown blockquote::before {
+  content: '"';
+  font-size: 4rem;
+  color: var(--color-purple-400);
+  position: absolute;
+  top: -0.5rem;
+  left: 1rem;
+  opacity: 0.3;
+  font-family: serif;
+  line-height: 1;
+}
+
+.markdown blockquote p {
+  margin: 0;
+  font-size: clamp(1rem, 1.75vw, 1.25rem);
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+/* Code */
+.markdown code {
+  background: var(--color-gray-300);
+  color: var(--color-purple-300);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.875em;
+  border: 1px solid var(--color-gray-200);
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.markdown pre {
+  background: var(--color-gray-300);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  margin: 2.5rem 0;
+  overflow-x: auto;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.markdown pre::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--color-gradient-purple-blue);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.markdown pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-purple-300);
+  font-size: clamp(0.75rem, 1.25vw, 0.875rem);
+  line-height: 1.7;
+  display: block;
+  white-space: pre;
+  box-shadow: none;
+}
+
+/* Tables */
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2.5rem 0;
+  background: var(--color-gray-300);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-gray-200);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.markdown th,
+.markdown td {
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-gray-200);
+  font-size: clamp(0.875rem, 1.5vw, 1rem);
+  line-height: 1.5;
+}
+
+.markdown th {
+  background: var(--color-gray-200);
+  color: white;
+  font-weight: 600;
+  font-size: clamp(0.75rem, 1.25vw, 0.875rem);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.markdown td {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.markdown tr:hover td {
+  background: rgba(152, 35, 221, 0.08);
+  transition: background-color 0.2s ease;
+}
+
+.markdown tr:last-child td {
+  border-bottom: none;
+}
+
+.markdown tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.markdown tr:nth-child(even):hover td {
+  background: rgba(152, 35, 221, 0.08);
+}
+
+/* Horizontal Rules */
+.markdown hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--color-gray-200) 50%, transparent 100%);
+  margin: 3rem 0;
+  border-radius: 1px;
+  position: relative;
+}
+
+.markdown hr::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 2px;
+  background: var(--color-purple-400);
+  border-radius: 1px;
+}
+
+/* Images */
+.markdown img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+  margin: 2.5rem 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid var(--color-gray-200);
+}
+
+.markdown img:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* Image captions */
+.markdown img + em {
+  display: block;
+  text-align: center;
+  font-size: clamp(0.75rem, 1.25vw, 0.875rem);
+  color: var(--color-gray-100);
+  margin-top: -1.5rem;
+  margin-bottom: 2rem;
+  font-style: italic;
+}
+
+/* Strong and Emphasis */
+.markdown strong {
+  color: white;
+  font-weight: 600;
+}
+
+.markdown em {
+  color: rgba(255, 255, 255, 0.9);
+  font-style: italic;
+}
+
+/* Keyboard keys */
+.markdown kbd {
+  background: var(--color-gray-300);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: white;
+  display: inline-block;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875em;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  
+  .markdown h1 {
+    margin: 2rem 0 1.25rem 0;
+  }
+  
+  .markdown h2 {
+    margin: 1.75rem 0 1rem 0;
+  }
+  
+  .markdown h3 {
+    margin: 1.5rem 0 0.875rem 0;
+  }
+  
+  .markdown blockquote {
+    margin: 1.25rem 0;
+    padding: 1rem 1.25rem;
+  }
+  
+  .markdown pre {
+    padding: 1rem;
+    margin: 1.25rem 0;
+  }
+  
+  .markdown table {
+    font-size: 0.875rem;
+  }
+  
+  .markdown th,
+  .markdown td {
+    padding: 0.625rem 0.75rem;
+  }
+  
+  .markdown ul,
+  .markdown ol {
+    padding-left: 1.25rem;
+  }
+  
+  .markdown ul li::before {
+    left: -1rem;
+  }
+  
+  .markdown ol li::before {
+    left: -1.25rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .markdown h1 {
+    margin: 1.75rem 0 1rem 0;
+  }
+  
+  .markdown h2 {
+    margin: 1.5rem 0 0.875rem 0;
+  }
+  
+  .markdown h3 {
+    margin: 1.25rem 0 0.75rem 0;
+  }
+  
+  .markdown blockquote {
+    margin: 1rem 0;
+    padding: 0.875rem 1rem;
+  }
+  
+  .markdown pre {
+    padding: 0.875rem;
+    margin: 1rem 0;
+  }
+  
+  .markdown table {
+    font-size: 0.75rem;
+  }
+  
+  .markdown th,
+  .markdown td {
+    padding: 0.5rem 0.625rem;
+  }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+  .markdown {
+    color: rgba(255, 255, 255, 0.95);
+  }
+  
+  .markdown p {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .markdown li {
+    color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .markdown blockquote {
+    background: linear-gradient(135deg, rgba(152, 35, 221, 0.15) 0%, rgba(152, 35, 221, 0.08) 100%);
+  }
+}
+
+/* Print styles */
+@media print {
+  .markdown {
+    color: black;
+    background: white;
+  }
+  
+  .markdown h1,
+  .markdown h2,
+  .markdown h3,
+  .markdown h4,
+  .markdown h5,
+  .markdown h6 {
+    color: black;
+    background: none;
+    -webkit-text-fill-color: initial;
+  }
+  
+  .markdown a {
+    color: #0066cc;
+    text-decoration: underline;
+  }
+  
+  .markdown blockquote {
+    background: #f5f5f5;
+    border-left-color: #ccc;
+  }
+  
+  .markdown pre {
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+  }
+  
+  .markdown table {
+    background: white;
+    border: 1px solid #ccc;
+  }
+  
+  .markdown th {
+    background: #f0f0f0;
+    color: black;
+  }
+  
+  .markdown td {
+    color: black;
+  }
+}
