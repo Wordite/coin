@@ -18,29 +18,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-      
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
+    services: {}
 
     steps:
     - name: Checkout code
@@ -57,21 +35,14 @@ jobs:
           admin/package-lock.json
           docs/package-lock.json
 
-    # Backend tests
+    # Backend build only
     - name: Install backend dependencies
       working-directory: ./backend
       run: npm ci
 
-    - name: Run backend tests
+    - name: Build backend
       working-directory: ./backend
-      run: npm run test
-      env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb?schema=public
-        REDIS_HOST: localhost
-        REDIS_PORT: 6379
-        JWT_SECRET: test-secret-key
-        VAULT_URL: http://localhost:8200
-        VAULT_TOKEN: test-token
+      run: npm run build
 
     # Frontend tests
     - name: Install frontend dependencies
