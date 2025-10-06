@@ -76,8 +76,7 @@ const Settings = () => {
     maxBuyAmount: 1000000,
     mintAddress: '',
   })
-  
-  
+
   const [availableStages, setAvailableStages] = useState<number[]>([1, 2, 3, 4, 5])
   
   const [loading, setLoading] = useState(true)
