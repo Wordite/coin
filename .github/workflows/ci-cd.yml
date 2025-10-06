@@ -45,46 +45,7 @@ jobs:
       run: npm run build
 
     # Frontend tests
-    - name: Install frontend dependencies
-      working-directory: ./frontend
-      run: npm ci
-
-    - name: Sanity check frontend entry
-      working-directory: ./frontend
-      run: |
-        set -euxo pipefail
-        ls -la
-        if [ -d index.html ]; then
-          echo "Found directory named index.html → removing and restoring from HEAD";
-          rm -rf index.html
-          git show HEAD:frontend/index.html > index.html
-        elif [ ! -f index.html ]; then
-          echo "index.html file missing → restoring from HEAD";
-          git show HEAD:frontend/index.html > index.html
-        fi
-        test -f index.html
-
-    - name: Build frontend
-      working-directory: ./frontend
-      run: npm run build
-
-    # Admin tests
-    - name: Install admin dependencies
-      working-directory: ./admin
-      run: npm ci
-
-    - name: Build admin
-      working-directory: ./admin
-      run: npm run build
-
-    # Docs tests
-    - name: Install docs dependencies
-      working-directory: ./docs
-      run: npm ci
-
-    - name: Build docs
-      working-directory: ./docs
-      run: npm run build
+    # Skipping frontend/admin/docs builds in CI; they build on the server during deploy
 
   
   # ===========================================
