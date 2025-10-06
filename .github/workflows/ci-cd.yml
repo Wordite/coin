@@ -49,6 +49,17 @@ jobs:
       working-directory: ./frontend
       run: npm ci
 
+    - name: Sanity check frontend entry
+      working-directory: ./frontend
+      run: |
+        set -euxo pipefail
+        ls -la
+        if [ -d index.html ]; then
+          echo "Found directory named index.html, removing and restoring file";
+          rm -rf index.html;
+        fi
+        test -f index.html || (echo "index.html file missing"; exit 1)
+
     - name: Build frontend
       working-directory: ./frontend
       run: npm run build
