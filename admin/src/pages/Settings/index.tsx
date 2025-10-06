@@ -77,6 +77,7 @@ const Settings = () => {
     mintAddress: '',
   })
 
+  
   const [availableStages, setAvailableStages] = useState<number[]>([1, 2, 3, 4, 5])
   
   const [loading, setLoading] = useState(true)
