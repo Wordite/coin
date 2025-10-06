@@ -51,6 +51,11 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
+          admin/package-lock.json
+          docs/package-lock.json
 
     # Backend tests
     - name: Install backend dependencies
@@ -91,9 +96,9 @@ jobs:
       working-directory: ./docs
       run: npm ci
 
-    - name: Run docs tests
+    - name: Build docs
       working-directory: ./docs
-      run: npm run test
+      run: npm run build
 
   
   # ===========================================
