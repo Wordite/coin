@@ -17,15 +17,5 @@
   "log_format": "json",
   "disable_mlock": true,
   "default_lease_ttl": "168h",
-  "max_lease_ttl": "720h",
-  "raw_storage_endpoint": true,
-  "disable_sealwrap": true,
-  "disable_performance_standby": true,
-  "disable_clustering": false,
-  "cluster_name": "vault-cluster",
-  "seal": {
-    "awskms": {
-      "disabled": true
-    }
-  }
+  "max_lease_ttl": "720h"
 }

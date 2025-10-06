@@ -1,5 +1,22 @@
 version: '3.9'
 services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/gateway.http.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html/frontend:ro
+      - ./admin/dist:/usr/share/nginx/html/admin:ro
+      - ./docs/dist:/usr/share/nginx/html/docs:ro
+    depends_on:
+      - backend
+      - frontend
+      - admin
+      - docs
+    restart: unless-stopped
   vault:
     image: hashicorp/vault:1.15
     container_name: vault
@@ -43,7 +60,7 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-    command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -54,28 +71,22 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
-    container_name: backend-dev
+      dockerfile: Dockerfile
+    container_name: backend
     ports:
       - "3000:3000"
     env_file:
       - ./backend/.env
     environment:
-      - DOCKER=true
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mydb?schema=public
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - JWT_SECRET=your-secret-key-here
-      - JWT_EXPIRES_IN=7d
-      - PORT=3000
-      - NODE_ENV=development
+      - NODE_ENV=production
       - VAULT_URL=http://vault:8200
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/mydb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
-      - ./backend:/app
-      - /app/node_modules
-      - ./docs/content:/app/docs-content
       - backend_uploads:/app/uploads
+      - ./docs/content:/app/docs-content:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,7 +95,6 @@ services:
       vault:
         condition: service_started
     restart: unless-stopped
-    command: sh -c "npx prisma db push --accept-data-loss && npm run start:dev"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -92,21 +102,39 @@ services:
       retries: 3
       start_period: 40s
 
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+    container_name: admin
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+    container_name: frontend
+    ports:
+      - "5174:80"
+    restart: unless-stopped
+
   docs:
     build:
       context: ./docs
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      args:
+        - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+      network: host
     container_name: docs
     ports:
-      - "5175:5175"
+      - "5175:3000"
     environment:
-      - NODE_ENV=development
-      - VITE_BACKEND_URL=http://localhost:3000/api
-    volumes:
-      - ./docs:/app
-      - /app/node_modules
-      - ./docs/content:/app/content
-    command: npm run dev
+      - NODE_ENV=production
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     restart: unless-stopped
 
 volumes:

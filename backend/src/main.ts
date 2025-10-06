@@ -60,6 +60,14 @@ async function bootstrap() {
   app.setGlobalPrefix('api')
   app.use(cookieParser())
   
+  // Health endpoint outside of /api prefix for container health checks
+  const httpAdapter: any = app.getHttpAdapter()
+  if (httpAdapter?.get) {
+    httpAdapter.get('/health', (_req: any, res: any) => {
+      res.status(200).json({ status: 'ok' })
+    })
+  }
+  
   // Middleware для логирования куки
   // app.use((req: any, res: any, next: any) => {
   //   console.log('🔍 Request cookies:', req.ip)
