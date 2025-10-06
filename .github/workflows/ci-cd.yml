@@ -55,10 +55,14 @@ jobs:
         set -euxo pipefail
         ls -la
         if [ -d index.html ]; then
-          echo "Found directory named index.html, removing and restoring file";
-          rm -rf index.html;
+          echo "Found directory named index.html → removing and restoring from HEAD";
+          rm -rf index.html
+          git show HEAD:frontend/index.html > index.html
+        elif [ ! -f index.html ]; then
+          echo "index.html file missing → restoring from HEAD";
+          git show HEAD:frontend/index.html > index.html
         fi
-        test -f index.html || (echo "index.html file missing"; exit 1)
+        test -f index.html
 
     - name: Build frontend
       working-directory: ./frontend
