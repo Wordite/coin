@@ -19,6 +19,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Ensure index.html is a file (some environments may have a misplaced directory)
+RUN if [ -d index.html ]; then rm -rf index.html; fi && \
+    test -f index.html
+
 # Build the application
 ARG VITE_BACKEND_URL=/api
 ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
