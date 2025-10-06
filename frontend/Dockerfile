@@ -16,12 +16,16 @@ COPY package*.json ./
 # Install dependencies (allow native builds under Debian)
 RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy source files explicitly (avoid accidental directory named index.html)
+COPY src ./src
+COPY public ./public
+COPY index.html ./index.html
+COPY vite.config.ts ./vite.config.ts
+COPY tsconfig*.json ./
+COPY package*.json ./
 
-# Ensure index.html is a file (some environments may have a misplaced directory)
-RUN if [ -d index.html ]; then rm -rf index.html; fi && \
-    test -f index.html
+# Ensure index.html is a file
+RUN if [ -d index.html ]; then rm -rf index.html; fi && test -f index.html
 
 # Build the application
 ARG VITE_BACKEND_URL=/api
