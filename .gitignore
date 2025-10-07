@@ -1,3 +1,5 @@
+# Ignore documentation content (MDX files and assets)
+docs/content/
 # ===========================================
 # ROOT PROJECT .GITIGNORE
 # ===========================================
