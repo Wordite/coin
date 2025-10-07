@@ -194,6 +194,8 @@ const Users = () => {
   }
 
   const formatAmount = (amount: number) => {
+    if (!amount) return '0'
+
     return amount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 6,
