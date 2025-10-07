@@ -12,6 +12,7 @@ services:
       - ./admin/dist:/usr/share/nginx/html/admin:ro
       - ./docs/dist:/usr/share/nginx/html/docs:ro
       - ./certbot/www:/var/www/certbot:rw
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
       - frontend

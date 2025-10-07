@@ -93,12 +93,20 @@ jobs:
           # Docs client build is inside /app/build/client in docs container
           docker cp docs:/app/build/client/. ./docs/dist/ || true
           
-          # Reload gateway
-          docker compose restart nginx
+          # Switch gateway to HTTPS config and reload if certs exist
+          if [ -f /etc/letsencrypt/live/tycoin.app/fullchain.pem ]; then
+            sed -i 's#nginx/gateway.http.conf#nginx/gateway.conf#' docker-compose.yml || true
+            docker compose up -d nginx
+            docker compose restart nginx
+          fi
           
           # Health checks
           curl -fsS http://localhost/ >/dev/null
           curl -fsS http://localhost/api/health || curl -fsS http://localhost/health
+          # If HTTPS is enabled, check it too
+          if [ -f /etc/letsencrypt/live/tycoin.app/fullchain.pem ]; then
+            curl -fsSI https://tycoin.app >/dev/null
+          fi
 
 
   # ===========================================
