@@ -11,7 +11,10 @@ interface AuthStore {
 
 const useAuthStore = create<AuthStore>((set) => ({
   isAuthenticated: false,
-  setIsAuthenticated: (isAuthenticated) => set({ isAuthenticated }),
+  setIsAuthenticated: (isAuthenticated) => {
+    console.log('11111111111111 setIsAuthenticated: isAuthenticated =', isAuthenticated)
+    set({ isAuthenticated })
+  },
   isAuthFromSent: false,
   setIsAuthFromSent: (isAuthFromSent) => set({ isAuthFromSent }),
   isRootWalletInitialized: true,

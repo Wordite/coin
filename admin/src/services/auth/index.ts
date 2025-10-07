@@ -7,6 +7,13 @@ import { Notify } from '../notify'
 import { Navigate } from '../navigate'
 import { Location } from '../location'
 
+useAuthStore.subscribe((state) => {
+  console.log('Auth store changed: isAuthenticated =', state.isAuthenticated, 'Location =', Location.get())
+  if (!state.isAuthenticated && Location.get() != Navigate.paths.login) {
+    Navigate.to('login')
+  }
+})
+
 class Auth {
   private static _lastAccessFetch = 0
   private static _lastAuthCheckAndSet = 0
@@ -15,7 +22,7 @@ class Auth {
   private static _refreshSubscribers: Array<(token: string | null) => void> = []
 
   static setup() {
-    if (this._isInitialized) return
+    if (this._isInitialized) return console.log('Auth already initialized')
 
     // this.setupAuthInterceptor()
     this.checkAndSetAuth()
@@ -110,15 +117,12 @@ class Auth {
     const isAuthenticated = await this.check()
     const currentLocation = Location.get()
     
-    console.log('checkAndSetAuth: isAuthenticated =', isAuthenticated, 'currentLocation =', currentLocation)
-    
     // Set authentication state first
     this.setIsAuthenticated(isAuthenticated)
 
     if (!isAuthenticated) {
       // Only navigate to login if we're not already there
       if (currentLocation !== Navigate.paths.login) {
-        console.log('User not authenticated, navigating to login')
         Navigate.to('login')
       }
       return
@@ -215,7 +219,6 @@ class Auth {
       (response) => response,
       (error) => this.errorInterceptor(error)
     )
-    console.log('Response interceptor setup complete')
   }
 
   private static onRefreshed(token: string | null) {
@@ -224,9 +227,11 @@ class Auth {
   }
 
   static async errorInterceptor(error: AxiosError) {
-    console.log('Error interceptor called with status:', error.response?.status, 'for URL:', error.config?.url)
-    
     const originalRequest = error.config as AxiosRequestConfig
+
+    if (originalRequest?.url?.includes('/auth/access')) {
+      return Promise.reject(error);
+    }
 
     if (originalRequest?.url?.includes('/auth/sign-up') || originalRequest?.url?.includes('/auth/sign-in')) {
       return Promise.reject(error)

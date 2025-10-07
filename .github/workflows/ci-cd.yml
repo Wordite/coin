@@ -83,7 +83,7 @@ jobs:
           
           # Build and start stack
           docker compose pull || true
-          docker compose build --no-cache backend frontend admin docs
+          docker compose build backend frontend admin docs
           docker compose up -d --remove-orphans
           
           # Sync static builds for gateway (frontend/admin/docs)
