@@ -228,8 +228,7 @@ class Auth {
     
     const originalRequest = error.config as AxiosRequestConfig
 
-    if (originalRequest?.url?.includes('/auth/access')) {
-      console.log('Auth access token request, rejecting...')
+    if (originalRequest?.url?.includes('/auth/sign-up') || originalRequest?.url?.includes('/auth/sign-in')) {
       return Promise.reject(error)
     }
 

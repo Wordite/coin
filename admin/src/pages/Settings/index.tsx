@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
+import { formatNumber } from '@/shared/utils/formatNumber'
 import {
   Card,
   CardBody,
@@ -740,7 +741,7 @@ const Settings = () => {
               Status: {presaleSettings.status}
             </Chip>
             <span className="text-sm text-foreground/60">
-              Stage {presaleSettings.stage} • {presaleSettings.totalAmount.toLocaleString()} total tokens
+              Stage {presaleSettings.stage} • {formatNumber(presaleSettings.totalAmount)} total tokens
             </span>
           </div>
 

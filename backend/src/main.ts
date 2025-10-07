@@ -45,7 +45,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'https://tycoin.app/api', 'https://admin.tycoin.app', 'https://docs.tycoin.app', 
-      // 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 
+      'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 
       // 'http://localhost:3000', 'http://localhost:3003', 'http://localhost:3001', 
       // 'http://192.168.0.102:5174', 'http://192.168.0.102:5175', 'http://192.168.3.2:5174',
       // 'https://localhost:5173', 'https://localhost:5174', 'https://localhost:5175', 

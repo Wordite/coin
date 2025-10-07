@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { formatNumber } from '@/shared/utils/formatNumber'
 import {
   Card,
   CardBody,
@@ -148,8 +149,8 @@ const Presale = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString('en-US', {
+  const formatAmount = (amount: number | null | undefined) => {
+    return formatNumber(amount, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 6,
     })
@@ -295,7 +296,7 @@ const Presale = () => {
         </CardHeader>
         <CardBody>
           <div className="text-sm text-foreground/60">
-            {usersWithPurchases} users waiting for tokens • {totalPendingTokens.toLocaleString()} tokens to distribute
+            {usersWithPurchases} users waiting for tokens • {formatNumber(totalPendingTokens)} tokens to distribute
           </div>
         </CardBody>
       </Card>

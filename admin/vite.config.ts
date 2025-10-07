@@ -15,4 +15,19 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    sourcemap: false,
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          ui: ['@heroui/react', '@heroui/button', '@heroui/toast'],
+        },
+      },
+    },
+    // Increase the warning limit for production
+    chunkSizeWarningLimit: 1000,
+  },
+  logLevel: process.env.NODE_ENV === 'production' ? 'error' : 'info',
 })
