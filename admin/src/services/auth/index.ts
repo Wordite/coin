@@ -229,9 +229,9 @@ class Auth {
   static async errorInterceptor(error: AxiosError) {
     const originalRequest = error.config as AxiosRequestConfig
 
-    if (originalRequest?.url?.includes('/auth/access')) {
-      return Promise.reject(error);
-    }
+    // if (originalRequest?.url?.includes('/auth/access')) {
+    //   return Promise.reject(error);
+    // }
 
     if (originalRequest?.url?.includes('/auth/sign-up') || originalRequest?.url?.includes('/auth/sign-in')) {
       return Promise.reject(error)
