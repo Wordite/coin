@@ -7,13 +7,6 @@ import { Notify } from '../notify'
 import { Navigate } from '../navigate'
 import { Location } from '../location'
 
-useAuthStore.subscribe((state) => {
-  console.log('Auth store changed: isAuthenticated =', state.isAuthenticated, 'Location =', Location.get())
-  if (!state.isAuthenticated && Location.get() != Navigate.paths.login) {
-    Navigate.to('login')
-  }
-})
-
 class Auth {
   private static _lastAccessFetch = 0
   private static _lastAuthCheckAndSet = 0
