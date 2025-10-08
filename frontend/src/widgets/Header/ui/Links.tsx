@@ -9,7 +9,7 @@ const Links = () => {
     error: headerLinksError,
   } = useSectionData('HeaderLinks')
 
-  if (isHeaderLinksLoading || headerLinksError) return null
+  if (isHeaderLinksLoading || headerLinksError || !headerLinks || headerLinks.length === 0) return null
 
   return (
     <nav className='h-full max-md:hidden'>
