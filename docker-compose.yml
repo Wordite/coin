@@ -1,4 +1,4 @@
-version: '3.9'
+name: coin
 services:
   nginx:
     image: nginx:alpine
@@ -142,5 +142,8 @@ services:
 
 volumes:
   postgres_data:
+    name: coin_postgres_data
   backend_uploads:
+    name: coin_backend_uploads
   vault_data:
+    name: coin_vault_data
