@@ -222,73 +222,88 @@ class Auth {
   static async errorInterceptor(error: AxiosError) {
     const originalRequest = error.config as AxiosRequestConfig
 
-    // if (originalRequest?.url?.includes('/auth/access')) {
-    //   return Promise.reject(error);
-    // }
+    const url = originalRequest?.url || ''
 
-    if (originalRequest?.url?.includes('/auth/sign-up') || originalRequest?.url?.includes('/auth/sign-in')) {
+    // Allow opting out of refresh for specific requests
+    if ((originalRequest as any)?.skipAuthRefresh) {
       return Promise.reject(error)
     }
 
-    if (error.response?.status === 401) {
-      console.log('401 error, trying to get new access token')
-      const req: any = originalRequest || {}
-      if (req._retry) {
-        // Already retried once; avoid infinite loop
-        return Promise.reject(error)
-      }
-      req._retry = true
-
-      if (this._isRefreshing) {
-        return new Promise((resolve, reject) => {
-          this._refreshSubscribers.push((token) => {
-            if (!token) {
-              reject(error)
-              return
-            }
-            req.headers = req.headers || {}
-            req.headers['Authorization'] = `Bearer ${token}`
-            resolve(api(req))
-          })
-        })
-      }
-
-      this._isRefreshing = true
-
-      try {
-        const { data } = await api.get<AccessTokenResponse>('/auth/access')
-        const accessToken = (data as any)?.accessToken
-
-        if (accessToken) {
-          console.log('New access token received, setting...')
-          this.setAccessToken(accessToken)
-          this.setIsAuthenticated(true)
-          this._isRefreshing = false
-          this.onRefreshed(accessToken)
-
-          req.headers = req.headers || {}
-          req.headers['Authorization'] = `Bearer ${accessToken}`
-          return api(req)
-        }
-
-        console.log('No new access token received, removing...')
-        this.removeAccessToken()
-        this.setIsAuthenticated(false)
-        this._isRefreshing = false
-        this.onRefreshed(null)
-        return Promise.reject(error)
-      } catch (err) {
-        console.log('Error getting new access token, removing...')
-        this.removeAccessToken()
-        this.setIsAuthenticated(false)
-        this._isRefreshing = false
-        this.onRefreshed(null)
-        return Promise.reject(err)
-      }
+    // Never try to refresh while calling the refresh endpoint itself
+    if (url?.includes('/auth/access')) {
+      return Promise.reject(error)
     }
 
-    console.log('Rejecting error...')
-    return Promise.reject(error)
+    // Skip refresh for auth endpoints that shouldn't be retried
+    if (url?.includes('/auth/sign-up') || url?.includes('/auth/sign-in')) {
+      return Promise.reject(error)
+    }
+
+    // Only handle 401 here; pass through other errors
+    if (error.response?.status !== 401) {
+      console.log('Rejecting error...')
+      return Promise.reject(error)
+    }
+
+    console.log('401 error, trying to get new access token')
+    const req: any = originalRequest || {}
+    if (req._retry) {
+      // Already retried once; avoid infinite loop
+      return Promise.reject(error)
+    }
+    req._retry = true
+
+    if (this._isRefreshing) {
+      return new Promise((resolve, reject) => {
+        this._refreshSubscribers.push((token) => {
+          if (!token) {
+            reject(error)
+            return
+          }
+          req.headers = req.headers || {}
+          req.headers['Authorization'] = `Bearer ${token}`
+          resolve(api(req))
+        })
+      })
+    }
+
+    this._isRefreshing = true
+
+    try {
+      const { data } = await api.get<AccessTokenResponse>('/auth/access')
+      const accessToken = (data as any)?.accessToken
+
+      if (accessToken) {
+        console.log('New access token received, setting...')
+        this.setAccessToken(accessToken)
+        this.setIsAuthenticated(true)
+
+        ;(api.defaults.headers as any) = api.defaults.headers || {}
+        ;(api.defaults.headers.common as any) = api.defaults.headers.common || {}
+        api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
+
+        this._isRefreshing = false
+        this.onRefreshed(accessToken)
+
+        req.headers = req.headers || {}
+        req.headers['Authorization'] = `Bearer ${accessToken}`
+        return api(req)
+      }
+
+      console.log('No new access token received, removing...')
+      this.removeAccessToken()
+      this.setIsAuthenticated(false)
+      this._isRefreshing = false
+      this.onRefreshed(null)
+      return Promise.reject(error)
+    } catch (err) {
+      console.log('Error getting new access token, removing...')
+      this.removeAccessToken()
+      this.setIsAuthenticated(false)
+      this._isRefreshing = false
+      this.onRefreshed(null)
+      return Promise.reject(err)
+    }
   }
 
   private static removeAccessToken() {
