@@ -5,12 +5,7 @@ FROM node:22-bookworm-slim AS base
 FROM base AS deps
 WORKDIR /app
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-     ca-certificates curl git \
-  && rm -rf /var/lib/apt/lists/*
-
-# Install dependencies based on the preferred package manager
+# Install dependencies based on the preferred package manager (avoid OS package mirrors)
 COPY package.json package-lock.json* ./
 # Ensure devDependencies are installed for build tools (nest, prisma)
 ENV NODE_ENV=development
