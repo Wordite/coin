@@ -1,10 +1,14 @@
 # Multi-stage build for production
-FROM node:22-alpine AS base
+FROM node:22-bookworm-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat openssl
 WORKDIR /app
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+     ca-certificates curl git \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
@@ -43,6 +47,9 @@ RUN for i in 1 2 3; do npm ci --omit=dev && break || sleep 5; done && npm cache 
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+# Copy Prisma CLI from build stage to avoid network install at runtime
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
 # Create uploads and logs directories with proper permissions
 RUN mkdir -p uploads logs && chown nestjs:nodejs uploads logs
@@ -53,9 +60,7 @@ USER nestjs
 # Expose port
 EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+# No Dockerfile-level healthcheck; managed by compose or external checks
 
-# Start the application
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run start:prod"]
+# Start: run database migrations, then start app
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/src/main.js"]
