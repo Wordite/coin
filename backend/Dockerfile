@@ -17,8 +17,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client (Prisma CLI already in node_modules from deps stage)
-RUN npx prisma generate
+# Generate Prisma client using local binary (avoid npx network fetch) with retries
+RUN for i in 1 2 3; do ./node_modules/.bin/prisma generate && break || sleep 5; done
 
 # Build the application
 RUN npm run build
