@@ -6,7 +6,6 @@ FROM base AS deps
 WORKDIR /app
 
 # Install dependencies based on the preferred package manager (avoid OS package mirrors)
-RUN npm i -g npm@10.7.0
 COPY package.json package-lock.json* ./
 # Ensure devDependencies are installed for build tools (nest, prisma)
 ENV NODE_ENV=development
@@ -44,8 +43,6 @@ RUN adduser --system --uid 1001 nestjs
 # Install only production dependencies (no dev tools needed at runtime)
 COPY package.json package-lock.json* ./
 ENV NODE_ENV=production
-# Pin npm to a stable version to avoid CI hangs
-RUN npm i -g npm@10.7.0
 # Retry npm ci up to 3 times in case of network issues
 RUN for i in 1 2 3; do npm install --omit=dev --no-audit --no-fund && break || (npm cache verify || true; sleep 5); done && npm cache clean --force
 
