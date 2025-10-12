@@ -9,8 +9,16 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 # Ensure devDependencies are installed for build tools (nest, prisma)
 ENV NODE_ENV=development
+ENV NPM_CONFIG_AUDIT=false \
+    NPM_CONFIG_FUND=false \
+    NPM_CONFIG_PROGRESS=false \
+    NPM_CONFIG_LOGLEVEL=warn \
+    NPM_CONFIG_FETCH_RETRIES=5 \
+    NPM_CONFIG_FETCH_RETRY_FACTOR=2 \
+    NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
+    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
 # Retry npm ci up to 3 times in case of network issues, include dev deps explicitly
-RUN for i in 1 2 3; do npm ci --include=dev && break || sleep 5; done && npm cache clean --force
+RUN for i in 1 2 3; do npm install --include=dev --no-audit --no-fund && break || (npm cache verify || true; sleep 5); done && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -36,7 +44,7 @@ RUN adduser --system --uid 1001 nestjs
 COPY package.json package-lock.json* ./
 ENV NODE_ENV=production
 # Retry npm ci up to 3 times in case of network issues
-RUN for i in 1 2 3; do npm ci --omit=dev && break || sleep 5; done && npm cache clean --force
+RUN for i in 1 2 3; do npm install --omit=dev --no-audit --no-fund && break || (npm cache verify || true; sleep 5); done && npm cache clean --force
 
 # Copy built application and Prisma client
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
