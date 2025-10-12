@@ -22,7 +22,6 @@ RUN npx prisma generate
 # Build the application
 RUN npm run build
 
-
 # Production image, copy all the files and run nest
 FROM base AS runner
 WORKDIR /app
