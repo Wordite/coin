@@ -5,20 +5,10 @@ FROM node:22-bookworm-slim AS base
 FROM base AS deps
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager (avoid OS package mirrors)
+# Install dependencies (including dev) for build tools (nest, prisma)
 COPY package.json package-lock.json* ./
-# Ensure devDependencies are installed for build tools (nest, prisma)
 ENV NODE_ENV=development
-ENV NPM_CONFIG_AUDIT=false \
-    NPM_CONFIG_FUND=false \
-    NPM_CONFIG_PROGRESS=false \
-    NPM_CONFIG_LOGLEVEL=warn \
-    NPM_CONFIG_FETCH_RETRIES=5 \
-    NPM_CONFIG_FETCH_RETRY_FACTOR=2 \
-    NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
-    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
-# Retry npm ci up to 3 times in case of network issues, include dev deps explicitly
-RUN for i in 1 2 3; do npm install --include=dev --no-audit --no-fund && break || (npm cache verify || true; sleep 5); done && npm cache clean --force
+RUN npm ci
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -26,8 +16,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Generate Prisma client using local binary (avoid npx network fetch) with retries
-RUN for i in 1 2 3; do ./node_modules/.bin/prisma generate && break || sleep 5; done
+# Generate Prisma client using local binary
+RUN npx prisma generate
 
 # Build the application
 RUN npm run build
@@ -43,8 +33,7 @@ RUN adduser --system --uid 1001 nestjs
 # Install only production dependencies (no dev tools needed at runtime)
 COPY package.json package-lock.json* ./
 ENV NODE_ENV=production
-# Retry npm ci up to 3 times in case of network issues
-RUN for i in 1 2 3; do npm install --omit=dev --no-audit --no-fund && break || (npm cache verify || true; sleep 5); done && npm cache clean --force
+RUN npm ci --omit=dev
 
 # Copy built application and Prisma client
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
@@ -60,6 +49,7 @@ RUN mkdir -p uploads logs && chown nestjs:nodejs uploads logs
 
 # Switch to non-root user
 USER nestjs
+
 
 # Expose port
 EXPOSE 3000
