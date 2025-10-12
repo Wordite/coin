@@ -8,7 +8,6 @@ import { Navigate } from '../navigate'
 import { Location } from '../location'
 
 class Auth {
-  private static _lastAccessFetch = 0
   private static _lastAuthCheckAndSet = 0
   private static _isInitialized = false
   private static _isRefreshing = false
@@ -17,7 +16,7 @@ class Auth {
   static setup() {
     if (this._isInitialized) return console.log('Auth already initialized')
 
-    // this.setupAuthInterceptor()
+    this.setupAuthInterceptor()
     this.checkAndSetAuth()
     this.setupIsAuthenticatedWatcher()
     this.setupRecheckOnUrlChange()
@@ -28,7 +27,7 @@ class Auth {
 
   static async check(): Promise<boolean> {
     try {
-      const response = await api.get('/auth/check')
+      const response = await api.get('/auth/check', { skipAuthRefresh: true } as any)
 
       if ([200, 201, 204].includes(response.status)) return true
       return false
@@ -37,8 +36,8 @@ class Auth {
       if (error.response?.status === 401) {
         return false
       }
-      // For other errors, re-throw them
-      throw error
+      // For other errors, treat as unauthenticated and do not refresh here
+      return false
     }
   }
 
@@ -118,6 +117,8 @@ class Auth {
       if (currentLocation !== Navigate.paths.login) {
         Navigate.to('login')
       }
+      // Throttle repeated checks when unauthenticated
+      this._lastAuthCheckAndSet = Date.now()
       return
     }
 
@@ -143,9 +144,8 @@ class Auth {
 
   private static setIsAuthenticated(isAuthenticated: boolean) {
     const currentState = useAuthStore.getState().isAuthenticated
-    if (currentState !== isAuthenticated) {
-      console.log('Authentication state changing from', currentState, 'to', isAuthenticated, 'at', new Error().stack?.split('\n')[2]?.trim())
-    }
+    if (currentState === isAuthenticated) return
+    console.log('Authentication state changing from', currentState, 'to', isAuthenticated, 'at', new Error().stack?.split('\n')[2]?.trim())
     useAuthStore.setState({ isAuthenticated })
   }
 
@@ -220,14 +220,14 @@ class Auth {
   }
 
   static async errorInterceptor(error: AxiosError) {
-    const originalRequest = error.config as AxiosRequestConfig
-
-    const url = originalRequest?.url || ''
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean; skipAuthRefresh?: boolean }
 
     // Allow opting out of refresh for specific requests
-    if ((originalRequest as any)?.skipAuthRefresh) {
+    if (originalRequest?.skipAuthRefresh) {
       return Promise.reject(error)
     }
+
+    const url = originalRequest?.url || ''
 
     // Never try to refresh while calling the refresh endpoint itself
     if (url?.includes('/auth/access')) {
@@ -239,20 +239,30 @@ class Auth {
       return Promise.reject(error)
     }
 
+    // Ignore 401 from check endpoint to avoid loops; let checkAndSetAuth handle navigation
+    if (url?.includes('/auth/check')) {
+      return Promise.reject(error)
+    }
+
     // Only handle 401 here; pass through other errors
     if (error.response?.status !== 401) {
-      console.log('Rejecting error...')
       return Promise.reject(error)
     }
 
     console.log('401 error, trying to get new access token')
     const req: any = originalRequest || {}
+    
+    // Prevent infinite retry loops
     if (req._retry) {
-      // Already retried once; avoid infinite loop
+      console.log('Already retried once, redirecting to login')
+      this.removeAccessToken()
+      this.setIsAuthenticated(false)
+      Navigate.to('login')
       return Promise.reject(error)
     }
     req._retry = true
 
+    // If already refreshing, queue this request
     if (this._isRefreshing) {
       return new Promise((resolve, reject) => {
         this._refreshSubscribers.push((token) => {
@@ -277,31 +287,33 @@ class Auth {
         console.log('New access token received, setting...')
         this.setAccessToken(accessToken)
         this.setIsAuthenticated(true)
+        this._isRefreshing = false
+        this.onRefreshed(accessToken)
 
+        // Ensure all subsequent requests carry the token
         ;(api.defaults.headers as any) = api.defaults.headers || {}
         ;(api.defaults.headers.common as any) = api.defaults.headers.common || {}
         api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`
-
-        this._isRefreshing = false
-        this.onRefreshed(accessToken)
 
         req.headers = req.headers || {}
         req.headers['Authorization'] = `Bearer ${accessToken}`
         return api(req)
       }
 
-      console.log('No new access token received, removing...')
+      console.log('No new access token received, redirecting to login')
       this.removeAccessToken()
       this.setIsAuthenticated(false)
       this._isRefreshing = false
       this.onRefreshed(null)
+      Navigate.to('login')
       return Promise.reject(error)
     } catch (err) {
-      console.log('Error getting new access token, removing...')
+      console.log('Error getting new access token, redirecting to login')
       this.removeAccessToken()
       this.setIsAuthenticated(false)
       this._isRefreshing = false
       this.onRefreshed(null)
+      Navigate.to('login')
       return Promise.reject(err)
     }
   }

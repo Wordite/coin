@@ -83,8 +83,19 @@ jobs:
           
           # Build and start stack
           docker compose pull || true
-          docker compose build backend frontend admin docs
+          docker compose build postgres backend frontend admin docs
           docker compose up -d --remove-orphans
+          
+          # Setup PostgreSQL security (run after postgres is ready)
+          echo "🔐 Setting up PostgreSQL security..."
+          sleep 10  # Wait for postgres to be ready
+          chmod +x ./scripts/setup-postgres-security.sh
+          ./scripts/setup-postgres-security.sh || echo "⚠️ PostgreSQL security setup failed, continuing..."
+          
+          # Setup PostgreSQL backups (run after security setup)
+          echo "💾 Setting up PostgreSQL backups..."
+          chmod +x ./scripts/setup-backup-cron.sh
+          ./scripts/setup-backup-cron.sh || echo "⚠️ PostgreSQL backup setup failed, continuing..."
           
           # Sync static builds for gateway (frontend/admin/docs)
           mkdir -p ./frontend/dist ./admin/dist ./docs/dist

@@ -179,6 +179,37 @@ const Presale = () => {
     )
   }
 
+  // Show loading spinner while initial data is loading
+  if (initialLoading) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Spinner size="lg" />
+          <p className="mt-4 text-foreground/60">Loading presale data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if presaleSettings is null
+  if (!presaleSettings) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-foreground/60">Failed to load presale settings</p>
+          <Button 
+            color="primary" 
+            variant="flat" 
+            className="mt-4"
+            onPress={loadInitialData}
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   const presaleProgress = presaleSettings.totalAmount > 0 
     ? (presaleSettings.soldAmount / presaleSettings.totalAmount) * 100 
     : 0
@@ -332,7 +363,7 @@ const Presale = () => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : (
+              ) : users && users.length > 0 ? (
                 users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
@@ -383,6 +414,15 @@ const Presale = () => {
                   </TableCell>
                 </TableRow>
                 ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8">
+                    <div className="text-foreground/60">
+                      <UsersIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>No users found</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
@@ -471,7 +511,8 @@ const Presale = () => {
                     <div>
                       <h3 className="font-semibold mb-3">Transaction History</h3>
                       <div className="space-y-3 max-h-64 overflow-y-auto">
-                        {selectedUser.transactions.map((transaction, index) => (
+                        {selectedUser.transactions && selectedUser.transactions.length > 0 ? (
+                          selectedUser.transactions.map((transaction, index) => (
                           <div key={index} className="flex items-center justify-between p-3 bg-content2 rounded-lg">
                             <div className="flex items-center gap-3">
                               <Chip color="primary" variant="flat" size="sm">
@@ -515,10 +556,10 @@ const Presale = () => {
                               </span>
                             </div>
                           </div>
-                        ))}
-                        {selectedUser.transactions.length === 0 && (
-                          <div className="text-center text-foreground/60 py-8">
-                            No transactions found
+                        ))
+                        ) : (
+                          <div className="text-center py-8 text-foreground/60">
+                            <p>No transactions found</p>
                           </div>
                         )}
                       </div>

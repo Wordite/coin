@@ -6,7 +6,7 @@ export class VaultService implements OnModuleInit {
   private readonly logger = new Logger(VaultService.name)
   private client: vault.client
   private readonly VAULT_URL = process.env.VAULT_URL || 'http://localhost:8200'
-  private readonly VAULT_TOKEN = process.env.VAULT_TOKEN || 'approot'
+  private readonly VAULT_TOKEN = process.env.VAULT_TOKEN || ''
   private initializationPromise: Promise<void>
 
   async onModuleInit() {
@@ -16,6 +16,8 @@ export class VaultService implements OnModuleInit {
 
   private async initialize(): Promise<void> {
     try {
+      this.logger.log(`Vault configuration: URL=${this.VAULT_URL}, TOKEN=${this.VAULT_TOKEN ? this.VAULT_TOKEN.substring(0, 8) + '...' : 'NOT_SET'}`)
+      
       this.client = vault({
         apiVersion: 'v1',
         endpoint: this.VAULT_URL,
@@ -44,21 +46,8 @@ export class VaultService implements OnModuleInit {
 
   private async initializeSecrets() {
     try {
-      // Создаем секретный движок solana если его нет
-      try {
-        await this.client.mount({
-          mount_point: 'solana',
-          type: 'kv',
-          options: { version: '2' }
-        })
-        this.logger.log('Solana secret engine mounted successfully')
-      } catch (error) {
-        if (error.response?.statusCode === 400 && error.response?.body?.errors?.includes('path is already in use')) {
-          this.logger.log('Solana secret engine already mounted')
-        } else {
-          this.logger.warn('Failed to mount solana secret engine:', error.message)
-        }
-      }
+      // Убеждаемся, что Solana secret engine смонтирован
+      await this.ensureSolanaSecretEngine()
 
       // Проверяем существует ли секрет для root кошелька
       const existingSecret = await this.getSecretDirect('root-wallet')
@@ -73,6 +62,36 @@ export class VaultService implements OnModuleInit {
       }
     } catch (error) {
       this.logger.error('Failed to initialize secrets:', error)
+    }
+  }
+
+  /**
+   * Убедиться, что Solana secret engine смонтирован
+   */
+  private async ensureSolanaSecretEngine(): Promise<void> {
+    try {
+      // Проверяем, смонтирован ли уже Solana secret engine
+      const mounts = await this.client.mounts()
+      if (mounts.solana) {
+        this.logger.log('Solana secret engine already mounted')
+        return
+      }
+
+      // Монтируем Solana secret engine
+      this.logger.log('Mounting Solana secret engine...')
+      await this.client.mount({
+        mount_point: 'solana',
+        type: 'kv',
+        options: { version: '2' }
+      })
+      this.logger.log('Solana secret engine mounted successfully')
+    } catch (error) {
+      if (error.response?.statusCode === 400 && error.response?.body?.errors?.includes('path is already in use')) {
+        this.logger.log('Solana secret engine already mounted')
+      } else {
+        this.logger.error('Failed to mount solana secret engine:', error.message)
+        throw error
+      }
     }
   }
 
@@ -213,6 +232,11 @@ export class VaultService implements OnModuleInit {
     updatedAt: string
   }> {
     try {
+      this.logger.log(`Initializing root wallet with force=${force}`)
+      
+      // Убеждаемся, что Solana secret engine смонтирован
+      await this.ensureSolanaSecretEngine()
+      
       // Проверяем, существует ли уже кошелек
       if (!force) {
         const existing = await this.getSecret('root-wallet')
@@ -227,6 +251,7 @@ export class VaultService implements OnModuleInit {
         updatedAt: new Date().toISOString()
       }
 
+      this.logger.log('Saving root wallet data to Vault...')
       await this.setSecret('root-wallet', walletData)
       
       // Проверяем, что данные сохранились

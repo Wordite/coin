@@ -324,7 +324,7 @@ const Users = () => {
               <TableColumn>ACTIONS</TableColumn>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {users && users.length > 0 ? users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     {user.email || (
@@ -372,7 +372,16 @@ const Users = () => {
                     </Button>
                   </TableCell>
                 </TableRow>
-              ))}
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    <div className="text-foreground/60">
+                      <UsersIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>No users found</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
 

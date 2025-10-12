@@ -23,6 +23,15 @@ vault/logs/
 vault/audit/
 vault/scripts/vault.env.generated
 
+# PostgreSQL Configuration (SECURITY!)
+# ===========================================
+postgres/.env
+postgres/.env.*
+postgres/data/
+postgres/logs/
+postgres/backups/
+postgres/dumps/
+
 # Node.js
 # ===========================================
 node_modules/

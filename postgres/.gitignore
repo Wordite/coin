@@ -1,0 +1,21 @@
+# PostgreSQL Environment Files
+# ===========================================
+
+# Ignore sensitive environment files
+postgres/.env
+postgres/.env.local
+postgres/.env.production
+postgres/.env.staging
+
+# Ignore backup files
+postgres/*.backup
+postgres/*.sql.backup
+postgres/dumps/
+
+# Ignore log files
+postgres/logs/
+postgres/*.log
+
+# Ignore temporary files
+postgres/tmp/
+postgres/temp/

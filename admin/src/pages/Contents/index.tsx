@@ -170,7 +170,7 @@ const Contents: React.FC = () => {
             </div>
           ) : (
             <div className='divide-y divide-gray-600'>
-              {sections.map((section) => (
+              {sections && sections.length > 0 ? sections.map((section) => (
                 <div key={section.id} className='px-6 py-6'>
                   <div className='flex items-start justify-between mb-4'>
                     <div className='flex-1'>
@@ -214,7 +214,11 @@ const Contents: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className='px-6 py-8 text-center text-gray-500'>
+                  No sections found
+                </div>
+              )}
             </div>
           )}
         </CardBody>
@@ -251,7 +255,7 @@ const Contents: React.FC = () => {
                   </div>
                 ) : (
                   <div className='grid gap-3'>
-                    {sectionTypes.map((sectionType) => (
+                    {sectionTypes && sectionTypes.length > 0 ? sectionTypes.map((sectionType) => (
                       <Card
                         key={sectionType.id}
                         className={`cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
@@ -293,7 +297,11 @@ const Contents: React.FC = () => {
                           </div>
                         </CardBody>
                       </Card>
-                    ))}
+                    )) : (
+                      <div className='text-center py-8 text-gray-500'>
+                        <p>No section types available</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </ModalBody>

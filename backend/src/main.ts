@@ -69,16 +69,16 @@ async function bootstrap() {
     })
   }
   
-  // Middleware для логирования куки
-  // app.use((req: any, res: any, next: any) => {
-  //   console.log('🔍 Request cookies:', req.ip)
-    // console.log('🔍 Request cookies:', req.cookies)
-    // console.log('🔍 Request headers:', req.headers)
-    // console.log('🔍 Cookie header:', req.headers.cookie)
-    // console.log('🔍 Origin:', req.headers.origin)
-    // console.log('🔍 Referer:', req.headers.referer)
-  //   next()
-  // })
+  app.use((req: any, res: any, next: any) => {
+    console.log('🔍 User agent:', req.get('user-agent'))
+    console.log('🔍 Request cookies:', req.ip)
+    console.log('🔍 Request cookies:', req.cookies)
+    console.log('🔍 Request headers:', req.headers)
+    console.log('🔍 Cookie header:', req.headers.cookie)
+    console.log('🔍 Origin:', req.headers.origin)
+    console.log('🔍 Referer:', req.headers.referer)
+    next()
+  })
 
   app.useGlobalPipes(
     new ValidationPipe({
