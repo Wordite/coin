@@ -1,0 +1,104 @@
+name: coin
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres_dev
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./postgres/.env.dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_dev
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: vault_dev
+    ports:
+      - "8200:8200"
+    env_file:
+      - ./vault/.env.dev
+    volumes:
+      - vault_data:/vault/data
+      - ./vault/config:/vault/config
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+    command: vault server -dev -dev-root-token-id=dev-root-token
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: backend_dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env.dev
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - backend_uploads:/app/uploads
+      - ./docs/content:/app/docs-content:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    restart: unless-stopped
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.dev
+    container_name: admin_dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./admin/src:/app/src
+      - ./admin/public:/app/public
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: frontend_dev
+    ports:
+      - "5174:5173"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    name: coin_postgres_data
+  backend_uploads:
+    name: coin_backend_uploads
+  vault_data:
+    name: coin_vault_data
+

@@ -14,6 +14,16 @@ docs/content/
 .env.test
 .env.*.local
 
+# New .env structure
+.env.prod
+.env.dev
+backend/.env.prod
+backend/.env.dev
+postgres/.env.prod
+postgres/.env.dev
+vault/.env.prod
+vault/.env.dev
+
 # Vault Configuration (SECURITY!)
 # ===========================================
 vault/vault.env
@@ -219,3 +229,9 @@ private/
 # ===========================================
 monitoring/
 analytics/
+
+
+README.md
+SETUP_GITHUB_SECRETS.md
+
+.cursorignore

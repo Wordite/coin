@@ -2,141 +2,50 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-  # ===========================================
-  # BUILD AND TEST
-  # ===========================================
-  build-and-test:
+  deploy:
     runs-on: ubuntu-latest
     
-    services: {}
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        cache-dependency-path: |
-          backend/package-lock.json
-          frontend/package-lock.json
-          admin/package-lock.json
-          docs/package-lock.json
-
-    # Backend build only
-    - name: Install backend dependencies
-      working-directory: ./backend
-      run: npm ci
-
-    - name: Build backend
-      working-directory: ./backend
-      run: npm run build
-
-    # Frontend tests
-    # Skipping frontend/admin/docs builds in CI; they build on the server during deploy
-
-  
-  # ===========================================
-  # DEPLOY TO PRODUCTION (via SSH, build on server)
-  # ===========================================
-  deploy:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v1.0.0
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        port: ${{ secrets.PORT }}
-        script: |
-          set -e
-          cd ${{ secrets.PROJECT_PATH }}
-          
-          # Ensure project exists; clone if missing
-          if [ ! -d .git ]; then
-            git clone ${{ github.server_url }}/${{ github.repository }} .
-          fi
-          git fetch --all --prune
-          git reset --hard origin/main
-          
-          # Optional: provide env for build args
-          export VITE_BACKEND_URL=${{ secrets.VITE_BACKEND_URL || '/api' }}
-          
-          # Build and start stack
-          docker compose pull || true
-          docker compose build postgres backend frontend admin docs
-          docker compose up -d --remove-orphans
-          
-          # Setup PostgreSQL security (run after postgres is ready)
-          echo "🔐 Setting up PostgreSQL security..."
-          sleep 10  # Wait for postgres to be ready
-          chmod +x ./scripts/setup-postgres-security.sh
-          ./scripts/setup-postgres-security.sh || echo "⚠️ PostgreSQL security setup failed, continuing..."
-          
-          # Setup PostgreSQL backups (run after security setup)
-          echo "💾 Setting up PostgreSQL backups..."
-          chmod +x ./scripts/setup-backup-cron.sh
-          ./scripts/setup-backup-cron.sh || echo "⚠️ PostgreSQL backup setup failed, continuing..."
-          
-          # Sync static builds for gateway (frontend/admin/docs)
-          mkdir -p ./frontend/dist ./admin/dist ./docs/dist
-          docker cp frontend:/usr/share/nginx/html/. ./frontend/dist/ || true
-          docker cp admin:/usr/share/nginx/html/. ./admin/dist/ || true
-          # Docs client build is inside /app/build/client in docs container
-          docker cp docs:/app/build/client/. ./docs/dist/ || true
-          
-          # Switch gateway to HTTPS config and reload if certs exist
-          if [ -f /etc/letsencrypt/live/tycoin.app/fullchain.pem ]; then
-            sed -i 's#nginx/gateway.http.conf#nginx/gateway.conf#' docker-compose.yml || true
-            docker compose up -d nginx
-            docker compose restart nginx
-          fi
-          
-          # Health checks
-          curl -fsS http://localhost/ >/dev/null
-          curl -fsS http://localhost/api/health || curl -fsS http://localhost/health
-          # If HTTPS is enabled, check it too
-          if [ -f /etc/letsencrypt/live/tycoin.app/fullchain.pem ]; then
-            curl -fsSI https://tycoin.app >/dev/null
-          fi
-
-
-  # ===========================================
-  # NOTIFICATION
-  # ===========================================
-  notify:
-    needs: [build-and-test, deploy]
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-    - name: Notify on success
-      if: needs.deploy.result == 'success'
-      run: |
-        echo "✅ Deployment successful!"
-        echo "🚀 Application is live at: ${{ secrets.APP_URL }}"
-
-    - name: Notify on failure
-      if: needs.deploy.result == 'failure'
-      run: |
-        echo "❌ Deployment failed!"
-        echo "🔍 Check the logs for details"
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create .env files from secrets
+        run: |
+          echo "${{ secrets.BACKEND_ENV_PROD }}" > backend/.env.prod
+          echo "${{ secrets.POSTGRES_ENV_PROD }}" > postgres/.env.prod
+          echo "${{ secrets.VAULT_ENV_PROD }}" > vault/.env.prod
+          echo "${{ secrets.ROOT_ENV_PROD }}" > .env.prod
+      
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            set -e
+            cd ${{ secrets.PROJECT_PATH }}
+            
+            echo "📥 Pulling latest changes..."
+            git fetch --all
+            git reset --hard origin/main
+            
+            echo "📝 Creating .env files..."
+            echo "${{ secrets.BACKEND_ENV_PROD }}" > backend/.env.prod
+            echo "${{ secrets.POSTGRES_ENV_PROD }}" > postgres/.env.prod
+            echo "${{ secrets.VAULT_ENV_PROD }}" > vault/.env.prod
+            echo "${{ secrets.ROOT_ENV_PROD }}" > .env.prod
+            
+            echo "🐳 Building and starting services..."
+            docker compose -f docker-compose.yml --env-file .env.prod up -d --build
+            
+            echo "⏳ Waiting for services to start..."
+            sleep 10
+            
+            echo "✅ Deployment complete!"
+            docker compose ps

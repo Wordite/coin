@@ -1,4 +1,5 @@
 name: coin
+
 services:
   nginx:
     image: nginx:alpine
@@ -7,11 +8,11 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/nginx/gateway.http.conf:/etc/nginx/conf.d/default.conf:ro
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/frontend/dist:/usr/share/nginx/html/frontend:ro
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/admin/dist:/usr/share/nginx/html/admin:ro
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/docs/dist:/usr/share/nginx/html/docs:ro
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/certbot/www:/var/www/certbot:rw
+      - ./nginx/gateway.http.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html/frontend:ro
+      - ./admin/dist:/usr/share/nginx/html/admin:ro
+      - ./docs/dist:/usr/share/nginx/html/docs:ro
+      - ./certbot/www:/var/www/certbot:rw
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
@@ -19,40 +20,32 @@ services:
       - admin
       - docs
     restart: unless-stopped
+
   vault:
     image: hashicorp/vault:1.15
     container_name: vault
     ports:
       - "8200:8200"
     env_file:
-      - ./vault/vault.env
-    environment:
-      - VAULT_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN}
-      - VAULT_API_ADDR=https://0.0.0.0:8200
-      - VAULT_CLUSTER_ADDR=https://0.0.0.0:8201
+      - ./vault/.env.prod
     volumes:
       - vault_data:/vault/data
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/vault/config:/vault/config
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/vault/scripts:/vault/scripts
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/vault/certs:/vault/certs:ro
+      - ./vault/config:/vault/config
+      - ./vault/certs:/vault/certs:ro
     cap_add:
       - IPC_LOCK
     restart: unless-stopped
     command: vault server -config=/vault/config/vault.json
 
   postgres:
-    build:
-      context: .
-      dockerfile: ./postgres/Dockerfile
+    image: postgres:15
     container_name: postgres
     ports:
       - "5432:5432"
     env_file:
-      - ./postgres/.env
+      - ./postgres/.env.prod
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - postgres_backups:/var/lib/postgresql/backups
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/scripts/setup-secure-postgres.sql:/docker-entrypoint-initdb.d/01-setup-security.sql:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -81,15 +74,10 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - ./backend/.env
-    environment:
-      - NODE_ENV=production
-      - VAULT_URL=http://vault:8201
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - ./backend/.env.prod
     volumes:
       - backend_uploads:/app/uploads
-      - ${PROJECT_PATH:-/home/wordite/projects/coin_presale}/docs/content:/app/docs-content:ro
+      - ./docs/content:/app/docs-content:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,12 +86,6 @@ services:
       vault:
         condition: service_started
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   admin:
     build:
@@ -143,8 +125,6 @@ services:
 volumes:
   postgres_data:
     name: coin_postgres_data
-  postgres_backups:
-    name: coin_postgres_backups
   backend_uploads:
     name: coin_backend_uploads
   vault_data:
