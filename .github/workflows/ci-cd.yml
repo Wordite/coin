@@ -13,13 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Create .env files from secrets
-        run: |
-          echo "${{ secrets.BACKEND_ENV_PROD }}" > backend/.env.prod
-          echo "${{ secrets.POSTGRES_ENV_PROD }}" > postgres/.env.prod
-          echo "${{ secrets.VAULT_ENV_PROD }}" > vault/.env.prod
-          echo "${{ secrets.ROOT_ENV_PROD }}" > .env.prod
-      
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -35,17 +28,28 @@ jobs:
             git fetch --all
             git reset --hard origin/main
             
-            echo "📝 Creating .env files..."
-            echo "${{ secrets.BACKEND_ENV_PROD }}" > backend/.env.prod
-            echo "${{ secrets.POSTGRES_ENV_PROD }}" > postgres/.env.prod
-            echo "${{ secrets.VAULT_ENV_PROD }}" > vault/.env.prod
-            echo "${{ secrets.ROOT_ENV_PROD }}" > .env.prod
+            echo "📝 Creating .env files from secrets..."
+            cat > backend/.env.prod << 'BACKEND_ENV_EOF'
+            ${{ secrets.BACKEND_ENV_PROD }}
+            BACKEND_ENV_EOF
+            
+            cat > postgres/.env.prod << 'POSTGRES_ENV_EOF'
+            ${{ secrets.POSTGRES_ENV_PROD }}
+            POSTGRES_ENV_EOF
+            
+            cat > vault/.env.prod << 'VAULT_ENV_EOF'
+            ${{ secrets.VAULT_ENV_PROD }}
+            VAULT_ENV_EOF
+            
+            cat > .env.prod << 'ROOT_ENV_EOF'
+            ${{ secrets.ROOT_ENV_PROD }}
+            ROOT_ENV_EOF
             
             echo "🐳 Building and starting services..."
             docker compose -f docker-compose.yml --env-file .env.prod up -d --build
             
             echo "⏳ Waiting for services to start..."
-            sleep 10
+            sleep 15
             
             echo "✅ Deployment complete!"
             docker compose ps
