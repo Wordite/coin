@@ -8,7 +8,8 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
-RUN npm ci && npm cache clean --force
+# Retry npm ci up to 3 times in case of network issues
+RUN for i in 1 2 3; do npm ci && break || sleep 5; done && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -16,10 +17,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Install Prisma CLI globally
-RUN npm install -g prisma
-
-# Generate Prisma client
+# Generate Prisma client (Prisma CLI already in node_modules from deps stage)
 RUN npx prisma generate
 
 # Build the application
@@ -35,7 +33,8 @@ RUN adduser --system --uid 1001 nestjs
 
 # Install only production dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production && npm cache clean --force
+# Retry npm ci up to 3 times in case of network issues
+RUN for i in 1 2 3; do npm ci --only=production && break || sleep 5; done && npm cache clean --force
 
 # Copy built application and Prisma client
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
