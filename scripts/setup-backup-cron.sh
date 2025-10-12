@@ -66,7 +66,6 @@ if crontab -l 2>/dev/null | grep -q "postgres-backup.sh"; then
         exit 0
     fi
     
-    
     # Remove existing cron job
     crontab -l | grep -v "postgres-backup.sh" | crontab -
     log "Removed existing cron job"
