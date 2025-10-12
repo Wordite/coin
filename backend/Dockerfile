@@ -57,6 +57,7 @@ COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modul
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
 
+
 # Create uploads and logs directories with proper permissions
 RUN mkdir -p uploads logs && chown nestjs:nodejs uploads logs
 
