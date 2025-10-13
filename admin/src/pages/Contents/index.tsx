@@ -16,13 +16,12 @@ import {
   useDisclosure,
 } from '@heroui/react'
 import { sectionApi } from '../../services/sectionApi'
-import { useAuthNotify } from '@/hooks/useAuthNotify'
+import { Notify } from '../../services/notify'
 import type { Section, SectionType } from '../../entities/section/types'
 import { useNavigate } from 'react-router'
 
 const Contents: React.FC = () => {
   const [sections, setSections] = useState<Section[]>([])
-  const { error: notifyError } = useAuthNotify()
   const [sectionTypes, setSectionTypes] = useState<SectionType[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSectionType, setSelectedSectionType] = useState<SectionType | null>(null)
@@ -48,7 +47,7 @@ const Contents: React.FC = () => {
       setSections(sectionsData)
       setSectionTypes(typesData)
     } catch (err) {
-      notifyError('Failed to load data')
+      Notify.error('Failed to load data')
       console.error(err)
     } finally {
       setLoading(false)
@@ -69,11 +68,11 @@ const Contents: React.FC = () => {
 
       // Показываем более детальную информацию об ошибке
       if (err.response?.data?.message) {
-        notifyError(`Delete failed: ${err.response.data.message}`)
+        Notify.error(`Delete failed: ${err.response.data.message}`)
       } else if (err.message) {
-        notifyError(`Delete failed: ${err.message}`)
+        Notify.error(`Delete failed: ${err.message}`)
       } else {
-        notifyError('Failed to delete section')
+        Notify.error('Failed to delete section')
       }
 
       console.error(err)
@@ -118,7 +117,7 @@ const Contents: React.FC = () => {
       navigate(`/page-editor/${newSection.link}`)
     } catch (err: any) {
       console.error('Create section error:', err)
-      notifyError('Failed to create section. Please try again.')
+      Notify.error('Failed to create section. Please try again.')
     } finally {
       setIsCreating(false)
     }
@@ -171,7 +170,7 @@ const Contents: React.FC = () => {
             </div>
           ) : (
             <div className='divide-y divide-gray-600'>
-              {sections && sections.length > 0 ? sections.map((section) => (
+              {sections.map((section) => (
                 <div key={section.id} className='px-6 py-6'>
                   <div className='flex items-start justify-between mb-4'>
                     <div className='flex-1'>
@@ -215,11 +214,7 @@ const Contents: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              )) : (
-                <div className='px-6 py-8 text-center text-gray-500'>
-                  No sections found
-                </div>
-              )}
+              ))}
             </div>
           )}
         </CardBody>
@@ -256,7 +251,7 @@ const Contents: React.FC = () => {
                   </div>
                 ) : (
                   <div className='grid gap-3'>
-                    {sectionTypes && sectionTypes.length > 0 ? sectionTypes.map((sectionType) => (
+                    {sectionTypes.map((sectionType) => (
                       <Card
                         key={sectionType.id}
                         className={`cursor-pointer transition-all duration-200 hover:scale-[1.02] ${
@@ -298,11 +293,7 @@ const Contents: React.FC = () => {
                           </div>
                         </CardBody>
                       </Card>
-                    )) : (
-                      <div className='text-center py-8 text-gray-500'>
-                        <p>No section types available</p>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </ModalBody>

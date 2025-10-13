@@ -30,12 +30,11 @@ import {
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
 import { contactApi, type ContactResponse } from '@/services/contactApi'
-import { useAuthNotify } from '@/hooks/useAuthNotify'
+import { Notify } from '@/services/notify'
 
 const Contacts = () => {
   const [contacts, setContacts] = useState<ContactResponse[]>([])
   const [contactsLoading, setContactsLoading] = useState(false)
-  const { error: notifyError } = useAuthNotify()
   const [deletingAllRead, setDeletingAllRead] = useState(false)
   const [selectedContact, setSelectedContact] = useState<ContactResponse | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -74,7 +73,7 @@ const Contacts = () => {
       setTotalPages(data.totalPages)
       setTotal(data.total)
     } catch (err) {
-      notifyError('Failed to load contacts')
+      Notify.error('Failed to load contacts')
       console.error(err)
     } finally {
       setContactsLoading(false)
@@ -89,7 +88,7 @@ const Contacts = () => {
         onOpen()
       }
     } catch (err) {
-      notifyError('Failed to load contact details')
+      Notify.error('Failed to load contact details')
       console.error(err)
     }
   }
@@ -101,7 +100,7 @@ const Contacts = () => {
       loadContactsData()
       loadReadCount()
     } catch (err) {
-      notifyError('Failed to mark contact as read')
+      Notify.error('Failed to mark contact as read')
       console.error(err)
     }
   }
@@ -113,7 +112,7 @@ const Contacts = () => {
       loadContactsData()
       loadReadCount()
     } catch (err) {
-      notifyError('Failed to mark contact as unread')
+      Notify.error('Failed to mark contact as unread')
       console.error(err)
     }
   }
@@ -125,7 +124,7 @@ const Contacts = () => {
       loadContactsData()
       loadReadCount()
     } catch (err) {
-      notifyError('Failed to delete contact')
+      Notify.error('Failed to delete contact')
       console.error(err)
     }
   }
@@ -139,7 +138,7 @@ const Contacts = () => {
       loadReadCount()
       onDeleteConfirmClose()
     } catch (err) {
-      notifyError('Failed to delete read contacts')
+      Notify.error('Failed to delete read contacts')
       console.error(err)
     } finally {
       setDeletingAllRead(false)

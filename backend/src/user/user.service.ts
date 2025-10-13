@@ -498,9 +498,11 @@ export class UserService {
 
     // Calculate current total coins
     const currentTotalCoins = transactions.reduce((sum, tx) => sum + tx.coinsPurchased, 0)
+    console.log('currentTotalCoins', currentTotalCoins)
 
     // Create adjustment transaction
     const adjustmentAmount = newCoinsAmount - currentTotalCoins
+    console.log('adjustmentAmount', adjustmentAmount)
     const adjustmentTransaction: Transaction = {
       id: `adjustment-${Date.now()}`,
       type: 'SOL', // Default type for adjustments

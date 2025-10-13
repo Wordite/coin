@@ -27,13 +27,12 @@ import {
   DropdownItem,
 } from '@heroui/react'
 import { EyeIcon, CurrencyDollarIcon, ChevronUpDownIcon, ArrowTopRightOnSquareIcon, TrashIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-import { useAuthNotify } from '@/hooks/useAuthNotify'
+import { Notify } from '@/services/notify'
 import { usersApi, type UserWithTransactions } from '@/services/usersApi'
 
 const Users = () => {
   const [users, setUsers] = useState<UserWithTransactions[]>([])
   const [loading, setLoading] = useState(true)
-  const { error: notifyError } = useAuthNotify()
   const [initialLoading, setInitialLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -73,7 +72,7 @@ const Users = () => {
         setInitialLoading(false)
       }
     } catch (err) {
-      notifyError('Failed to load users')
+      Notify.error('Failed to load users')
       console.error(err)
     } finally {
       setLoading(false)
@@ -119,7 +118,7 @@ const Users = () => {
       loadUsers(currentPage, sortBy, sortOrder)
     } catch (error) {
       console.error('Error deleting user:', error)
-      notifyError('Failed to delete user')
+      Notify.error('Failed to delete user')
     } finally {
       setUpdating(false)
     }
@@ -139,7 +138,7 @@ const Users = () => {
       loadUsers(currentPage, sortBy, sortOrder)
     } catch (error) {
       console.error('Error changing user role:', error)
-      notifyError('Failed to change user role')
+      Notify.error('Failed to change user role')
     } finally {
       setUpdating(false)
     }
@@ -149,10 +148,10 @@ const Users = () => {
     try {
       const user = await usersApi.getUserById(userId)
       setSelectedUser(user)
-      setNewCoinsAmount(user.totalCoinsPurchased)
+      setNewCoinsAmount(user.totalCoinsPurchased || 0)
       onOpen()
     } catch (err) {
-      notifyError('Failed to load user details')
+      Notify.error('Failed to load user details')
       console.error(err)
     }
   }
@@ -172,7 +171,7 @@ const Users = () => {
       
       Notify.success('User coins updated successfully')
     } catch (err) {
-      notifyError('Failed to update user coins')
+      Notify.error('Failed to update user coins')
       console.error(err)
     } finally {
       setUpdating(false)
@@ -194,11 +193,9 @@ const Users = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
-
-
   const formatAmount = (amount: number) => {
-    if (!amount) return '0'
-
+    if (isNaN(amount) || !amount) return '0'
+  
     return amount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 6,
@@ -325,7 +322,7 @@ const Users = () => {
               <TableColumn>ACTIONS</TableColumn>
             </TableHeader>
             <TableBody>
-              {users && users.length > 0 ? users.map((user) => (
+              {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     {user.email || (
@@ -373,16 +370,7 @@ const Users = () => {
                     </Button>
                   </TableCell>
                 </TableRow>
-              )) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    <div className="text-foreground/60">
-                      <UsersIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>No users found</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
 

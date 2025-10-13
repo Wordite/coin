@@ -153,13 +153,9 @@ const MediaGrid = React.memo(({ mediaFiles, onDelete }: { mediaFiles: MediaFile[
   return (
     <div className='w-full'>
       <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4'>
-        {mediaFiles && mediaFiles.length > 0 ? mediaFiles.map((file) => (
+        {mediaFiles.map((file) => (
           <MediaCard key={file.id} file={file} onDelete={onDelete} />
-        )) : (
-          <div className="col-span-full text-center py-12 text-foreground/60">
-            <p>No media files found</p>
-          </div>
-        )}
+        ))}
       </div>
     </div>
   )

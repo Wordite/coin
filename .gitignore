@@ -235,3 +235,5 @@ README.md
 SETUP_GITHUB_SECRETS.md
 
 .cursorignore
+
+database_export.sql

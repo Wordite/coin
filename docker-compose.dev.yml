@@ -43,7 +43,7 @@ services:
     cap_add:
       - IPC_LOCK
     restart: unless-stopped
-    command: vault server -dev -dev-root-token-id=dev-root-token
+    command: vault server -dev -dev-root-token-id=dev-root-token -dev-listen-address=0.0.0.0:8200
 
   backend:
     build:
@@ -73,6 +73,8 @@ services:
       context: ./admin
       dockerfile: Dockerfile.dev
     container_name: admin_dev
+    env_file:
+      - ./admin/.env.dev
     ports:
       - "5173:5173"
     volumes:
@@ -85,13 +87,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: frontend_dev
+    env_file:
+      - ./frontend/.env.dev
     ports:
-      - "5174:5173"
+      - "5174:5174"
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
-    environment:
-      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     restart: unless-stopped
 
 volumes:

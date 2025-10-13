@@ -25,7 +25,7 @@ export class VaultService implements OnModuleInit {
       })
 
       // Проверяем подключение к Vault
-      await this.client.status()
+      await this.client.health()
       this.logger.log('Successfully connected to Vault')
       
       // Инициализируем секреты если их нет

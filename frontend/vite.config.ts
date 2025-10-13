@@ -27,12 +27,13 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['linux.tail8a03ca.ts.net'],
-    // Добавляем настройки для WalletConnect
+    host: '0.0.0.0',
+    port: 5174,
     cors: true,
     // Настраиваем для работы с мобильными кошельками
-    host: true,
-    port: 5174
+    hmr: {
+      port: 5174
+    }
   },
   // Добавляем define для Buffer
   define: {

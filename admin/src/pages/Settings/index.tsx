@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { formatNumber } from '@/shared/utils/formatNumber'
+import { useState, useEffect, useRef } from 'react'
 import {
   Card,
   CardBody,
@@ -20,7 +19,7 @@ import {
   ModalFooter,
   useDisclosure,
 } from '@heroui/react'
-import { useAuthNotify } from '@/hooks/useAuthNotify'
+import { Notify } from '@/services/notify'
 import { settingsApi } from '@/services/settingsApi'
 import { coinApi, type CoinPresaleSettings } from '@/services/coinApi'
 import { ImagePicker } from '@/widgets/ImagePicker'
@@ -55,7 +54,6 @@ interface VaultStatus {
 }
 
 const Settings = () => {
-  const { error: notifyError } = useAuthNotify()
   const [settings, setSettings] = useState<SettingsData>({
     siteName: '',
     siteLogo: '',
@@ -78,7 +76,7 @@ const Settings = () => {
     maxBuyAmount: 1000000,
     mintAddress: '',
   })
-
+  
   const [availableStages, setAvailableStages] = useState<number[]>([1, 2, 3, 4, 5])
   
   const [loading, setLoading] = useState(true)
@@ -124,7 +122,7 @@ const Settings = () => {
       setPresaleSettings(presaleData)
       setAvailableStages(stagesData)
     } catch (err) {
-      notifyError('Failed to load settings')
+      Notify.error('Failed to load settings')
       console.error(err)
     } finally {
       setLoading(false)
@@ -149,7 +147,7 @@ const Settings = () => {
       ])
       Notify.success('Settings saved successfully')
     } catch (err) {
-      notifyError('Failed to save settings')
+      Notify.error('Failed to save settings')
       console.error(err)
     } finally {
       setSaving(false)
@@ -190,7 +188,7 @@ const Settings = () => {
 
   const initializeWallet = async () => {
     if (!newSecretKey.trim()) {
-      notifyError('Please enter a secret key')
+      Notify.error('Please enter a secret key')
       return
     }
 
@@ -211,7 +209,7 @@ const Settings = () => {
     } catch (error: any) {
       console.error('Failed to initialize wallet:', error)
       const errorMessage = error.response?.data?.error || 'Failed to initialize wallet'
-      notifyError(errorMessage)
+      Notify.error(errorMessage)
     } finally {
       setVaultLoading(false)
     }
@@ -219,7 +217,7 @@ const Settings = () => {
 
   const updateWallet = async () => {
     if (!newSecretKey.trim()) {
-      notifyError('Please enter a new secret key')
+      Notify.error('Please enter a new secret key')
       return
     }
 
@@ -239,7 +237,7 @@ const Settings = () => {
     } catch (error: any) {
       console.error('Failed to update wallet:', error)
       const errorMessage = error.response?.data?.error || 'Failed to update wallet'
-      notifyError(errorMessage)
+      Notify.error(errorMessage)
     } finally {
       setVaultLoading(false)
     }
@@ -256,7 +254,7 @@ const Settings = () => {
     } catch (error: any) {
       console.error('Failed to delete wallet:', error)
       const errorMessage = error.response?.data?.error || 'Failed to delete wallet'
-      notifyError(errorMessage)
+      Notify.error(errorMessage)
     } finally {
       setVaultLoading(false)
     }
@@ -742,7 +740,7 @@ const Settings = () => {
               Status: {presaleSettings.status}
             </Chip>
             <span className="text-sm text-foreground/60">
-              Stage {presaleSettings.stage} • {formatNumber(presaleSettings.totalAmount)} total tokens
+              Stage {presaleSettings.stage} • {presaleSettings.totalAmount.toLocaleString()} total tokens
             </span>
           </div>
 

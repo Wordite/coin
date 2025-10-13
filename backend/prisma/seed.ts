@@ -16,16 +16,18 @@ function generateSolanaAddress(): string {
 function generateTransaction(type: 'SOL' | 'USDT') {
   const amount = Math.random() * 10 + 0.1 // 0.1 to 10.1
   const rate = type === 'SOL' ? 0.0001 : 0.001 // Different rates for SOL and USDT
-  const coinsReceived = amount * rate
+  const coinsPurchased = amount * rate
   
   return {
     id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     type,
     amount: Math.round(amount * 1000000) / 1000000, // 6 decimal places
     rate,
-    coinsReceived: Math.round(coinsReceived * 1000000) / 1000000,
+    coinsPurchased: Math.round(coinsPurchased * 1000000) / 1000000,
     timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(), // Random date within last 30 days
     txHash: `tx_${Math.random().toString(36).substr(2, 16)}`,
+    isReceived: Math.random() > 0.2, // 80% chance of being received
+    isSuccessful: Math.random() > 0.1, // 90% chance of being successful
   }
 }
 

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { formatNumber } from '@/shared/utils/formatNumber'
 import {
   Card,
   CardBody,
@@ -32,12 +31,11 @@ import {
 } from '@heroicons/react/24/outline'
 import { usersApi, type UserWithTransactions } from '@/services/usersApi'
 import { coinApi, type CoinPresaleSettings } from '@/services/coinApi'
-import { useAuthNotify } from '@/hooks/useAuthNotify'
+import { Notify } from '@/services/notify'
 
 const Presale = () => {
   const [presaleSettings, setPresaleSettings] = useState<CoinPresaleSettings | null>(null)
   const [users, setUsers] = useState<UserWithTransactions[]>([])
-  const { error: notifyError } = useAuthNotify()
   const [usersStatistics, setUsersStatistics] = useState<{
     totalUsers: number
     usersWithPurchases: number
@@ -72,7 +70,7 @@ const Presale = () => {
       setPresaleSettings(settingsData)
       setUsersStatistics(statisticsData)
     } catch (err) {
-      notifyError('Failed to load presale data')
+      Notify.error('Failed to load presale data')
       console.error('Error loading presale data:', err)
     } finally {
       setInitialLoading(false)
@@ -86,7 +84,7 @@ const Presale = () => {
       setUsers(usersData.users)
       setTotalPages(usersData.totalPages)
     } catch (err) {
-      notifyError('Failed to load users data')
+      Notify.error('Failed to load users data')
       console.error(err)
     } finally {
       setUsersLoading(false)
@@ -101,7 +99,7 @@ const Presale = () => {
       
       Notify.success('Tokens issued to all users successfully')
     } catch (err) {
-      notifyError('Failed to issue tokens')
+      Notify.error('Failed to issue tokens')
       console.error(err)
     } finally {
       setIssuingTokens(false)
@@ -115,7 +113,7 @@ const Presale = () => {
       
       Notify.success('Tokens issued to user successfully')
     } catch (err) {
-      notifyError('Failed to issue tokens to user')
+      Notify.error('Failed to issue tokens to user')
       console.error(err)
     }
   }
@@ -126,7 +124,7 @@ const Presale = () => {
       setSelectedUser(user)
       onOpen()
     } catch (err) {
-      notifyError('Failed to load user details')
+      Notify.error('Failed to load user details')
       console.error(err)
     }
   }
@@ -136,6 +134,8 @@ const Presale = () => {
   }
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return 'No date'
+
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -150,8 +150,10 @@ const Presale = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
   }
 
-  const formatAmount = (amount: number | null | undefined) => {
-    return formatNumber(amount, {
+  const formatAmount = (amount: number) => {
+    if (isNaN(amount) || !amount) return '0'
+  
+    return amount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 6,
     })
@@ -175,37 +177,6 @@ const Presale = () => {
       <div className="p-6">
         <div className="text-center text-foreground/60">
           Failed to load presale data
-        </div>
-      </div>
-    )
-  }
-
-  // Show loading spinner while initial data is loading
-  if (initialLoading) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <Spinner size="lg" />
-          <p className="mt-4 text-foreground/60">Loading presale data...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Show error state if presaleSettings is null
-  if (!presaleSettings) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-foreground/60">Failed to load presale settings</p>
-          <Button 
-            color="primary" 
-            variant="flat" 
-            className="mt-4"
-            onPress={loadInitialData}
-          >
-            Retry
-          </Button>
         </div>
       </div>
     )
@@ -328,7 +299,7 @@ const Presale = () => {
         </CardHeader>
         <CardBody>
           <div className="text-sm text-foreground/60">
-            {usersWithPurchases} users waiting for tokens • {formatNumber(totalPendingTokens)} tokens to distribute
+            {usersWithPurchases} users waiting for tokens • {totalPendingTokens.toLocaleString()} tokens to distribute
           </div>
         </CardBody>
       </Card>
@@ -364,7 +335,7 @@ const Presale = () => {
                     </div>
                   </TableCell>
                 </TableRow>
-              ) : users && users.length > 0 ? (
+              ) : (
                 users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
@@ -415,15 +386,6 @@ const Presale = () => {
                   </TableCell>
                 </TableRow>
                 ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <div className="text-foreground/60">
-                      <UsersIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>No users found</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
               )}
             </TableBody>
           </Table>
@@ -512,8 +474,7 @@ const Presale = () => {
                     <div>
                       <h3 className="font-semibold mb-3">Transaction History</h3>
                       <div className="space-y-3 max-h-64 overflow-y-auto">
-                        {selectedUser.transactions && selectedUser.transactions.length > 0 ? (
-                          selectedUser.transactions.map((transaction, index) => (
+                        {selectedUser.transactions.map((transaction, index) => (
                           <div key={index} className="flex items-center justify-between p-3 bg-content2 rounded-lg">
                             <div className="flex items-center gap-3">
                               <Chip color="primary" variant="flat" size="sm">
@@ -557,10 +518,10 @@ const Presale = () => {
                               </span>
                             </div>
                           </div>
-                        ))
-                        ) : (
-                          <div className="text-center py-8 text-foreground/60">
-                            <p>No transactions found</p>
+                        ))}
+                        {selectedUser.transactions.length === 0 && (
+                          <div className="text-center text-foreground/60 py-8">
+                            No transactions found
                           </div>
                         )}
                       </div>

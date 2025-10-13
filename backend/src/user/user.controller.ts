@@ -69,6 +69,7 @@ export class UserController {
     @Param('id') id: string,
     @Body() body: { newCoinsAmount: number },
   ): Promise<UserWithTransactions> {
+    console.log('\n\n\n\nupdateUserCoins\n\n\n\n', id, body.newCoinsAmount)
     return this.user.updateUserCoins(id, body.newCoinsAmount)
   }
 
