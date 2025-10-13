@@ -1,5 +1,9 @@
 # Multi-stage build for production
 FROM node:22-bookworm-slim AS base
+# Prisma requires OpenSSL runtime; install minimal packages
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -8,6 +12,9 @@ WORKDIR /app
 # Install dependencies (including dev) for build tools (nest, prisma)
 COPY package.json package-lock.json* ./
 ENV NODE_ENV=development
+RUN apt-get update -y \
+  && apt-get install -y --no-install-recommends build-essential python3 pkg-config \
+  && rm -rf /var/lib/apt/lists/*
 RUN npm ci
 
 # Rebuild the source code only when needed
@@ -21,6 +28,7 @@ RUN npx prisma generate
 
 # Build the application
 RUN npm run build
+RUN npm prune --omit=dev
 
 # Production image, copy all the files and run nest
 FROM base AS runner
@@ -30,18 +38,12 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# Install only production dependencies (no dev tools needed at runtime)
-COPY package.json package-lock.json* ./
 ENV NODE_ENV=production
-RUN npm ci --omit=dev
 
 # Copy built application and Prisma client
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-# Copy Prisma CLI from build stage to avoid network install at runtime
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nestjs:nodejs /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
+COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 
 
 # Create uploads and logs directories with proper permissions
