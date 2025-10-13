@@ -32,11 +32,12 @@ import {
 } from '@heroicons/react/24/outline'
 import { usersApi, type UserWithTransactions } from '@/services/usersApi'
 import { coinApi, type CoinPresaleSettings } from '@/services/coinApi'
-import { Notify } from '@/services/notify'
+import { useAuthNotify } from '@/hooks/useAuthNotify'
 
 const Presale = () => {
   const [presaleSettings, setPresaleSettings] = useState<CoinPresaleSettings | null>(null)
   const [users, setUsers] = useState<UserWithTransactions[]>([])
+  const { error: notifyError } = useAuthNotify()
   const [usersStatistics, setUsersStatistics] = useState<{
     totalUsers: number
     usersWithPurchases: number
@@ -71,7 +72,7 @@ const Presale = () => {
       setPresaleSettings(settingsData)
       setUsersStatistics(statisticsData)
     } catch (err) {
-      Notify.error('Failed to load presale data')
+      notifyError('Failed to load presale data')
       console.error('Error loading presale data:', err)
     } finally {
       setInitialLoading(false)
@@ -85,7 +86,7 @@ const Presale = () => {
       setUsers(usersData.users)
       setTotalPages(usersData.totalPages)
     } catch (err) {
-      Notify.error('Failed to load users data')
+      notifyError('Failed to load users data')
       console.error(err)
     } finally {
       setUsersLoading(false)
@@ -100,7 +101,7 @@ const Presale = () => {
       
       Notify.success('Tokens issued to all users successfully')
     } catch (err) {
-      Notify.error('Failed to issue tokens')
+      notifyError('Failed to issue tokens')
       console.error(err)
     } finally {
       setIssuingTokens(false)
@@ -114,7 +115,7 @@ const Presale = () => {
       
       Notify.success('Tokens issued to user successfully')
     } catch (err) {
-      Notify.error('Failed to issue tokens to user')
+      notifyError('Failed to issue tokens to user')
       console.error(err)
     }
   }
@@ -125,7 +126,7 @@ const Presale = () => {
       setSelectedUser(user)
       onOpen()
     } catch (err) {
-      Notify.error('Failed to load user details')
+      notifyError('Failed to load user details')
       console.error(err)
     }
   }

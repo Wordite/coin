@@ -16,12 +16,13 @@ import {
   useDisclosure,
 } from '@heroui/react'
 import { sectionApi } from '../../services/sectionApi'
-import { Notify } from '../../services/notify'
+import { useAuthNotify } from '@/hooks/useAuthNotify'
 import type { Section, SectionType } from '../../entities/section/types'
 import { useNavigate } from 'react-router'
 
 const Contents: React.FC = () => {
   const [sections, setSections] = useState<Section[]>([])
+  const { error: notifyError } = useAuthNotify()
   const [sectionTypes, setSectionTypes] = useState<SectionType[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSectionType, setSelectedSectionType] = useState<SectionType | null>(null)
@@ -47,7 +48,7 @@ const Contents: React.FC = () => {
       setSections(sectionsData)
       setSectionTypes(typesData)
     } catch (err) {
-      Notify.error('Failed to load data')
+      notifyError('Failed to load data')
       console.error(err)
     } finally {
       setLoading(false)
@@ -68,11 +69,11 @@ const Contents: React.FC = () => {
 
       // Показываем более детальную информацию об ошибке
       if (err.response?.data?.message) {
-        Notify.error(`Delete failed: ${err.response.data.message}`)
+        notifyError(`Delete failed: ${err.response.data.message}`)
       } else if (err.message) {
-        Notify.error(`Delete failed: ${err.message}`)
+        notifyError(`Delete failed: ${err.message}`)
       } else {
-        Notify.error('Failed to delete section')
+        notifyError('Failed to delete section')
       }
 
       console.error(err)
@@ -117,7 +118,7 @@ const Contents: React.FC = () => {
       navigate(`/page-editor/${newSection.link}`)
     } catch (err: any) {
       console.error('Create section error:', err)
-      Notify.error('Failed to create section. Please try again.')
+      notifyError('Failed to create section. Please try again.')
     } finally {
       setIsCreating(false)
     }

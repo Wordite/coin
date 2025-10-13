@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common'
 import { UserService, Transaction } from '../user/user.service'
 import { JwtService } from '@nestjs/jwt'
 import { jwtConstants } from './constants/jwt.constant'
@@ -34,9 +34,9 @@ export class AuthService {
     this.logger.log(`Sign in by email: ${email}`)
     const user = await this.users.findByEmail(email)
 
-    if (!user) throw new UnauthorizedException('User not found')
+    if (!user) throw new BadRequestException('User not found')
 
-    if (!user.password || !user.email) throw new UnauthorizedException('User not found')
+    if (!user.password || !user.email) throw new BadRequestException('User not found')
 
     const isPasswordValid = await compare(password, user.password)
 
@@ -71,7 +71,7 @@ export class AuthService {
     this.logger.log(`Sign up by email: ${email}`)
 
     const existingUser = await this.users.findByEmail(email)
-    if (existingUser) throw new UnauthorizedException('User already exists')
+    if (existingUser) throw new BadRequestException('User already exists')
 
     const { activationLink, session } = await this.authorizationRequest.createByEmail(
       email,
@@ -181,7 +181,7 @@ export class AuthService {
     await this.checkFingerprint(fingerprint, session)
 
     if (!session.userId) {
-      throw new UnauthorizedException('Session has no associated user')
+      throw new BadRequestException('Session has no associated user')
     }
 
     const user = await this.users.findById(session.userId)

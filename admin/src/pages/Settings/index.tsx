@@ -20,7 +20,7 @@ import {
   ModalFooter,
   useDisclosure,
 } from '@heroui/react'
-import { Notify } from '@/services/notify'
+import { useAuthNotify } from '@/hooks/useAuthNotify'
 import { settingsApi } from '@/services/settingsApi'
 import { coinApi, type CoinPresaleSettings } from '@/services/coinApi'
 import { ImagePicker } from '@/widgets/ImagePicker'
@@ -55,6 +55,7 @@ interface VaultStatus {
 }
 
 const Settings = () => {
+  const { error: notifyError } = useAuthNotify()
   const [settings, setSettings] = useState<SettingsData>({
     siteName: '',
     siteLogo: '',
@@ -123,7 +124,7 @@ const Settings = () => {
       setPresaleSettings(presaleData)
       setAvailableStages(stagesData)
     } catch (err) {
-      Notify.error('Failed to load settings')
+      notifyError('Failed to load settings')
       console.error(err)
     } finally {
       setLoading(false)
@@ -148,7 +149,7 @@ const Settings = () => {
       ])
       Notify.success('Settings saved successfully')
     } catch (err) {
-      Notify.error('Failed to save settings')
+      notifyError('Failed to save settings')
       console.error(err)
     } finally {
       setSaving(false)
@@ -189,7 +190,7 @@ const Settings = () => {
 
   const initializeWallet = async () => {
     if (!newSecretKey.trim()) {
-      Notify.error('Please enter a secret key')
+      notifyError('Please enter a secret key')
       return
     }
 
@@ -210,7 +211,7 @@ const Settings = () => {
     } catch (error: any) {
       console.error('Failed to initialize wallet:', error)
       const errorMessage = error.response?.data?.error || 'Failed to initialize wallet'
-      Notify.error(errorMessage)
+      notifyError(errorMessage)
     } finally {
       setVaultLoading(false)
     }
@@ -218,7 +219,7 @@ const Settings = () => {
 
   const updateWallet = async () => {
     if (!newSecretKey.trim()) {
-      Notify.error('Please enter a new secret key')
+      notifyError('Please enter a new secret key')
       return
     }
 
@@ -238,7 +239,7 @@ const Settings = () => {
     } catch (error: any) {
       console.error('Failed to update wallet:', error)
       const errorMessage = error.response?.data?.error || 'Failed to update wallet'
-      Notify.error(errorMessage)
+      notifyError(errorMessage)
     } finally {
       setVaultLoading(false)
     }
@@ -255,7 +256,7 @@ const Settings = () => {
     } catch (error: any) {
       console.error('Failed to delete wallet:', error)
       const errorMessage = error.response?.data?.error || 'Failed to delete wallet'
-      Notify.error(errorMessage)
+      notifyError(errorMessage)
     } finally {
       setVaultLoading(false)
     }

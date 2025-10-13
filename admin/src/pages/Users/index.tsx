@@ -27,12 +27,13 @@ import {
   DropdownItem,
 } from '@heroui/react'
 import { EyeIcon, CurrencyDollarIcon, ChevronUpDownIcon, ArrowTopRightOnSquareIcon, TrashIcon, UserIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
-import { Notify } from '@/services/notify'
+import { useAuthNotify } from '@/hooks/useAuthNotify'
 import { usersApi, type UserWithTransactions } from '@/services/usersApi'
 
 const Users = () => {
   const [users, setUsers] = useState<UserWithTransactions[]>([])
   const [loading, setLoading] = useState(true)
+  const { error: notifyError } = useAuthNotify()
   const [initialLoading, setInitialLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -72,7 +73,7 @@ const Users = () => {
         setInitialLoading(false)
       }
     } catch (err) {
-      Notify.error('Failed to load users')
+      notifyError('Failed to load users')
       console.error(err)
     } finally {
       setLoading(false)
@@ -118,7 +119,7 @@ const Users = () => {
       loadUsers(currentPage, sortBy, sortOrder)
     } catch (error) {
       console.error('Error deleting user:', error)
-      Notify.error('Failed to delete user')
+      notifyError('Failed to delete user')
     } finally {
       setUpdating(false)
     }
@@ -138,7 +139,7 @@ const Users = () => {
       loadUsers(currentPage, sortBy, sortOrder)
     } catch (error) {
       console.error('Error changing user role:', error)
-      Notify.error('Failed to change user role')
+      notifyError('Failed to change user role')
     } finally {
       setUpdating(false)
     }
@@ -151,7 +152,7 @@ const Users = () => {
       setNewCoinsAmount(user.totalCoinsPurchased)
       onOpen()
     } catch (err) {
-      Notify.error('Failed to load user details')
+      notifyError('Failed to load user details')
       console.error(err)
     }
   }
@@ -171,7 +172,7 @@ const Users = () => {
       
       Notify.success('User coins updated successfully')
     } catch (err) {
-      Notify.error('Failed to update user coins')
+      notifyError('Failed to update user coins')
       console.error(err)
     } finally {
       setUpdating(false)
