@@ -15,8 +15,9 @@ ENV NODE_ENV=development
 RUN apt-get update -y \
   && apt-get install -y --no-install-recommends build-essential python3 pkg-config \
   && rm -rf /var/lib/apt/lists/*
+ENV npm_config_build_from_source=true
 RUN npm ci
-RUN npm rebuild sharp --unsafe-perm --verbose || npm rebuild sharp --force || true
+RUN npm rebuild sharp --build-from-source --unsafe-perm --verbose || npm rebuild sharp --build-from-source --force || true
 
 # Rebuild the source code only when needed
 FROM base AS builder
