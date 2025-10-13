@@ -1,25 +1,17 @@
 # Multi-stage build for production
-FROM node:22-bookworm-slim AS base
-# Prisma requires OpenSSL; sharp prefers system libvips
-RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends openssl ca-certificates libvips \
-  && rm -rf /var/lib/apt/lists/*
+FROM node:22-alpine AS base
+# Prisma requires OpenSSL; sharp requires vips and build tools on Alpine
+RUN apk add --no-cache openssl ca-certificates vips-dev
 
 # Install dependencies only when needed
 FROM base AS deps
 WORKDIR /app
 
-# Install dependencies (including dev) for build tools (nest, prisma)
+# Install build dependencies for native modules
 COPY package.json package-lock.json* ./
 ENV NODE_ENV=development
-RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends build-essential python3 pkg-config \
-  && rm -rf /var/lib/apt/lists/*
-ENV npm_config_build_from_source=sharp \
-    SHARP_FORCE_BUILD=1 \
-    SHARP_IGNORE_GLOBAL_LIBVIPS=0
+RUN apk add --no-cache build-base python3 pkgconfig
 RUN npm ci
-RUN npm rebuild sharp --build-from-source --unsafe-perm --verbose || npm rebuild sharp --build-from-source --force || true
 
 # Rebuild the source code only when needed
 FROM base AS builder
