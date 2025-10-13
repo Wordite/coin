@@ -1,8 +1,8 @@
 # Multi-stage build for production
 FROM node:22-bookworm-slim AS base
-# Prisma requires OpenSSL runtime; install minimal packages
+# Prisma requires OpenSSL; sharp prefers system libvips
 RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && apt-get install -y --no-install-recommends openssl ca-certificates libvips \
   && rm -rf /var/lib/apt/lists/*
 
 # Install dependencies only when needed
@@ -16,6 +16,7 @@ RUN apt-get update -y \
   && apt-get install -y --no-install-recommends build-essential python3 pkg-config \
   && rm -rf /var/lib/apt/lists/*
 RUN npm ci
+RUN npm rebuild sharp --unsafe-perm --verbose || npm rebuild sharp --force || true
 
 # Rebuild the source code only when needed
 FROM base AS builder
