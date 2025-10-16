@@ -50,12 +50,12 @@ export class StrongAuthGuard implements CanActivate {
         throw new UnauthorizedException('Session not found')
       }
 
-      this.logger.log(`StrongAuthGuard: Session fingerprint length: ${session.fingerprint?.length || 0}`)
-      this.logger.log(`StrongAuthGuard: Client fingerprint length: ${fingerprint?.length || 0}`)
+      // this.logger.log(`StrongAuthGuard: Session fingerprint length: ${session.fingerprint?.length || 0}`)
+      // this.logger.log(`StrongAuthGuard: Client fingerprint length: ${fingerprint?.length || 0}`)
 
       const fingerprintMatch = await compare(fingerprint, session.fingerprint)
       
-      this.logger.log(`StrongAuthGuard: Fingerprint match result: ${fingerprintMatch}`)
+      // this.logger.log(`StrongAuthGuard: Fingerprint match result: ${fingerprintMatch}`)
       
       if (!fingerprintMatch) {
         this.logger.error(`StrongAuthGuard: Fingerprint mismatch`)
@@ -64,7 +64,7 @@ export class StrongAuthGuard implements CanActivate {
         throw new UnauthorizedException('Fingerprint mismatch')
       }
 
-      this.logger.log(`StrongAuthGuard: Authentication successful`)
+      // this.logger.log(`StrongAuthGuard: Authentication successful`)
       return true
     } catch (error) {
       if (error instanceof UnauthorizedException) {

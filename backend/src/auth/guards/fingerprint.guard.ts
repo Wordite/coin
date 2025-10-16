@@ -14,18 +14,18 @@ export class FingerprintGuard implements CanActivate {
     const req = context.switchToHttp().getRequest()
     const fingerprint = req.headers['fingerprint'] as string
 
-    this.logger.log(`FingerprintGuard: Request from IP: ${req.ip}`)
-    this.logger.log(`FingerprintGuard: User-Agent: ${req.headers['user-agent']}`)
-    this.logger.log(`FingerprintGuard: Fingerprint present: ${!!fingerprint}`)
-    this.logger.log(`FingerprintGuard: Fingerprint length: ${fingerprint?.length || 0}`)
-    this.logger.log(`FingerprintGuard: Fingerprint value: ${fingerprint}`)
+    // this.logger.log(`FingerprintGuard: Request from IP: ${req.ip}`)
+    // this.logger.log(`FingerprintGuard: User-Agent: ${req.headers['user-agent']}`)
+    // this.logger.log(`FingerprintGuard: Fingerprint present: ${!!fingerprint}`)
+    // this.logger.log(`FingerprintGuard: Fingerprint length: ${fingerprint?.length || 0}`)
+    // this.logger.log(`FingerprintGuard: Fingerprint value: ${fingerprint}`)
 
     if (!fingerprint) {
       this.logger.error(`FingerprintGuard: Fingerprint is required from IP: ${req.ip}`)
       throw new UnauthorizedException('Something went wrong')
     }
 
-    this.logger.log(`FingerprintGuard: Fingerprint validation passed`)
+    // this.logger.log(`FingerprintGuard: Fingerprint validation passed`)
     return true
   }
 }
