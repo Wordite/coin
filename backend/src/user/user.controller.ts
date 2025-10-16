@@ -35,13 +35,14 @@ export class UserController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Query('search') search?: string,
+    @Query('filterType') filterType?: 'all' | 'pending' | 'issued',
   ): Promise<UsersListResponse> {
     const pageNum = page ? parseInt(page, 10) : 1
     const limitNum = limit ? parseInt(limit, 10) : 10
     const sortByField = sortBy || 'createdAt'
     const sortOrderField = sortOrder || 'desc'
     
-    return this.user.getUsers(pageNum, limitNum, sortByField, sortOrderField, search)
+    return this.user.getUsers(pageNum, limitNum, sortByField, sortOrderField, search, filterType)
   }
 
   @Get('statistics')
@@ -69,7 +70,6 @@ export class UserController {
     @Param('id') id: string,
     @Body() body: { newCoinsAmount: number },
   ): Promise<UserWithTransactions> {
-    console.log('\n\n\n\nupdateUserCoins\n\n\n\n', id, body.newCoinsAmount)
     return this.user.updateUserCoins(id, body.newCoinsAmount)
   }
 

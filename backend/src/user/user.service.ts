@@ -398,7 +398,8 @@ export class UserService {
     limit: number = 10,
     sortBy: string = 'createdAt',
     sortOrder: 'asc' | 'desc' = 'desc',
-    search?: string
+    search?: string,
+    filterType?: 'all' | 'pending' | 'issued'
   ): Promise<UsersListResponse> {
     const skip = (page - 1) * limit
 
@@ -436,10 +437,13 @@ export class UserService {
       }
     }
 
-    const [users, total] = await Promise.all([
-      this.prisma.user.findMany({
-        skip,
-        take: limit,
+    // For filtering, we need to get all users first, then apply pagination
+    let allUsers: any[] = []
+    let total = 0
+
+    if (filterType && filterType !== 'all') {
+      // Get all users for filtering
+      allUsers = await this.prisma.user.findMany({
         orderBy,
         where: whereClause,
         select: {
@@ -451,18 +455,63 @@ export class UserService {
           updatedAt: true,
           transactions: true,
         },
-      }),
-      this.prisma.user.count({ where: whereClause }),
-    ])
+      })
 
-    const usersWithCalculations = users.map((user) => this.calculateUserStats(user))
+      // Calculate stats and apply filtering
+      let usersWithCalculations = allUsers.map((user) => this.calculateUserStats(user))
+      
+      usersWithCalculations = usersWithCalculations.filter(user => {
+        switch (filterType) {
+          case 'pending':
+            return user.totalCoinsReceived < user.totalCoinsPurchased
+          case 'issued':
+            return user.totalCoinsReceived >= user.totalCoinsPurchased
+          default:
+            return true
+        }
+      })
 
-    return {
-      users: usersWithCalculations,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      // Apply pagination to filtered results
+      total = usersWithCalculations.length
+      const paginatedUsers = usersWithCalculations.slice(skip, skip + limit)
+
+      return {
+        users: paginatedUsers,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    } else {
+      // No filtering - use normal pagination
+      const [users, totalCount] = await Promise.all([
+        this.prisma.user.findMany({
+          skip,
+          take: limit,
+          orderBy,
+          where: whereClause,
+          select: {
+            id: true,
+            email: true,
+            walletAddress: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true,
+            transactions: true,
+          },
+        }),
+        this.prisma.user.count({ where: whereClause }),
+      ])
+
+      const usersWithCalculations = users.map((user) => this.calculateUserStats(user))
+
+      return {
+        users: usersWithCalculations,
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      }
     }
   }
 
@@ -512,7 +561,7 @@ export class UserService {
       coinsPurchased: adjustmentAmount,
       timestamp: new Date().toISOString(),
       txHash: 'ADMIN_ADJUSTMENT',
-      isReceived: true,
+      isReceived: adjustmentAmount < 0,
       isSuccessful: true,
     }
 
@@ -562,7 +611,7 @@ export class UserService {
     const totalCoinsPurchased = transactions.reduce((sum, tx) => sum + tx.coinsPurchased, 0)
 
     const totalCoinsReceived = transactions
-      .filter((tx) => tx.isReceived)
+      .filter((tx) => tx.isReceived && tx.coinsPurchased > 0)
       .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
 
     const totalPendingTokens = transactions

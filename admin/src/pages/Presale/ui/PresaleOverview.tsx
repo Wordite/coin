@@ -63,6 +63,7 @@ export const PresaleOverview: React.FC<PresaleOverviewProps> = ({
             color="primary" 
             className="w-full"
             size="lg"
+            aria-label={`Presale progress: ${presaleProgress.toFixed(1)}%`}
           />
         </div>
       </CardBody>

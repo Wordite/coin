@@ -19,10 +19,12 @@ const Presale = () => {
     selectedUser,
     currentPage,
     totalPages,
+    filterType,
     handleIssueAllTokens,
     handleIssueUserTokens,
     handleViewUser,
     handlePageChange,
+    handleFilterChange,
     openSolscan
   } = usePresale()
 
@@ -103,6 +105,8 @@ const Presale = () => {
         usersLoading={usersLoading}
         onViewUser={handleViewUserWithModal}
         onIssueUserTokens={handleIssueUserTokens}
+        filterType={filterType}
+        onFilterChange={handleFilterChange}
       />
 
       {/* Pagination */}

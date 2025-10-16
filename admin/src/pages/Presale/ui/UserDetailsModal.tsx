@@ -132,7 +132,12 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            {transaction.txHash && (
+                            {transaction.txHash === 'ADMIN_ADJUSTMENT' && (
+                              <Chip color="secondary" variant="flat" size="sm">
+                                Admin Adjustment
+                              </Chip>
+                            )}
+                            {transaction.txHash && transaction.txHash !== 'ADMIN_ADJUSTMENT' && (
                               <Button
                                 size="sm"
                                 variant="light"

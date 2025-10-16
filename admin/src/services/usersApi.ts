@@ -36,7 +36,7 @@ export interface UsersListResponse {
 }
 
 class UsersApiService {
-  async getUsers(page: number = 1, limit: number = 10, sortBy: string = 'createdAt', sortOrder: 'asc' | 'desc' = 'desc', search?: string): Promise<UsersListResponse> {
+  async getUsers(page: number = 1, limit: number = 10, sortBy: string = 'createdAt', sortOrder: 'asc' | 'desc' = 'desc', search?: string, filterType?: 'all' | 'pending' | 'issued'): Promise<UsersListResponse> {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -46,6 +46,10 @@ class UsersApiService {
     
     if (search && search.trim()) {
       params.append('search', search.trim())
+    }
+    
+    if (filterType && filterType !== 'all') {
+      params.append('filterType', filterType)
     }
     
     const response = await api.get(`/user/list?${params.toString()}`)

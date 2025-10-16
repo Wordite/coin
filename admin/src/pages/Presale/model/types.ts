@@ -27,6 +27,8 @@ export interface UsersTableProps {
   usersLoading: boolean
   onViewUser: (userId: string) => void
   onIssueUserTokens: (userId: string) => void
+  filterType?: 'all' | 'pending' | 'issued'
+  onFilterChange?: (filterType: 'all' | 'pending' | 'issued') => void
 }
 
 export interface UserDetailsModalProps {

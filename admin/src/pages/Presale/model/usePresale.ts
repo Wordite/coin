@@ -14,6 +14,7 @@ export const usePresale = () => {
   const [selectedUser, setSelectedUser] = useState<UserWithTransactions | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [filterType, setFilterType] = useState<'all' | 'pending' | 'issued'>('all')
 
   const loadInitialData = async () => {
     try {
@@ -35,7 +36,7 @@ export const usePresale = () => {
   const loadUsersData = async () => {
     try {
       setUsersLoading(true)
-      const usersData = await usersApi.getUsers(currentPage, 10, 'createdAt', 'desc')
+      const usersData = await usersApi.getUsers(currentPage, 10, 'createdAt', 'desc', undefined, filterType)
       setUsers(usersData.users)
       setTotalPages(usersData.totalPages)
     } catch (err) {
@@ -89,6 +90,11 @@ export const usePresale = () => {
     setCurrentPage(page)
   }
 
+  const handleFilterChange = (newFilterType: 'all' | 'pending' | 'issued') => {
+    setFilterType(newFilterType)
+    setCurrentPage(1) // Reset to first page when filter changes
+  }
+
   const openSolscan = (txHash: string) => {
     const solscanUrl = `https://solscan.io/tx/${txHash}`
     window.open(solscanUrl, '_blank', 'noopener,noreferrer')
@@ -126,7 +132,7 @@ export const usePresale = () => {
 
   useEffect(() => {
     loadUsersData()
-  }, [currentPage])
+  }, [currentPage, filterType])
 
   return {
     // State
@@ -140,6 +146,7 @@ export const usePresale = () => {
     setSelectedUser,
     currentPage,
     totalPages,
+    filterType,
     
     // Actions
     loadInitialData,
@@ -148,6 +155,7 @@ export const usePresale = () => {
     handleIssueUserTokens,
     handleViewUser,
     handlePageChange,
+    handleFilterChange,
     openSolscan,
     
     // Utils
