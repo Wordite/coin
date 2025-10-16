@@ -45,6 +45,19 @@ services:
     restart: unless-stopped
     command: vault server -dev -dev-root-token-id=dev-root-token -dev-listen-address=0.0.0.0:8200
 
+  docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile.dev
+    container_name: docs_dev
+    ports:
+      - "5175:5175"
+    volumes:
+      - ./docs/app:/app/app
+      - ./docs/content:/app/content
+      - ./docs/public:/app/public
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -52,19 +65,24 @@ services:
     container_name: backend_dev
     ports:
       - "3000:3000"
+    environment:
+      - DOCKER=true
+      - NODE_ENV=development
     env_file:
       - ./backend/.env.dev
     volumes:
       - ./backend/src:/app/src
       - ./backend/prisma:/app/prisma
       - backend_uploads:/app/uploads
-      - ./docs/content:/app/docs-content:ro
+      - ./docs/content:/app/docs-content
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       vault:
+        condition: service_started
+      docs:
         condition: service_started
     restart: unless-stopped
 

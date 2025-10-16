@@ -2,6 +2,10 @@ import { Controller, Post, Get, Put, Delete, Body, Param, Query } from '@nestjs/
 import { DocsContentService } from './docs-content.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { Roles } from 'src/auth/constants/roles.constant';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 export interface CreateDocumentationDto {
   title: string;
@@ -181,5 +185,46 @@ export class DocsContentController {
   @Post('sync-bidirectional')
   async syncBidirectional() {
     return this.docsContentService.syncBidirectional();
+  }
+
+  @Post('rebuild')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async rebuildDocumentation(): Promise<{ message: string; success: boolean }> {
+    try {
+      // Only allow rebuild in production
+      if (process.env.NODE_ENV !== 'production') {
+        return { 
+          message: 'Documentation rebuild is only allowed in production environment', 
+          success: false 
+        };
+      }
+
+      console.log('🔄 Starting documentation rebuild...');
+      
+      // Execute the rebuild script
+      const { stdout, stderr } = await execAsync('/app/scripts/rebuild-docs.sh');
+      
+      console.log('✅ Documentation rebuild completed:', stdout);
+      if (stderr) {
+        console.warn('⚠️ Rebuild warnings:', stderr);
+      }
+
+      return { 
+        message: 'Documentation rebuild completed successfully', 
+        success: true 
+      };
+    } catch (error) {
+      console.error('❌ Documentation rebuild failed:', error);
+      return { 
+        message: `Documentation rebuild failed: ${error.message}`, 
+        success: false 
+      };
+    }
+  }
+
+  @Post('rebuild-complete')
+  async rebuildComplete(): Promise<{ message: string }> {
+    console.log('📡 Received rebuild completion notification');
+    return { message: 'Rebuild completion acknowledged' };
   }
 }

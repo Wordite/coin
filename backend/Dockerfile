@@ -1,7 +1,8 @@
 # Multi-stage build for production
 FROM node:22-alpine AS base
 # Prisma requires OpenSSL; sharp requires vips and build tools on Alpine
-RUN apk add --no-cache openssl ca-certificates vips-dev
+# Also install docker-compose for documentation rebuild
+RUN apk add --no-cache openssl ca-certificates vips-dev docker-compose curl
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -40,6 +41,11 @@ ENV NODE_ENV=production
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
+
+# Copy rebuild script and docker-compose
+COPY --chown=nestjs:nodejs ../scripts/rebuild-docs.sh ./scripts/rebuild-docs.sh
+COPY --chown=nestjs:nodejs ../docker-compose.yml ./docker-compose.yml
+RUN chmod +x ./scripts/rebuild-docs.sh
 
 
 # Create uploads and logs directories with proper permissions

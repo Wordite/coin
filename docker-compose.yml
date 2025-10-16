@@ -77,7 +77,8 @@ services:
       - ./backend/.env.prod
     volumes:
       - backend_uploads:/app/uploads
-      - ./docs/content:/app/docs-content:ro
+      - ./docs/content:/app/docs-content
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     depends_on:
       postgres:
         condition: service_healthy

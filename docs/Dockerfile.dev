@@ -1,0 +1,33 @@
+# Use Node.js 22 Alpine image
+FROM node:22-alpine
+
+# Install build dependencies for native modules
+RUN apk update && apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    gcc \
+    libc-dev \
+    linux-headers \
+    libusb-dev \
+    eudev-dev \
+    pkgconf \
+    ca-certificates && update-ca-certificates
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (including dev dependencies)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 5175
+
+# Start the development server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5175"]

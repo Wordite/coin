@@ -17,17 +17,17 @@ ARG VITE_BACKEND_URL
 ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 RUN npm run build
 
-# Runtime server using react-router-serve
-FROM node:22-alpine AS runner
-WORKDIR /app
+# Use nginx to serve the built files (like frontend)
+FROM nginx:alpine
 
-# Install only production deps for runtime serve
-COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Copy built client files to nginx
+COPY --from=builder /app/build/client /usr/share/nginx/html
 
-# Copy built app
-COPY --from=builder /app/build ./build
+# Copy nginx configuration
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
-EXPOSE 3000
+# Expose port
+EXPOSE 80
 
-CMD ["npm", "run", "start"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
