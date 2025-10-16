@@ -16,7 +16,9 @@ const About = () => {
 
   return (
     <section className='markdown min-h-screen pt-[9rem]' ref={ref}>
-      {isLoading && <ContentSkeleton />}
+      {isLoading || error ? <ContentSkeleton /> : (
+        <div dangerouslySetInnerHTML={{ __html: data?.content || '' }} />
+      )}
     </section>
   )
 }
