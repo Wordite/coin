@@ -35,6 +35,7 @@ export interface UserWithTransactions {
   totalSpentUSDT: number
   totalCoinsPurchased: number
   totalCoinsReceived: number
+  totalPendingTokens: number
 }
 
 export interface UsersListResponse {
@@ -564,6 +565,10 @@ export class UserService {
       .filter((tx) => tx.isReceived)
       .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
 
+    const totalPendingTokens = transactions
+      .filter((tx) => tx.isSuccessful && !tx.isReceived)
+      .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
+
     return {
       id: user.id,
       email: user.email,
@@ -576,6 +581,7 @@ export class UserService {
       totalSpentUSDT,
       totalCoinsPurchased,
       totalCoinsReceived,
+      totalPendingTokens,
     }
   }
 
@@ -659,6 +665,7 @@ export class UserService {
     totalUsers: number
     usersWithPurchases: number
     totalCoinsPurchased: number
+    totalPendingTokens: number
     totalSpentSOL: number
     totalSpentUSDT: number
   }> {
@@ -678,6 +685,7 @@ export class UserService {
     let totalUsers = users.length
     let usersWithPurchases = 0
     let totalCoinsPurchased = 0
+    let totalPendingTokens = 0
     let totalSpentSOL = 0
     let totalSpentUSDT = 0
 
@@ -689,6 +697,7 @@ export class UserService {
       }
 
       totalCoinsPurchased += userStats.totalCoinsPurchased
+      totalPendingTokens += userStats.totalPendingTokens
       totalSpentSOL += userStats.totalSpentSOL
       totalSpentUSDT += userStats.totalSpentUSDT
     })
@@ -697,6 +706,7 @@ export class UserService {
       totalUsers,
       usersWithPurchases,
       totalCoinsPurchased,
+      totalPendingTokens,
       totalSpentSOL,
       totalSpentUSDT,
     }

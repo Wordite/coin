@@ -23,6 +23,8 @@ export interface UserWithTransactions {
   totalSpentSOL: number
   totalSpentUSDT: number
   totalCoinsPurchased: number
+  totalCoinsReceived: number
+  totalPendingTokens: number
 }
 
 export interface UsersListResponse {
@@ -74,6 +76,7 @@ class UsersApiService {
     totalUsers: number
     usersWithPurchases: number
     totalCoinsPurchased: number
+    totalPendingTokens: number
     totalSpentSOL: number
     totalSpentUSDT: number
   }> {

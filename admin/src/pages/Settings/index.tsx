@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Card,
   CardBody,
@@ -89,9 +89,16 @@ const Settings = () => {
   const [walletInfo, setWalletInfo] = useState<RootWalletInfo>({ isInitialized: false })
   const [vaultLoading, setVaultLoading] = useState(false)
   const [newSecretKey, setNewSecretKey] = useState('')
+  const [forceInitialize, setForceInitialize] = useState(false)
   
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure()
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onOpenChange: onDeleteOpenChange } = useDisclosure()
+
+  const handleModalClose = () => {
+    setNewSecretKey('')
+    setForceInitialize(false)
+    onClose()
+  }
 
   useEffect(() => {
     loadSettings()
@@ -173,6 +180,7 @@ const Settings = () => {
     }
   }
 
+
   const getWalletInfo = async () => {
     try {
       const response = await api.get('/vault/root-wallet')
@@ -196,20 +204,40 @@ const Settings = () => {
     try {
       const response = await api.post('/vault/root-wallet', {
         secretKey: newSecretKey.trim(),
-        force: false
+        force: forceInitialize
       })
 
-      setWalletInfo({
-        isInitialized: true,
-        updatedAt: response.data.updatedAt
-      })
-      setNewSecretKey('')
-      onOpenChange()
-      Notify.success('Root wallet initialized successfully!')
+      // Проверяем, что ответ содержит корректные данные
+      if (response.data && response.data.isInitialized && response.data.updatedAt) {
+        setWalletInfo({
+          isInitialized: true,
+          updatedAt: response.data.updatedAt
+        })
+        setNewSecretKey('')
+        setForceInitialize(false)
+        onOpenChange()
+        Notify.success('Root wallet initialized successfully!')
+      } else {
+        throw new Error('Invalid response from server')
+      }
     } catch (error: any) {
       console.error('Failed to initialize wallet:', error)
-      const errorMessage = error.response?.data?.error || 'Failed to initialize wallet'
+      
+      // Обрабатываем разные типы ошибок
+      let errorMessage = 'Failed to initialize wallet'
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       Notify.error(errorMessage)
+      
+      // Обновляем статус кошелька в случае ошибки
+      await getWalletInfo()
     } finally {
       setVaultLoading(false)
     }
@@ -227,17 +255,37 @@ const Settings = () => {
         secretKey: newSecretKey.trim()
       })
 
-      setWalletInfo({
-        isInitialized: true,
-        updatedAt: response.data.updatedAt
-      })
-      setNewSecretKey('')
-      onOpenChange()
-      Notify.success('Root wallet updated successfully!')
+      // Проверяем, что ответ содержит корректные данные
+      if (response.data && response.data.isInitialized && response.data.updatedAt) {
+        setWalletInfo({
+          isInitialized: true,
+          updatedAt: response.data.updatedAt
+        })
+        setNewSecretKey('')
+        setForceInitialize(false)
+        onOpenChange()
+        Notify.success('Root wallet updated successfully!')
+      } else {
+        throw new Error('Invalid response from server')
+      }
     } catch (error: any) {
       console.error('Failed to update wallet:', error)
-      const errorMessage = error.response?.data?.error || 'Failed to update wallet'
+      
+      // Обрабатываем разные типы ошибок
+      let errorMessage = 'Failed to update wallet'
+      
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       Notify.error(errorMessage)
+      
+      // Обновляем статус кошелька в случае ошибки
+      await getWalletInfo()
     } finally {
       setVaultLoading(false)
     }
@@ -770,7 +818,7 @@ const Settings = () => {
         wrapper: "dark",
       }} isOpen={isOpen} onOpenChange={onOpenChange} size="2xl">
         <ModalContent>
-          {(onClose) => (
+          {() => (
             <>
               <ModalHeader className="dark text-white">
                 {walletInfo.isInitialized ? 'Update Root Wallet' : 'Initialize Root Wallet'}
@@ -786,10 +834,27 @@ const Settings = () => {
                     minRows={3}
                     maxRows={6}
                   />
+                  
+                  {!walletInfo.isInitialized && (
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        isSelected={forceInitialize}
+                        onValueChange={setForceInitialize}
+                        color="warning"
+                        size="sm"
+                      />
+                      <div className="flex flex-col justify-center">
+                        <p className="text-sm font-medium text-white">Force Initialize</p>
+                        <p className="text-xs text-foreground/60">
+                          Overwrite existing wallet if it exists
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </ModalBody>
               <ModalFooter>
-                <Button variant="light" onPress={onClose}>
+                <Button variant="light" onPress={handleModalClose}>
                   Cancel
                 </Button>
                 <Button
@@ -816,7 +881,7 @@ const Settings = () => {
         wrapper: "dark",
       }}>
         <ModalContent>
-          {(onClose) => (
+          {() => (
             <>
               <ModalHeader className="dark text-white">Delete Root Wallet</ModalHeader>
               <ModalBody>

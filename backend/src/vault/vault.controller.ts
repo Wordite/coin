@@ -1,11 +1,15 @@
 import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common'
 import { VaultService } from './vault.service'  
+import { WalletService } from '../wallet/wallet.service'
 import { Roles } from '../auth/constants/roles.constant'
 import { Auth } from '../auth/decorators/auth.decorator'
 
 @Controller('vault')
 export class VaultController {
-  constructor(private readonly vaultService: VaultService) {}
+  constructor(
+    private readonly vaultService: VaultService,
+    private readonly walletService: WalletService
+  ) {}
 
   @Get('status')
   @Auth({ roles: [Roles.ADMIN], strong: true })
@@ -16,6 +20,33 @@ export class VaultController {
       return { isConnected: isHealthy, isRootWalletInitialized }
     } catch (error) {
       return { isConnected: false, isRootWalletInitialized: false, error: error.message }
+    }
+  }
+
+  @Get('diagnose')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async diagnoseVault() {
+    try {
+      const state = await this.vaultService.checkAndFixVaultState()
+      return state
+    } catch (error) {
+      return { 
+        isHealthy: false, 
+        solanaEngineMounted: false, 
+        solanaEngineFunctional: false, 
+        message: `Diagnosis failed: ${error.message}` 
+      }
+    }
+  }
+
+  @Post('mount-solana')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async mountSolanaEngine() {
+    try {
+      await this.vaultService.ensureSolanaSecretEngine()
+      return { message: 'Solana engine mounted successfully' }
+    } catch (error) {
+      throw new Error(`Failed to mount Solana engine: ${error.message}`)
     }
   }
 
@@ -36,9 +67,18 @@ export class VaultController {
   async initializeRootWallet(@Body() body: { secretKey: string; force?: boolean }) {
     try {
       const result = await this.vaultService.initializeRootWallet(body.secretKey, body.force)
+      
+      // Обновляем WalletService после успешной инициализации
+      try {
+        await this.walletService.refreshWallet()
+      } catch (refreshError) {
+        console.warn('Failed to refresh wallet after initialization:', refreshError.message)
+      }
+      
       return result
     } catch (error) {
-      return { error: error.message || 'Failed to initialize root wallet' }
+      // Возвращаем ошибку с правильным HTTP статусом
+      throw new Error(error.message || 'Failed to initialize root wallet')
     }
   }
 
@@ -47,9 +87,18 @@ export class VaultController {
   async updateRootWallet(@Body() body: { secretKey: string }) {
     try {
       const result = await this.vaultService.updateRootWallet(body.secretKey)
+      
+      // Обновляем WalletService после успешного обновления
+      try {
+        await this.walletService.refreshWallet()
+      } catch (refreshError) {
+        console.warn('Failed to refresh wallet after update:', refreshError.message)
+      }
+      
       return result
     } catch (error) {
-      return { error: error.message || 'Failed to update root wallet' }
+      // Возвращаем ошибку с правильным HTTP статусом
+      throw new Error(error.message || 'Failed to update root wallet')
     }
   }
 

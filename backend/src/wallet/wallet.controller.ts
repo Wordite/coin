@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { VaultService } from '../vault/vault.service';
 import { Auth } from '../auth/decorators/auth.decorator';
@@ -26,6 +26,17 @@ export class WalletController {
     
     return {
       isRootWalletInitialized: isInitialized
+    }
+  }
+
+  @Post('refresh')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async refreshWallet() {
+    try {
+      await this.walletService.refreshWallet()
+      return { message: 'Wallet refreshed successfully' }
+    } catch (error) {
+      throw new Error(`Failed to refresh wallet: ${error.message}`)
     }
   }
 }

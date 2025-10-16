@@ -32,14 +32,16 @@ export const VaultStatus: React.FC<VaultStatusProps> = ({
           )}
         </>
       )}
-      <Button
-        size="sm"
-        variant="light"
-        onPress={onRefresh}
-        isLoading={loading}
-      >
-        Refresh
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="light"
+          onPress={onRefresh}
+          isLoading={loading}
+        >
+          Refresh
+        </Button>
+      </div>
     </div>
   )
 }

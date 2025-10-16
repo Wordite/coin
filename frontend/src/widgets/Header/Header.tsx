@@ -25,7 +25,7 @@ const Header = () => {
   useHeaderScrollWatcher()
   const { open } = useAppKit()
   const { isConnected } = useWalletStore()
-  const { settings, isLoading } = useSettings()
+  const { settings, isLoading, error } = useSettings()
   const isMobile = useIsMobile()
   const [isConnecting, setIsConnecting] = useState(false)
   const {
@@ -48,7 +48,7 @@ const Header = () => {
   }
 
 
-  if (isLoading || isHeaderLinksLoading || headerLinksError) return <HeaderSkeleton />
+  if (isLoading || isHeaderLinksLoading || headerLinksError || error) return <HeaderSkeleton />
 
   return (
     <>

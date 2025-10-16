@@ -68,16 +68,37 @@ export class VaultService implements OnModuleInit {
   /**
    * Убедиться, что Solana secret engine смонтирован
    */
-  private async ensureSolanaSecretEngine(): Promise<void> {
+  async ensureSolanaSecretEngine(): Promise<void> {
     try {
-      // Проверяем, смонтирован ли уже Solana secret engine
-      const mounts = await this.client.mounts()
-      if (mounts.solana) {
-        this.logger.log('Solana secret engine already mounted')
+      // Простая проверка: пытаемся получить список секретов
+      // Если это работает, значит engine уже смонтирован и функционален
+      try {
+        await this.client.list('solana/data/')
+        this.logger.log('Solana engine is already mounted and functional')
         return
+      } catch (listError) {
+        // Если ошибка 404, это нормально для пустого engine
+        if (listError.response?.statusCode === 404) {
+          this.logger.log('Solana engine is mounted but empty - this is normal')
+          return
+        }
+        
+        // Если другая ошибка, возможно engine не смонтирован
+        this.logger.log('Solana engine not accessible, attempting to mount...')
       }
 
-      // Монтируем Solana secret engine
+      // Проверяем, смонтирован ли engine
+      try {
+        const mounts = await this.client.mounts()
+        if (mounts.solana) {
+          this.logger.log('Solana engine is mounted but not accessible - this may be normal')
+          return
+        }
+      } catch (mountError) {
+        this.logger.log('Could not check mounts, proceeding with mount attempt')
+      }
+
+      // Монтируем engine
       this.logger.log('Mounting Solana secret engine...')
       await this.client.mount({
         mount_point: 'solana',
@@ -85,13 +106,17 @@ export class VaultService implements OnModuleInit {
         options: { version: '2' }
       })
       this.logger.log('Solana secret engine mounted successfully')
+      
     } catch (error) {
-      if (error.response?.statusCode === 400 && error.response?.body?.errors?.includes('path is already in use')) {
-        this.logger.log('Solana secret engine already mounted')
-      } else {
-        this.logger.error('Failed to mount solana secret engine:', error.message)
-        throw error
+      // Если ошибка "path is already in use", считаем это успехом
+      if (error.message?.includes('path is already in use') || 
+          error.response?.body?.errors?.some((err: string) => err.includes('path is already in use'))) {
+        this.logger.log('Solana engine already mounted (detected via error)')
+        return
       }
+      
+      this.logger.error('Failed to mount Solana engine:', error.message)
+      throw new Error(`Failed to mount Solana secret engine: ${error.message}`)
     }
   }
 
@@ -240,13 +265,18 @@ export class VaultService implements OnModuleInit {
       // Проверяем, существует ли уже кошелек
       if (!force) {
         const existing = await this.getSecret('root-wallet')
-        if (existing && existing.isInitialized) {
+        if (existing && existing.isInitialized && existing.secretKey) {
           throw new Error('Root wallet already initialized. Use force=true to overwrite.')
         }
       }
 
+      // Валидируем secret key
+      if (!secretKey || secretKey.trim().length === 0) {
+        throw new Error('Secret key cannot be empty')
+      }
+
       const walletData = {
-        secretKey,
+        secretKey: secretKey.trim(),
         isInitialized: true,
         updatedAt: new Date().toISOString()
       }
@@ -254,13 +284,7 @@ export class VaultService implements OnModuleInit {
       this.logger.log('Saving root wallet data to Vault...')
       await this.setSecret('root-wallet', walletData)
       
-      // Проверяем, что данные сохранились
-      const saved = await this.getSecret('root-wallet')
-      this.logger.log('Root wallet initialized successfully', { 
-        saved: !!saved, 
-        hasSecretKey: !!saved?.secretKey,
-        isInitialized: saved?.isInitialized 
-      })
+      this.logger.log('Root wallet initialized successfully')
       
       return {
         isInitialized: true,
@@ -294,13 +318,7 @@ export class VaultService implements OnModuleInit {
 
       await this.setSecret('root-wallet', walletData)
       
-      // Проверяем, что данные сохранились
-      const saved = await this.getSecret('root-wallet')
-      this.logger.log('Root wallet updated successfully', { 
-        saved: !!saved, 
-        hasSecretKey: !!saved?.secretKey,
-        isInitialized: saved?.isInitialized 
-      })
+      this.logger.log('Root wallet updated successfully')
       
       return {
         isInitialized: true,
@@ -356,6 +374,69 @@ export class VaultService implements OnModuleInit {
       }
       this.logger.error(`Failed to list secrets from path ${path}:`, error)
       throw error
+    }
+  }
+
+  /**
+   * Проверить и исправить состояние Vault
+   */
+  async checkAndFixVaultState(): Promise<{
+    isHealthy: boolean
+    solanaEngineMounted: boolean
+    solanaEngineFunctional: boolean
+    message: string
+  }> {
+    try {
+      // Проверяем здоровье Vault
+      const isHealthy = await this.isHealthy()
+      if (!isHealthy) {
+        return {
+          isHealthy: false,
+          solanaEngineMounted: false,
+          solanaEngineFunctional: false,
+          message: 'Vault is not healthy'
+        }
+      }
+
+      // Простая проверка Solana engine
+      let solanaEngineMounted = false
+      let solanaEngineFunctional = false
+      
+      try {
+        // Пытаемся получить список секретов
+        await this.client.list('solana/data/')
+        solanaEngineMounted = true
+        solanaEngineFunctional = true
+      } catch (error) {
+        // Если ошибка 404, engine смонтирован но пустой
+        if (error.response?.statusCode === 404) {
+          solanaEngineMounted = true
+          solanaEngineFunctional = true
+        } else {
+          // Проверяем, смонтирован ли engine
+          try {
+            const mounts = await this.client.mounts()
+            solanaEngineMounted = !!mounts.solana
+          } catch (mountError) {
+            this.logger.error('Failed to check mounts:', mountError.message)
+          }
+        }
+      }
+
+      return {
+        isHealthy: true,
+        solanaEngineMounted,
+        solanaEngineFunctional,
+        message: solanaEngineFunctional ? 'Vault is ready' : 'Solana engine needs attention'
+      }
+    } catch (error) {
+      this.logger.error('Failed to check Vault state:', error.message)
+      return {
+        isHealthy: false,
+        solanaEngineMounted: false,
+        solanaEngineFunctional: false,
+        message: `Vault check failed: ${error.message}`
+      }
     }
   }
 }

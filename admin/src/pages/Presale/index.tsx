@@ -40,6 +40,7 @@ const Presale = () => {
     totalUsers: number
     usersWithPurchases: number
     totalCoinsPurchased: number
+    totalPendingTokens: number
     totalSpentSOL: number
     totalSpentUSDT: number
   } | null>(null)
@@ -187,8 +188,8 @@ const Presale = () => {
     : 0
 
   // Use total statistics from all users, not just current page
-  const totalPendingTokens = usersStatistics?.totalCoinsPurchased || 0
-  const usersWithPurchases = usersStatistics?.usersWithPurchases || 0
+  const totalPendingTokens = usersStatistics?.totalPendingTokens || 0
+  const usersWithPendingTokens = usersStatistics?.usersWithPurchases || 0
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -289,7 +290,7 @@ const Presale = () => {
                 size="lg"
                 onPress={handleIssueAllTokens}
                 isLoading={issuingTokens}
-                isDisabled={usersWithPurchases === 0}
+                isDisabled={usersWithPendingTokens === 0}
                 startContent={!issuingTokens && <CheckCircleIcon className="w-4 h-4" />}
               >
                 {issuingTokens ? 'Issuing...' : 'Issue All Tokens'}
@@ -299,7 +300,7 @@ const Presale = () => {
         </CardHeader>
         <CardBody>
           <div className="text-sm text-foreground/60">
-            {usersWithPurchases} users waiting for tokens • {totalPendingTokens.toLocaleString()} tokens to distribute
+            {usersWithPendingTokens} users waiting for tokens • {totalPendingTokens.toLocaleString()} tokens to distribute
           </div>
         </CardBody>
       </Card>
@@ -322,7 +323,7 @@ const Presale = () => {
             <TableHeader>
               <TableColumn>WALLET ADDRESS</TableColumn>
               <TableColumn>COINS PURCHASED</TableColumn>
-              <TableColumn>STATUS</TableColumn>
+              <TableColumn>COINS RECEIVED</TableColumn>
               <TableColumn className="text-right">ACTIONS</TableColumn>
             </TableHeader>
             <TableBody>
@@ -355,13 +356,9 @@ const Presale = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Chip 
-                      color={user.totalCoinsPurchased > 0 ? 'warning' : 'default'} 
-                      variant="flat" 
-                      size="sm"
-                    >
-                      {user.totalCoinsPurchased > 0 ? 'Pending' : 'No purchases'}
-                    </Chip>
+                    <span className="font-medium">
+                      {formatAmount(user.totalCoinsReceived || 0)}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2 justify-end">
@@ -373,7 +370,7 @@ const Presale = () => {
                       >
                         View
                       </Button>
-                      {user.totalCoinsPurchased > 0 && (
+                      {user.totalPendingTokens > 0 && (
                         <Button
                           size="sm"
                           color="success"
