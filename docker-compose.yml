@@ -75,6 +75,12 @@ services:
       - "3000:3000"
     env_file:
       - ./backend/.env.prod
+    environment:
+      - NODE_OPTIONS=--dns-result-order=ipv4first
+      - MX_CHECK_DNS_SERVERS=8.8.8.8,1.1.1.1
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - backend_uploads:/app/uploads
       - ./docs/content:/app/docs-content
