@@ -116,10 +116,9 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_BACKEND_URL=${VITE_BACKEND_URL}
-      network: host
     container_name: docs
     ports:
-      - "5175:3000"
+      - "5175:80"
     environment:
       - NODE_ENV=production
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
