@@ -228,6 +228,7 @@ export class AuthService {
   }
 
   private async checkFingerprint(fingerprint: string, session: Session): Promise<boolean> {
+    // TODO: add check for fingerprint in database and logs
     const isValidFingerprint = await compare(fingerprint, session.fingerprint)
     if (!isValidFingerprint) throw new UnauthorizedException('Invalid credentials')
 
