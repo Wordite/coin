@@ -79,6 +79,8 @@ services:
       - backend_uploads:/app/uploads
       - ./docs/content:/app/docs-content
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./scripts/rebuild-docs.sh:/app/scripts/rebuild-docs.sh:ro
+      - ./docker-compose.yml:/app/docker-compose.yml:ro
     depends_on:
       postgres:
         condition: service_healthy

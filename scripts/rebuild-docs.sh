@@ -7,6 +7,9 @@ set -e
 
 echo "🔄 Starting documentation rebuild..."
 
+# Make sure script is executable
+chmod +x /app/scripts/rebuild-docs.sh
+
 # Check if we're in production
 if [ "$NODE_ENV" != "production" ]; then
     echo "❌ This script should only run in production"

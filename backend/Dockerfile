@@ -42,14 +42,9 @@ COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
 
-# Copy rebuild script and docker-compose
-COPY --chown=nestjs:nodejs ../scripts/rebuild-docs.sh ./scripts/rebuild-docs.sh
-COPY --chown=nestjs:nodejs ../docker-compose.yml ./docker-compose.yml
-RUN chmod +x ./scripts/rebuild-docs.sh
 
-
-# Create uploads and logs directories with proper permissions
-RUN mkdir -p uploads logs && chown nestjs:nodejs uploads logs
+# Create uploads, logs and scripts directories with proper permissions
+RUN mkdir -p uploads logs scripts && chown nestjs:nodejs uploads logs scripts
 
 # Switch to non-root user
 USER nestjs
