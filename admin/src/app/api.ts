@@ -10,6 +10,14 @@ api.interceptors.request.use(async (config) => {
   const token = localStorage.getItem('accessToken')
   const fingerprint = await getBrowserFingerprint()
 
+  console.log('API Request Interceptor:')
+  console.log('- URL:', config.url)
+  console.log('- Method:', config.method)
+  console.log('- Token present:', !!token)
+  console.log('- Fingerprint present:', !!fingerprint)
+  console.log('- Fingerprint length:', String(fingerprint).length)
+  console.log('- Fingerprint value:', fingerprint)
+
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`
   }

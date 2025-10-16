@@ -62,7 +62,7 @@ export class AuthController {
   }
 
   @Post('/wallet')
-  @Auth({ fingerprint: true, public: true, antiSpam: false }) // TODO: Remove antiSpam: false
+  @Auth({ fingerprint: true, public: true, antiSpam: true })
   async wallet(@Body() walletDto: WalletDto, @Req() req: Request, @Res({ passthrough: true }) res: Response, @Headers('fingerprint') fingerprint: string) {
     const key = getFingerprintFromReq(req, fingerprint)
     
