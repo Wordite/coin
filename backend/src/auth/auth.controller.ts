@@ -44,7 +44,7 @@ export class AuthController {
         sameSite: 'lax',
         path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        domain: process.env.NODE_ENV === 'production' ? 'https://tycoin.app' : 'localhost',
+        domain: process.env.NODE_ENV === 'production' ? '.tycoin.app' : 'localhost',
       })
 
       return { message: 'Login successful' }
@@ -116,7 +116,7 @@ export class AuthController {
       sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      domain: process.env.NODE_ENV === 'production' ? 'https://tycoin.app' : 'localhost',
+      domain: process.env.NODE_ENV === 'production' ? '.tycoin.app' : 'localhost',
     })
 
     return { message: 'Sign up successful' }
@@ -143,7 +143,7 @@ export class AuthController {
       sameSite: 'lax',
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      domain: process.env.NODE_ENV === 'production' ? 'https://tycoin.app' : 'localhost',
+      domain: process.env.NODE_ENV === 'production' ? '.tycoin.app' : 'localhost',
     })
 
     return { message: 'Refresh token updated', accessToken }
