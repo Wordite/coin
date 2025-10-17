@@ -60,7 +60,15 @@ async function bootstrap() {
     origin: origins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'fingerprint'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'fingerprint',
+      'Accept',
+      'Origin',
+      'X-Requested-With',
+      'Referer',
+    ],
   })
   app.setGlobalPrefix('api')
   app.use(cookieParser())
