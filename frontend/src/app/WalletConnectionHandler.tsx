@@ -9,14 +9,6 @@ export const WalletConnectionHandler = () => {
   const { showSuccess, showError } = useToast()
 
   useEffect(() => {
-    console.log('WalletConnectionHandler: isConnected =', isConnected, 'address =', address)
-    
-    // Дополнительное логирование для отладки WalletConnect
-    console.log('Current window.location.origin:', window.location.origin)
-    console.log('Current window.location.href:', window.location.href)
-  }, [isConnected, address])
-
-  useEffect(() => {
     const handleConnectionChange = async () => {
       console.log('handleConnectionChange called: isConnected =', isConnected, 'address =', address)
 
@@ -45,7 +37,6 @@ export const WalletConnectionHandler = () => {
 
     handleConnectionChange()
   }, [isConnected, address, showSuccess, showError])
-
 
   return null
 }
