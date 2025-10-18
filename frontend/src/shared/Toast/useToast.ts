@@ -11,6 +11,7 @@ export const useToast = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([])
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'info', duration: number = 5000) => {
+    console.log('showToast called:', message, type, duration)
     const id = Math.random().toString(36).substr(2, 9)
     const newToast: ToastMessage = { id, message, type, duration }
     
@@ -27,6 +28,7 @@ export const useToast = () => {
   }, [])
 
   const showSuccess = useCallback((message: string, duration?: number) => {
+    console.log('showSuccess called:', message, duration)
     showToast(message, 'success', duration)
   }, [showToast])
 
