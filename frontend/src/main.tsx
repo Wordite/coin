@@ -33,7 +33,7 @@ createRoot(document.getElementById('root')!).render(
         url: window.location.origin,
         icons: [`${window.location.origin}/favicon.ico`],
       }}
-      enableWalletConnect={true} // maybe try false TODO:
+      enableWalletConnect={true}
       enableWallets={true}
       enableWalletGuide={false}
       features={{

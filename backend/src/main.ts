@@ -81,16 +81,16 @@ async function bootstrap() {
     })
   }
   
-  app.use((req: any, res: any, next: any) => {
-    if (req.path.startsWith('/api/')) {
-      console.log('🔍 CORS Debug - Origin:', req.headers.origin)
-      console.log('🔍 CORS Debug - Referer:', req.headers.referer)
-      console.log('🔍 CORS Debug - Host:', req.headers.host)
-      console.log('🔍 CORS Debug - Method:', req.method)
-      console.log('🔍 CORS Debug - Path:', req.path)
-    }
-    next()
-  })
+  // app.use((req: any, res: any, next: any) => {
+  //   if (req.path.startsWith('/api/')) {
+  //     console.log('🔍 CORS Debug - Origin:', req.headers.origin)
+  //     console.log('🔍 CORS Debug - Referer:', req.headers.referer)
+  //     console.log('🔍 CORS Debug - Host:', req.headers.host)
+  //     console.log('🔍 CORS Debug - Method:', req.method)
+  //     console.log('🔍 CORS Debug - Path:', req.path)
+  //   }
+  //   next()
+  // })
 
   app.useGlobalPipes(
     new ValidationPipe({

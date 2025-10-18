@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
+import { useAppKitAccount } from '@reown/appkit/react'
 import { useWalletStore } from '@/app/store/walletStore'
 import { Wallets } from '@/services/wallets.service'
 import { useToast } from '@/shared/Toast'
@@ -10,6 +10,10 @@ export const WalletConnectionHandler = () => {
 
   useEffect(() => {
     console.log('WalletConnectionHandler: isConnected =', isConnected, 'address =', address)
+    
+    // Дополнительное логирование для отладки WalletConnect
+    console.log('Current window.location.origin:', window.location.origin)
+    console.log('Current window.location.href:', window.location.href)
   }, [isConnected, address])
 
   useEffect(() => {
@@ -42,23 +46,6 @@ export const WalletConnectionHandler = () => {
     handleConnectionChange()
   }, [isConnected, address, showSuccess, showError])
 
-  // ============= DEBUG ======================
-  const appkit = useAppKit()
-
-  useEffect(() => {
-    if (!appkit) return
-
-    appkit.on('session_settled', (session) => {
-      console.log('✅ WalletConnect session settled:', session)
-    })
-    appkit.on('session_update', (session) => {
-      console.log('🔄 WalletConnect session updated:', session)
-    })
-    appkit.on('session_delete', () => {
-      console.log('❌ WalletConnect session deleted')
-    })
-  }, [appkit])
-  // =============================================
 
   return null
 }
