@@ -56,8 +56,6 @@ async function bootstrap() {
     'https://localhost:5173', 'https://localhost:5174', 'https://localhost:5175', 
   ]
 
-  console.log('🔍 Origins:', origins)
-
   app.enableCors({
     origin: origins,
     credentials: true,
@@ -83,16 +81,16 @@ async function bootstrap() {
     })
   }
   
-  // app.use((req: any, res: any, next: any) => {
-  //   console.log('🔍 User agent:', req.get('user-agent'))
-  //   console.log('🔍 Request cookies:', req.ip)
-  //   console.log('🔍 Request cookies:', req.cookies)
-  //   console.log('🔍 Request headers:', req.headers)
-  //   console.log('🔍 Cookie header:', req.headers.cookie)
-  //   console.log('🔍 Origin:', req.headers.origin)
-  //   console.log('🔍 Referer:', req.headers.referer)
-  //   next()
-  // })
+  app.use((req: any, res: any, next: any) => {
+    if (req.path.startsWith('/api/')) {
+      console.log('🔍 CORS Debug - Origin:', req.headers.origin)
+      console.log('🔍 CORS Debug - Referer:', req.headers.referer)
+      console.log('🔍 CORS Debug - Host:', req.headers.host)
+      console.log('🔍 CORS Debug - Method:', req.method)
+      console.log('🔍 CORS Debug - Path:', req.path)
+    }
+    next()
+  })
 
   app.useGlobalPipes(
     new ValidationPipe({
