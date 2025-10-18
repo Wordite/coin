@@ -15,7 +15,7 @@ import { Burger } from './ui/Burger'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useHeaderStore } from '@/app/store/headerStore'
 import { useSectionData } from '@/hooks'
-import { useAppKit } from '@reown/appkit/react'
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
 import { useState } from 'react'
 import { useToast } from '@/shared/Toast'
 import { useWalletStore } from '@/app/store/walletStore'
@@ -46,6 +46,10 @@ const Header = () => {
       setIsConnecting(false)
     }
   }
+
+
+  const { address } = useAppKitAccount()
+  console.log('appkit account address:', address)
 
 
   if (isLoading || isHeaderLinksLoading || headerLinksError || error) return <HeaderSkeleton />
