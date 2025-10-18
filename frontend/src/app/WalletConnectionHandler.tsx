@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { useAppKitAccount } from '@reown/appkit/react'
+import { useEffect, useRef } from 'react'
+import { useAppKitAccount, useAppKitState, useAppKitEvents } from '@reown/appkit/react'
 import { useWalletStore } from '@/app/store/walletStore'
 import { Wallets } from '@/services/wallets.service'
 import { useToast } from '@/shared/Toast'
@@ -7,6 +7,9 @@ import { useToast } from '@/shared/Toast'
 export const WalletConnectionHandler = () => {
   const { isConnected, address } = useAppKitAccount()
   const { showSuccess, showError } = useToast()
+  const { open } = useAppKitState()
+  const appkitEvents = useAppKitEvents()
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
     const handleConnectionChange = async () => {
@@ -37,6 +40,22 @@ export const WalletConnectionHandler = () => {
 
     handleConnectionChange()
   }, [isConnected, address, showSuccess, showError])
+
+  // Show notification if modal was closed without establishing connection
+  useEffect(() => {
+    const wasOpen = wasOpenRef.current
+    if (wasOpen && !open && (!isConnected || !address)) {
+      showError('Wallet not connected. On mobile, use a Solana wallet (Phantom/Solflare/Backpack).')
+    }
+    wasOpenRef.current = open
+  }, [open, isConnected, address, showError])
+
+  // additional logging
+  useEffect(() => {
+    if (appkitEvents) {
+      console.log('AppKit event:', appkitEvents.data)
+    }
+  }, [appkitEvents?.timestamp])
 
   return null
 }
