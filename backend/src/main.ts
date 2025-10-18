@@ -56,6 +56,8 @@ async function bootstrap() {
     'https://localhost:5173', 'https://localhost:5174', 'https://localhost:5175', 
   ]
 
+  console.log('🔍 Origins:', origins)
+
   app.enableCors({
     origin: origins,
     credentials: true,
