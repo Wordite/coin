@@ -10,6 +10,7 @@ export const WalletConnectionHandler = () => {
   const { open } = useAppKitState()
   const appkitEvents = useAppKitEvents()
   const wasOpenRef = useRef(false)
+  const lastQrAttemptRef = useRef(false)
 
   useEffect(() => {
     const handleConnectionChange = async () => {
@@ -45,17 +46,42 @@ export const WalletConnectionHandler = () => {
   useEffect(() => {
     const wasOpen = wasOpenRef.current
     if (wasOpen && !open && (!isConnected || !address)) {
-      showError('Wallet not connected. On mobile, use a Solana wallet (Phantom/Solflare/Backpack).')
+      if (lastQrAttemptRef.current) {
+        showError('QR connect via this wallet is not supported for Solana. Use Phantom/Solflare/Backpack or other Solana wallet.')
+      } else {
+        showError('Wallet not connected. On mobile, use a Solana wallet (Phantom/Solflare/Backpack or other Solana wallet).')
+      }
+      lastQrAttemptRef.current = false
     }
     wasOpenRef.current = open
   }, [open, isConnected, address, showError])
 
-  // additional logging
+  // additional logging + heuristic for QR/WalletConnect attempts
   useEffect(() => {
     if (appkitEvents) {
       console.log('AppKit event:', appkitEvents.data)
+      try {
+        const raw: any = appkitEvents.data
+        const props = raw?.properties ?? raw
+        const text = JSON.stringify(props || {}).toLowerCase()
+        if (
+          text.includes('qr') ||
+          text.includes('walletconnect') ||
+          text.includes('wc_uri') ||
+          text.includes('wc:') ||
+          text.includes('deeplink') ||
+          text.includes('universal')
+        ) {
+          lastQrAttemptRef.current = true
+        }
+        if (isConnected && address) {
+          lastQrAttemptRef.current = false
+        }
+      } catch (_) {
+        // ignore
+      }
     }
-  }, [appkitEvents?.timestamp])
+  }, [appkitEvents?.timestamp, isConnected, address])
 
   return null
 }
