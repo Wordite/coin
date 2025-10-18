@@ -21,7 +21,7 @@ export const WalletConnectionHandler = () => {
         showSuccess('Wallet connected successfully!')
 
         useWalletStore.setState({ isConnected: true })
-    
+
         try {
           const balance = await Wallets.getBalance(address)
           useWalletStore.setState({ balance })
@@ -34,16 +34,13 @@ export const WalletConnectionHandler = () => {
         console.log('Wallet disconnected')
         useWalletStore.setState({
           isConnected: false,
-          balance: { sol: 0, usdt: 0 }
+          balance: { sol: 0, usdt: 0 },
         })
       }
     }
 
     handleConnectionChange()
   }, [isConnected, address, showSuccess, showError])
-
-
-
 
   // ============= DEBUG ======================
   const appkit = useAppKit()
@@ -62,9 +59,6 @@ export const WalletConnectionHandler = () => {
     })
   }, [appkit])
   // =============================================
-
-  return null
-}
 
   return null
 }
