@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@reown/appkit": "^1.8.10",
+    "@reown/appkit-adapter-solana": "^1.8.10"
+  }
+}

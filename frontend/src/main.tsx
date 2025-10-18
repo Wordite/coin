@@ -28,12 +28,12 @@ createRoot(document.getElementById('root')!).render(
       networks={[solana]}
       adapters={[solanaWeb3JsAdapter]}
       metadata={{
-        name: 'Coin Presale',
-        description: 'Coin Presale Application',
+        name: 'Tycoin',
+        description: 'Tycoin Application',
         url: window.location.origin,
         icons: [`${window.location.origin}/favicon.ico`],
       }}
-      enableWalletConnect={true}
+      enableWalletConnect={true} // maybe try false TODO:
       enableWallets={true}
       enableWalletGuide={false}
       features={{
