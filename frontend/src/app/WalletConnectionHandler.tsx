@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react'
 import { useAppKitAccount, useAppKitState, useAppKitEvents } from '@reown/appkit/react'
 import { useWalletStore } from '@/app/store/walletStore'
 import { Wallets } from '@/services/wallets.service'
-import { useToast } from '@/shared/Toast'
+import { useToastContext } from '@/shared/Toast'
 
 export const WalletConnectionHandler = () => {
   const { isConnected, address } = useAppKitAccount()
-  const { showSuccess, showError } = useToast()
+  const { showSuccess, showError } = useToastContext()
   const { open } = useAppKitState()
   const appkitEvents = useAppKitEvents()
   const wasOpenRef = useRef(false)
