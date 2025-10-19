@@ -3,6 +3,8 @@ import { useAppKitAccount, useAppKitState, useAppKitEvents } from '@reown/appkit
 import { useWalletStore } from '@/app/store/walletStore'
 import { Wallets } from '@/services/wallets.service'
 import { useToastContext } from '@/shared/Toast'
+import { Modals } from '@/constants/modals'
+import { useModalStore } from './store/modalStore'
 
 export const WalletConnectionHandler = () => {
   const { isConnected, address } = useAppKitAccount()
@@ -11,6 +13,7 @@ export const WalletConnectionHandler = () => {
   const appkitEvents = useAppKitEvents()
   const wasOpenRef = useRef(false)
   const lastQrAttemptRef = useRef(false)
+  const { openModal } = useModalStore()
 
   useEffect(() => {
     const handleConnectionChange = async () => {
@@ -42,15 +45,13 @@ export const WalletConnectionHandler = () => {
     handleConnectionChange()
   }, [isConnected, address, showSuccess, showError])
 
-  // Show notification if modal was closed without establishing connection
   useEffect(() => {
     const wasOpen = wasOpenRef.current
     if (wasOpen && !open && (!isConnected || !address)) {
       if (lastQrAttemptRef.current) {
-        showError('QR connect via this wallet is not supported for Solana. Use Phantom/Solflare/Backpack or other Solana wallet.')
-      } else {
-        showError('Wallet not connected. On mobile, use a Solana wallet (Phantom/Solflare/Backpack or other Solana wallet).')
+        openModal(Modals.FAILED_WALLET_CONNECT)
       }
+  
       lastQrAttemptRef.current = false
     }
     wasOpenRef.current = open
@@ -59,7 +60,6 @@ export const WalletConnectionHandler = () => {
   // additional logging + heuristic for QR/WalletConnect attempts
   useEffect(() => {
     if (appkitEvents) {
-      console.log('AppKit event:', appkitEvents.data)
       try {
         const raw: any = appkitEvents.data
         const props = raw?.properties ?? raw

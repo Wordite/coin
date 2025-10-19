@@ -1,0 +1,41 @@
+.modalOverlay {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  
+  &.open {
+    opacity: 1;
+  }
+}
+
+.modalContent {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.8);
+  transition: all 0.3s ease-in-out;
+  
+  &.open {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.walletList {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.5);
+    }
+  }
+}

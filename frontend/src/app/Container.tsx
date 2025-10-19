@@ -9,6 +9,7 @@ import { clickAnimation } from './animations/click'
 import { CookieBanner } from '@/widgets/CookieBanner/CookieBanner'
 import { useSettings } from '@/hooks'
 import { Section } from '@/services/section.service'
+import { FailedWalletConnectModal } from '@/features/FailedWalletConnectModal/FailedWalletConnectModal'
 
 const Container = () => {
   const { init } = useAnimations()
@@ -48,6 +49,7 @@ const Container = () => {
       <main className='layout container' data-scroll-container>
         <Header />
         {/* <SelectWalletModal /> */}
+        <FailedWalletConnectModal />
         <Outlet />
         <Footer />
         <CookieBanner />
