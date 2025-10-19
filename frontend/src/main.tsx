@@ -40,16 +40,20 @@ createRoot(document.getElementById('root')!).render(
         email: false,
         socials: [],
         emailShowWallets: true,
-        analytics: true
+        analytics: true,
       }}
       debug={true}
+      themeVariables={{
+        '--w3m-font-family': 'Inter',
+        '--w3m-accent': 'var(--color-purple-600)',
+      }}
     >
       <QueryClientProvider client={queryClient}>
         <SkeletonTheme
           borderRadius='var(--radius-md)'
           baseColor='var(--color-gray-transparent-50)'
           highlightColor='var(--color-gray-transparent-10)'
-          >
+        >
           <ToastProvider>
             <WalletConnectionHandler />
             <RouterProvider router={router} />

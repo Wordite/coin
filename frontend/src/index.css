@@ -90,6 +90,10 @@ w3m-modal {
   font-family: 'Inter' !important;
 }
 
+wui-card {
+  background: yellow !important;
+}
+
 .container {
   width: 88.75rem;
   max-width: 88.75rem;

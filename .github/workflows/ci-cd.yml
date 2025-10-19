@@ -51,5 +51,10 @@ jobs:
             echo "⏳ Waiting for services to start..."
             sleep 15
             
+            echo "🔓 Unsealing Vault..."
+            docker exec 8a518eb03478_vault vault operator unseal -address=http://127.0.0.1:8201 ${{ secrets.VAULT_UNSEAL_KEY_1 }}
+            docker exec 8a518eb03478_vault vault operator unseal -address=http://127.0.0.1:8201 ${{ secrets.VAULT_UNSEAL_KEY_2 }}
+            docker exec 8a518eb03478_vault vault operator unseal -address=http://127.0.0.1:8201 ${{ secrets.VAULT_UNSEAL_KEY_3 }}
+            
             echo "✅ Deployment complete!"
             docker compose ps
