@@ -8,7 +8,6 @@ import { AnchorLink } from '@/shared/AnchorLink'
 import { Profile } from './ui/Profile'
 import { useSettings } from '@/hooks/useSettings'
 import { Section } from '@/services/section.service'
-import './Header.scss'
 import { HeaderSkeleton } from './ui/HeaderSkeleton'
 import { MobileMenu } from './ui/MobileMenu'
 import { Burger } from './ui/Burger'
@@ -20,6 +19,8 @@ import { useState } from 'react'
 import { useToast } from '@/shared/Toast'
 import { useWalletStore } from '@/app/store/walletStore'
 import { useServerAccount } from './model/useServerAccount'
+import { ReactSVG } from 'react-svg'
+import './Header.scss'
 
 const Header = () => {
   useHeaderScrollWatcher()
@@ -64,9 +65,12 @@ const Header = () => {
         <div className='container flex items-center h-full justify-between'>
           <AnchorLink href={LinksConfig.Home} onClick={() => setIsMobileMenuOpen(false)}>
             <div className='clickable cursor-pointer w-[3.188rem] h-[3.188rem]'>
-              <img
+            <ReactSVG
+                beforeInjection={(svg) => {
+                  svg.removeAttribute('width')
+                  svg.removeAttribute('height')
+                }}
                 src={Section.getImageUrl(settings!.siteLogo)}
-                alt='logo'
                 className='w-full h-full'
               />
             </div>

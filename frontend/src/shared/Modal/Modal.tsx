@@ -17,10 +17,10 @@ interface ModalProps {
 }
 
 const sizeClasses = {
-  sm: 'w-[25rem] h-[20rem]',
-  md: 'w-[31.625rem] h-[35rem]',
-  lg: 'w-[40rem] h-[45rem]',
-  xl: 'w-[50rem] h-[55rem]',
+  sm: 'w-[25rem]',
+  md: 'w-[31.625rem]',
+  lg: 'w-[40rem]',
+  xl: 'w-[50rem]',
   full: 'w-[90%] h-[90dvh]'
 }
 
@@ -101,16 +101,16 @@ export const Modal = ({
       />
       <div
         ref={modalRef}
-        className={`${styles.modalContent} text-[1.25rem] p-[1.563rem] fixed left-1/2 top-1/2 overflow-hidden z-[30000] bg-gray-transparent-70 rounded-xxl border-1 border-stroke-light max-md:w-[90%] max-md:h-[90dvh] max-md:p-[1.5rem] max-md:text-[1.125rem] ${sizeClasses[size]} ${contentClassName} ${className}`}
+        className={`${styles.modalContent} text-[1.25rem] p-[1.563rem] fixed left-1/2 top-1/2 overflow-hidden z-[30000] bg-gray-transparent-70 rounded-xxl border-1 border-stroke-light max-md:w-[90%] max-md:p-[1.5rem] max-md:text-[1.125rem] ${sizeClasses[size]} ${contentClassName} ${className}`}
       >
         {(title || showCloseButton) && (
           <div className='flex justify-between items-center max-md:mb-2'>
             {title && (
-              <p className='font-semibold max-md:text-[2rem] max-md:h-[3rem]'>{title}</p>
+              <p className='font-semibold text-[1.6rem] max-md:text-[2rem] max-md:h-[3rem]'>{title}</p>
             )}
             {showCloseButton && (
               <div 
-                className='cursor-pointer w-[1.25rem] h-[1.25rem] max-md:w-[2rem] max-md:h-[2rem] hover:scale-110 transition-all duration-300 [&>path]:fill-white'
+                className='cursor-pointer w-[1.25rem] h-[1.25rem] max-md:w-[1.8rem] max-md:h-[1.8rem] hover:scale-110 transition-all duration-300 [&>path]:fill-white'
                 onClick={onClose}
               >
                 <CrossIcon className='w-full h-full' />

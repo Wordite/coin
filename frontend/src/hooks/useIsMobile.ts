@@ -5,7 +5,7 @@ const useIsMobile = () => {
 
   useEffect(() => {
     const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      setIsMobile(window.innerWidth < 769)
     }
 
     let timeoutId: NodeJS.Timeout
