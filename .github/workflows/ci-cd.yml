@@ -56,5 +56,9 @@ jobs:
             docker exec 8a518eb03478_vault vault operator unseal -address=http://127.0.0.1:8201 ${{ secrets.VAULT_UNSEAL_KEY_2 }}
             docker exec 8a518eb03478_vault vault operator unseal -address=http://127.0.0.1:8201 ${{ secrets.VAULT_UNSEAL_KEY_3 }}
             
+            echo "🔧 Setting up Vault secrets engines..."
+            docker exec 8a518eb03478_vault vault login -address=http://127.0.0.1:8201 ${{ secrets.VAULT_ROOT_TOKEN }}
+            docker exec 8a518eb03478_vault vault secrets enable -address=http://127.0.0.1:8201 -path=solana kv-v2 || echo "Solana engine already exists"
+            
             echo "✅ Deployment complete!"
             docker compose ps

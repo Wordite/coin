@@ -334,6 +334,11 @@ const ImagePicker: React.FC<ImagePickerProps> = ({
     onClose()
   }, [selectedImages, onClose])
 
+  // Handle unselect all
+  const handleUnselectAll = useCallback(() => {
+    setLocalSelectedImages([])
+  }, [])
+
   // Load media files when modal opens
   React.useEffect(() => {
     if (isOpen) {
@@ -565,17 +570,31 @@ const ImagePicker: React.FC<ImagePickerProps> = ({
           </ModalBody>
           
           <ModalFooter>
-            <Button variant='light' onPress={handleCancel} aria-label="Cancel selection">
-              Cancel
-            </Button>
-            <Button
-              color='primary'
-              onPress={handleConfirm}
-              disabled={localSelectedImages.length === 0}
-              aria-label="Confirm image selection"
-            >
-              Select {localSelectedImages.length > 0 ? `(${localSelectedImages.length})` : ''}
-            </Button>
+            <div className='flex justify-between w-full'>
+              <div className='flex gap-2'>
+                <Button variant='light' onPress={handleCancel} aria-label="Cancel selection">
+                  Cancel
+                </Button>
+                {localSelectedImages.length > 0 && (
+                  <Button 
+                    variant='light' 
+                    color='warning' 
+                    onPress={handleUnselectAll} 
+                    aria-label="Unselect all images"
+                  >
+                    Unselect All
+                  </Button>
+                )}
+              </div>
+              <Button
+                color='primary'
+                onPress={handleConfirm}
+                disabled={localSelectedImages.length === 0}
+                aria-label="Confirm image selection"
+              >
+                Select {localSelectedImages.length > 0 ? `(${localSelectedImages.length})` : ''}
+              </Button>
+            </div>
           </ModalFooter>
         </ModalContent>
       </Modal>
