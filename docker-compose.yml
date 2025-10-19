@@ -123,14 +123,13 @@ services:
       args:
         - VITE_BACKEND_URL=${VITE_BACKEND_URL}
         - NODE_ENV=production
-        - VITE_PROD=true
     container_name: docs
     ports:
-      - "5175:80"
+      - "5175:3000"
     environment:
       - NODE_ENV=production
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
-      - VITE_PROD=true
+      - PORT=3000
     restart: unless-stopped
 
 volumes:

@@ -1,4 +1,4 @@
-# Multi-stage build for React Router docs
+# Multi-stage build for React Router docs with SSR server
 FROM node:22-alpine AS builder
 
 WORKDIR /app
@@ -19,17 +19,20 @@ ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 ENV NODE_ENV=$NODE_ENV
 RUN npm run build
 
-# Use nginx to serve the built files (like frontend)
-FROM nginx:alpine
+# Production stage: Run SSR server
+FROM node:22-alpine
 
-# Copy built client files to nginx
-COPY --from=builder /app/build/client /usr/share/nginx/html
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
+# Copy package files and install production deps only
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy built server and client from builder
+COPY --from=builder /app/build ./build
 
 # Expose port
-EXPOSE 80
+EXPOSE 3000
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start the React Router SSR server
+CMD ["npm", "start"]
