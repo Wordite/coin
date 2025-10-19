@@ -45,11 +45,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
   (function(){
     document.addEventListener('click', function(ev){
       try {
-        var a = (ev.target && (ev.target as Element).closest) ? (ev.target as Element).closest('a[href]') : null;
+        var t = ev.target;
+        var a = null;
+        if (t && t.closest) {
+          a = t.closest('a[href]');
+        }
         if (!a) return;
-        var href = (a as HTMLAnchorElement).getAttribute('href') || '';
+        var href = a.getAttribute('href') || '';
         if (!href || href.startsWith('#')) return;
-        var url = new URL((a as HTMLAnchorElement).href, window.location.href);
+        var url = new URL(a.href, window.location.href);
         if (url.origin === window.location.origin) {
           ev.preventDefault();
           window.location.assign(url.href);
