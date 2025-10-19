@@ -1,3 +1,4 @@
+import React from 'react'
 import { PieChart } from '@/shared/PieChart/PieChart'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { PieChartData } from '@/shared/PieChartData/PieChartData'
@@ -10,7 +11,7 @@ import { useSettings } from '@/hooks/useSettings'
 import { ReactSVG } from 'react-svg'
 import { Section } from '@/services/section.service'
 
-const Tokenomics = () => {
+const Tokenomics = React.memo(() => {
   const { data, isLoading, error } = useSectionData('Tokenomics')
   const { settings, isLoading: isSettingsLoading, error: isSettingsError } = useSettings()
   const isMobile = useIsMobile()
@@ -44,6 +45,8 @@ const Tokenomics = () => {
       </section>
     </>
   )
-}
+})
+
+Tokenomics.displayName = 'Tokenomics'
 
 export { Tokenomics }

@@ -1,9 +1,10 @@
+import React from 'react'
 import { PresailDetailsInfo } from '@/entities/PresaleDetailsInfo/PresailDetailsInfo'
 import { useSectionData } from '@/hooks/useSectionData'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { PresailDetailsSkeleton } from './ui/PresailDetailsSkeleton'
 
-const PresailDetails = () => {
+const PresailDetails = React.memo(() => {
   const { data, isLoading, error } = useSectionData('PresaleDetails')
 
   if (isLoading || error) return <PresailDetailsSkeleton />
@@ -19,6 +20,8 @@ const PresailDetails = () => {
       <PresailDetailsInfo />
     </section>
   )
-}
+})
+
+PresailDetails.displayName = 'PresailDetails'
 
 export { PresailDetails }

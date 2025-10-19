@@ -1,6 +1,6 @@
 const StagesPricingSkeleton = () => {
   return (
-    <section id='stages-pricing' className='mt-[4.375rem] max-md:mt-[10rem]'>
+    <section id='stages-pricing' className='mt-[4.375rem] max-md:mt-[10rem] transform-gpu will-change-contents'>
       {/* SectionHead skeleton */}
       <div className='flex flex-col items-center'>
         <div className='h-[3.438rem] w-[20rem] bg-gray-300 rounded animate-pulse max-md:h-[4.3rem] max-md:w-[25rem]' />

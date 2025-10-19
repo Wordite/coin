@@ -1,6 +1,6 @@
 const RoadmapSkeleton = () => {
   return (
-    <section id='roadmap' className='mt-[18.75rem] relative max-md:mt-[14rem]'>
+    <section id='roadmap' className='mt-[18.75rem] relative max-md:mt-[14rem] transform-gpu will-change-contents'>
       {/* Background lights skeleton */}
       <div className='absolute top-[10rem] left-[15.938rem] w-[10rem] h-[10rem] bg-purple-500/20 rounded-full blur-[8.125rem] max-md:w-[6rem] max-md:h-[6rem]'></div>
       <div className='absolute bottom-[2rem] right-[15.938rem] w-[6rem] h-[6rem] bg-green-500/20 rounded-full blur-[6.125rem]'></div>

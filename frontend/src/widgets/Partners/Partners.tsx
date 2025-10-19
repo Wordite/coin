@@ -1,9 +1,10 @@
+import React from 'react'
 import { BackgroundLight } from '@/shared/BackgroundLight/BackgroundLight'
 import styles from './Partners.module.scss'
 import { useSectionData } from '@/hooks/useSectionData'
 import { Section } from '@/services/section.service'
 
-const Partners = () => {
+const Partners = React.memo(() => {
   const { data } = useSectionData('Partners')
 
   return (
@@ -44,6 +45,8 @@ const Partners = () => {
       </div>
     </section>
   )
-}
+})
+
+Partners.displayName = 'Partners'
 
 export { Partners }

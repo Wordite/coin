@@ -1,6 +1,6 @@
 const StakingSkeleton = () => {
   return (
-    <section id='staking' className='mt-[12rem]'>
+    <section id='staking' className='mt-[12rem] transform-gpu will-change-contents'>
       <div className='flex flex-col items-center'>
         <div className='h-[2.5rem] w-[15rem] bg-gray-300 rounded animate-pulse' />
         

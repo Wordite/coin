@@ -1,6 +1,6 @@
 const PresailDetailsSkeleton = () => {
   return (
-    <section id='presale-details' className='mt-[18.75rem]'>
+    <section id='presale-details' className='mt-[18.75rem] transform-gpu will-change-contents'>
       {/* SectionHead skeleton */}
       <div className='flex flex-col items-center'>
         <div className='h-[3.438rem] w-[20rem] bg-gray-300 rounded animate-pulse max-md:h-[4.3rem] max-md:w-[25rem]' />

@@ -1,10 +1,11 @@
+import React from 'react'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { StakingCard } from '@/entities/StakingCard/StakingCard'
 import Button from '@/shared/Button'
 import { useSectionData } from '@/hooks/useSectionData'
 import { StakingSkeleton } from './ui/StakingSkeleton'
 
-const Staking = () => {
+const Staking = React.memo(() => {
   const { data, isLoading, error } = useSectionData('Staking')
 
   if (isLoading || error) {
@@ -37,6 +38,8 @@ const Staking = () => {
       </div>
     </section>
   )
-}
+})
+
+Staking.displayName = 'Staking'
 
 export { Staking }

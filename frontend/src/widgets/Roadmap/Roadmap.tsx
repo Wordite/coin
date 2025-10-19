@@ -1,3 +1,4 @@
+import React from 'react'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { RoadmapItems } from '@/entities/RoadmapItems/RoadmapItems'
 import Button from '@/shared/Button'
@@ -5,7 +6,7 @@ import { BackgroundLight } from '@/shared/BackgroundLight/BackgroundLight'
 import { useSectionData } from '@/hooks/useSectionData'
 import { RoadmapSkeleton } from './ui/RoadmapSkeleton'
 
-const Roadmap = () => {
+const Roadmap = React.memo(() => {
   const { data, isLoading, error } = useSectionData('Roadmap')
 
   if (isLoading || error) return <RoadmapSkeleton />
@@ -30,6 +31,8 @@ const Roadmap = () => {
       </Button>
     </section>
   )
-}
+})
+
+Roadmap.displayName = 'Roadmap'
 
 export { Roadmap }

@@ -1,9 +1,10 @@
+import React from 'react'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { StagesCards } from '@/entities/StagesCards/StagesCards'
 import { useSectionData } from '@/hooks/useSectionData'
 import { StagesPricingSkeleton } from './ui/StagesPricingSkeleton'
 
-const StagesPricing = () => {
+const StagesPricing = React.memo(() => {
   const { data, isLoading, error } = useSectionData('StagesPricing')
 
   if (isLoading || error) return <StagesPricingSkeleton />
@@ -14,6 +15,8 @@ const StagesPricing = () => {
       <StagesCards />
     </section>
   )
-}
+})
+
+StagesPricing.displayName = 'StagesPricing'
 
 export { StagesPricing }

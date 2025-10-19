@@ -1,6 +1,6 @@
 const OurBenefitsSkeleton = () => {
   return (
-    <div className='flex flex-col mt-[6rem]'>
+    <div className='flex flex-col mt-[6rem] transform-gpu will-change-contents'>
       <div className='flex flex-col items-center gap-[1.125rem] max-md:mt-[2rem]'>
         <div className='h-[3.3rem] w-[17.625rem] bg-gray-300 rounded animate-pulse' />
         <div className='h-[1.688rem] w-[23.75rem] bg-gray-300 rounded animate-pulse' />

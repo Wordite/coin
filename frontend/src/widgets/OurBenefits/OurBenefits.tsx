@@ -1,10 +1,11 @@
+import React from 'react'
 import { OurBenefitsBackground } from '@/entities/OurBenefitsBackground/OurBenefitsBackground'
 import { Advantage } from '@/entities/Advantage/Advantage'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { useSectionData } from '@/hooks/useSectionData'
 import { OurBenefitsSkeleton } from './ui/OurBenefitsSkeleton'
 
-const OurBenefits = () => {
+const OurBenefits = React.memo(() => {
   const { data, isLoading, error } = useSectionData('Benefits')
   
   if (isLoading || error) {
@@ -35,6 +36,8 @@ const OurBenefits = () => {
       </div>
     </section>
   )
-}
+})
+
+OurBenefits.displayName = 'OurBenefits'
 
 export { OurBenefits }

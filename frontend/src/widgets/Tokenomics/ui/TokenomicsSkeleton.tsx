@@ -3,7 +3,7 @@ const TokenomicsSkeleton = () => {
     <>
       <div className='absolute inset-0 -z-10' />
       
-      <section id='tokenomics' className='mt-[14.875rem]'>
+      <section id='tokenomics' className='mt-[14.875rem] transform-gpu will-change-contents'>
         <div className='flex flex-col items-center'>
           <div className='h-[3.438rem] w-[20rem] bg-gray-300 rounded animate-pulse max-md:h-[4.3rem] max-md:w-[25rem]' />
           <div className='mt-[.938rem] mb-[1.438rem] max-md:mt-[1.175rem] max-md:mb-[1.8rem]'>

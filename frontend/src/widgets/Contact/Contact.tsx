@@ -1,11 +1,12 @@
+import React from 'react'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { ContactForm } from '@/features/ContactForm/ContactForm'
 import { ContactInfo } from '@/entities/ContactInfo'
 import { BackgroundLight } from '@/shared/BackgroundLight/BackgroundLight'
 import { useSectionData } from '@/hooks/useSectionData'
 
-const Contact = () => {
-  const { data, isLoading  } = useSectionData('SocialsAndContact')
+const Contact = React.memo(() => {
+  const { data } = useSectionData('SocialsAndContact')
 
   return (
     <section id='contact' className='mt-[6.25rem] relative'>
@@ -26,6 +27,8 @@ const Contact = () => {
       </div>
     </section>
   )
-}
+})
+
+Contact.displayName = 'Contact'
 
 export { Contact }

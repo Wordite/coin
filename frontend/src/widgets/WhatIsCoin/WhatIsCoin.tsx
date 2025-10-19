@@ -1,10 +1,11 @@
+import React from 'react'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { WhatIsBenefits } from '@/entities/WhatIsBenefits/WhatIsBenefits'
 import { WhatIsPhotos } from '@/entities/WhatIsPhotos/WhatIsPhotos'
 import { useSectionData } from '@/hooks/useSectionData'
 
-const WhatIsCoin = () => {
-  const { data, isLoading, error } = useSectionData('WhatIsCoin')
+const WhatIsCoin = React.memo(() => {
+  const { data, isLoading } = useSectionData('WhatIsCoin')
 
   return (
     <section id='what-is-coin' className='flex flex-col mt-[5rem] max-md:mt-[12rem]'>
@@ -22,6 +23,8 @@ const WhatIsCoin = () => {
       </div>
     </section>
   )
-}
+})
+
+WhatIsCoin.displayName = 'WhatIsCoin'
 
 export { WhatIsCoin }
