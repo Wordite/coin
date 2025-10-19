@@ -35,7 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body className='flex flex-col min-h-screen'>
         <QueryClientProvider client={queryClient}>
           <ReactRouterProvider>
-            <RootProvider>{children}</RootProvider>
+            <RootProvider search={{ enabled: false }} >{children}</RootProvider>
           </ReactRouterProvider>
           <ScrollRestoration />
           <script
