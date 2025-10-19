@@ -14,7 +14,9 @@ COPY . .
 
 # Build the application
 ARG VITE_BACKEND_URL
+ARG NODE_ENV
 ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+ENV NODE_ENV=$NODE_ENV
 RUN npm run build
 
 # Use nginx to serve the built files (like frontend)

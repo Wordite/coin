@@ -122,12 +122,15 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+        - NODE_ENV=production
+        - VITE_PROD=true
     container_name: docs
     ports:
       - "5175:80"
     environment:
       - NODE_ENV=production
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+      - VITE_PROD=true
     restart: unless-stopped
 
 volumes:
