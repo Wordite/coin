@@ -380,235 +380,235 @@
 @media screen and (max-width: 768px) {
   
   .markdown h1 {
-    font-size: clamp(3rem, 6vw, 4.5rem);
-    margin: 3rem 0 1.875rem 0;
+    font-size: clamp(3.6rem, 7.2vw, 5.4rem);
+    margin: 3.6rem 0 2.25rem 0;
   }
   
   .markdown h2 {
-    font-size: clamp(2.25rem, 4.5vw, 3.375rem);
-    margin: 2.625rem 0 1.5rem 0;
+    font-size: clamp(2.7rem, 5.4vw, 4.05rem);
+    margin: 3.15rem 0 1.8rem 0;
   }
   
   .markdown h3 {
-    font-size: clamp(1.875rem, 3.75vw, 2.625rem);
-    margin: 2.25rem 0 1.3125rem 0;
+    font-size: clamp(2.25rem, 4.5vw, 3.15rem);
+    margin: 2.7rem 0 1.575rem 0;
   }
   
   .markdown h4 {
-    font-size: clamp(1.6875rem, 3vw, 2.25rem);
-    margin: 2.625rem 0 1.5rem 0;
+    font-size: clamp(2.025rem, 3.6vw, 2.7rem);
+    margin: 3.15rem 0 1.8rem 0;
   }
   
   .markdown h5 {
-    font-size: clamp(1.5rem, 2.25vw, 1.875rem);
-    margin: 2.25rem 0 1.3125rem 0;
+    font-size: clamp(1.8rem, 2.7vw, 2.25rem);
+    margin: 2.7rem 0 1.575rem 0;
   }
   
   .markdown h6 {
-    font-size: clamp(1.3125rem, 1.875vw, 1.6875rem);
-    margin: 1.875rem 0 1.125rem 0;
+    font-size: clamp(1.575rem, 2.25vw, 2.025rem);
+    margin: 2.25rem 0 1.35rem 0;
   }
   
   .markdown p {
-    font-size: clamp(1.3125rem, 2.25vw, 1.6875rem);
-    margin: 2.25rem 0;
+    font-size: clamp(1.575rem, 2.7vw, 2.025rem);
+    margin: 2.7rem 0;
   }
   
   .markdown p:first-of-type {
-    font-size: clamp(1.5rem, 2.625vw, 1.875rem);
+    font-size: clamp(1.8rem, 3.15vw, 2.25rem);
   }
   
   .markdown li {
-    font-size: clamp(1.3125rem, 2.25vw, 1.6875rem);
-    margin: 1.125rem 0;
+    font-size: clamp(1.575rem, 2.7vw, 2.025rem);
+    margin: 1.35rem 0;
   }
   
   .markdown blockquote {
-    margin: 1.875rem 0;
-    padding: 1.5rem 1.875rem;
+    margin: 2.25rem 0;
+    padding: 1.8rem 2.25rem;
   }
   
   .markdown blockquote p {
-    font-size: clamp(1.5rem, 2.625vw, 1.875rem);
+    font-size: clamp(1.8rem, 3.15vw, 2.25rem);
   }
   
   .markdown pre {
-    padding: 1.5rem;
-    margin: 1.875rem 0;
+    padding: 1.8rem;
+    margin: 2.25rem 0;
   }
   
   .markdown pre code {
-    font-size: clamp(1.125rem, 1.875vw, 1.3125rem);
+    font-size: clamp(1.35rem, 2.25vw, 1.575rem);
   }
   
   .markdown table {
-    font-size: 1.3125rem;
-    margin: 3.75rem 0;
+    font-size: 1.575rem;
+    margin: 4.5rem 0;
   }
   
   .markdown th,
   .markdown td {
-    padding: 0.9375rem 1.125rem;
-    font-size: clamp(1.3125rem, 2.25vw, 1.5rem);
+    padding: 1.125rem 1.35rem;
+    font-size: clamp(1.575rem, 2.7vw, 1.8rem);
   }
   
   .markdown th {
-    font-size: clamp(1.125rem, 1.875vw, 1.3125rem);
+    font-size: clamp(1.35rem, 2.25vw, 1.575rem);
   }
   
   .markdown ul,
   .markdown ol {
-    padding-left: 1.875rem;
-    margin: 3rem 0;
+    padding-left: 2.25rem;
+    margin: 3.6rem 0;
   }
   
   .markdown ul li::before {
-    left: -1.5rem;
+    left: -1.8rem;
   }
   
   .markdown ol li::before {
-    left: -1.875rem;
+    left: -2.25rem;
   }
   
   .markdown hr {
-    margin: 4.5rem 0;
+    margin: 5.4rem 0;
   }
   
   .markdown img {
-    margin: 3.75rem 0;
+    margin: 4.5rem 0;
   }
   
   .markdown img + em {
-    font-size: clamp(1.125rem, 1.875vw, 1.3125rem);
-    margin-top: -2.25rem;
-    margin-bottom: 3rem;
+    font-size: clamp(1.35rem, 2.25vw, 1.575rem);
+    margin-top: -2.7rem;
+    margin-bottom: 3.6rem;
   }
   
   .markdown code {
-    font-size: 1.3125em;
-    padding: 0.375rem 0.75rem;
+    font-size: 1.575em;
+    padding: 0.45rem 0.9rem;
   }
   
   .markdown kbd {
-    font-size: 1.3125em;
-    padding: 0.375rem 0.75rem;
+    font-size: 1.575em;
+    padding: 0.45rem 0.9rem;
   }
 }
 
 @media screen and (max-width: 480px) {
   .markdown h1 {
-    font-size: clamp(2.625rem, 5.25vw, 3.9375rem);
-    margin: 2.625rem 0 1.5rem 0;
+    font-size: clamp(3.15rem, 6.3vw, 4.725rem);
+    margin: 3.15rem 0 1.8rem 0;
   }
   
   .markdown h2 {
-    font-size: clamp(1.96875rem, 3.9375vw, 2.953125rem);
-    margin: 2.25rem 0 1.3125rem 0;
+    font-size: clamp(2.3625rem, 4.725vw, 3.54375rem);
+    margin: 2.7rem 0 1.575rem 0;
   }
   
   .markdown h3 {
-    font-size: clamp(1.640625rem, 3.28125vw, 2.4609375rem);
-    margin: 1.875rem 0 1.125rem 0;
+    font-size: clamp(1.96875rem, 3.9375vw, 2.953125rem);
+    margin: 2.25rem 0 1.35rem 0;
   }
   
   .markdown h4 {
-    font-size: clamp(1.4765625rem, 2.953125vw, 2.21484375rem);
-    margin: 2.296875rem 0 1.3125rem 0;
+    font-size: clamp(1.771875rem, 3.54375vw, 2.6578125rem);
+    margin: 2.75625rem 0 1.575rem 0;
   }
   
   .markdown h5 {
-    font-size: clamp(1.3125rem, 2.625vw, 1.96875rem);
-    margin: 1.96875rem 0 1.1484375rem 0;
+    font-size: clamp(1.575rem, 3.15vw, 2.3625rem);
+    margin: 2.3625rem 0 1.378125rem 0;
   }
   
   .markdown h6 {
-    font-size: clamp(1.1484375rem, 2.296875vw, 1.72265625rem);
-    margin: 1.640625rem 0 0.984375rem 0;
+    font-size: clamp(1.378125rem, 2.75625vw, 2.0671875rem);
+    margin: 1.96875rem 0 1.18125rem 0;
   }
   
   .markdown p {
-    font-size: clamp(1.1484375rem, 1.96875vw, 1.4765625rem);
-    margin: 1.96875rem 0;
+    font-size: clamp(1.378125rem, 2.3625vw, 1.771875rem);
+    margin: 2.3625rem 0;
   }
   
   .markdown p:first-of-type {
-    font-size: clamp(1.3125rem, 2.296875vw, 1.72265625rem);
+    font-size: clamp(1.575rem, 2.75625vw, 2.0671875rem);
   }
   
   .markdown li {
-    font-size: clamp(1.1484375rem, 1.96875vw, 1.4765625rem);
-    margin: 0.984375rem 0;
+    font-size: clamp(1.378125rem, 2.3625vw, 1.771875rem);
+    margin: 1.18125rem 0;
   }
   
   .markdown blockquote {
-    margin: 1.5rem 0;
-    padding: 1.3125rem 1.5rem;
+    margin: 1.8rem 0;
+    padding: 1.575rem 1.8rem;
   }
   
   .markdown blockquote p {
-    font-size: clamp(1.3125rem, 2.296875vw, 1.72265625rem);
+    font-size: clamp(1.575rem, 2.75625vw, 2.0671875rem);
   }
   
   .markdown pre {
-    padding: 1.3125rem;
-    margin: 1.5rem 0;
+    padding: 1.575rem;
+    margin: 1.8rem 0;
   }
   
   .markdown pre code {
-    font-size: clamp(0.984375rem, 1.640625vw, 1.23046875rem);
+    font-size: clamp(1.18125rem, 1.96875vw, 1.4765625rem);
   }
   
   .markdown table {
-    font-size: 1.1484375rem;
-    margin: 3.28125rem 0;
+    font-size: 1.378125rem;
+    margin: 3.9375rem 0;
   }
   
   .markdown th,
   .markdown td {
-    padding: 0.75rem 0.9375rem;
-    font-size: clamp(1.1484375rem, 1.96875vw, 1.3125rem);
+    padding: 0.9rem 1.125rem;
+    font-size: clamp(1.378125rem, 2.3625vw, 1.575rem);
   }
   
   .markdown th {
-    font-size: clamp(0.984375rem, 1.640625vw, 1.23046875rem);
+    font-size: clamp(1.18125rem, 1.96875vw, 1.4765625rem);
   }
   
   .markdown ul,
   .markdown ol {
-    padding-left: 1.640625rem;
-    margin: 2.625rem 0;
+    padding-left: 1.96875rem;
+    margin: 3.15rem 0;
   }
   
   .markdown ul li::before {
-    left: -1.3125rem;
+    left: -1.575rem;
   }
   
   .markdown ol li::before {
-    left: -1.640625rem;
+    left: -1.96875rem;
   }
   
   .markdown hr {
-    margin: 3.9375rem 0;
+    margin: 4.725rem 0;
   }
   
   .markdown img {
-    margin: 3.28125rem 0;
+    margin: 3.9375rem 0;
   }
   
   .markdown img + em {
-    font-size: clamp(0.984375rem, 1.640625vw, 1.23046875rem);
-    margin-top: -1.96875rem;
-    margin-bottom: 2.625rem;
+    font-size: clamp(1.18125rem, 1.96875vw, 1.4765625rem);
+    margin-top: -2.3625rem;
+    margin-bottom: 3.15rem;
   }
   
   .markdown code {
-    font-size: 1.1484375em;
-    padding: 0.328125rem 0.65625rem;
+    font-size: 1.378125em;
+    padding: 0.39375rem 0.7875rem;
   }
   
   .markdown kbd {
-    font-size: 1.1484375em;
-    padding: 0.328125rem 0.65625rem;
+    font-size: 1.378125em;
+    padding: 0.39375rem 0.7875rem;
   }
 }
 
