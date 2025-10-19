@@ -38,6 +38,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <RootProvider>{children}</RootProvider>
           </ReactRouterProvider>
           <ScrollRestoration />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+  try {
+    if (window.__reactRouterContext) {
+      window.__reactRouterContext.routeDiscovery = { mode: "static", manifestPath: "/__manifest" };
+    }
+  } catch (_) {}
+`}}
+          />
           <Scripts />
         </QueryClientProvider>
       </body>
