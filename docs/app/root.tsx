@@ -38,6 +38,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <RootProvider>{children}</RootProvider>
           </ReactRouterProvider>
           <ScrollRestoration />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+  // Force full page load on internal link clicks to avoid SPA routing
+  (function(){
+    document.addEventListener('click', function(ev){
+      try {
+        var a = (ev.target && (ev.target as Element).closest) ? (ev.target as Element).closest('a[href]') : null;
+        if (!a) return;
+        var href = (a as HTMLAnchorElement).getAttribute('href') || '';
+        if (!href || href.startsWith('#')) return;
+        var url = new URL((a as HTMLAnchorElement).href, window.location.href);
+        if (url.origin === window.location.origin) {
+          ev.preventDefault();
+          window.location.assign(url.href);
+        }
+      } catch(_) {}
+    }, true);
+  })();
+`}}
+          />
+          <Scripts />
         </QueryClientProvider>
       </body>
     </html>
