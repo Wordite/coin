@@ -48,6 +48,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
   } catch (_) {}
 `}}
           />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+  (function(){
+    var lastHref = location.href;
+    function maybeReload(){
+      try {
+        if (location.href !== lastHref) {
+          lastHref = location.href;
+          location.assign(location.href);
+        }
+      } catch(_) {}
+    }
+    var origPush = history.pushState;
+    var origReplace = history.replaceState;
+    history.pushState = function(){ var r = origPush.apply(this, arguments); maybeReload(); return r; };
+    history.replaceState = function(){ var r = origReplace.apply(this, arguments); maybeReload(); return r; };
+    window.addEventListener('popstate', maybeReload);
+  })();
+`}}
+          />
           <Scripts />
         </QueryClientProvider>
       </body>
