@@ -5,8 +5,8 @@ services:
     image: nginx:alpine
     container_name: nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx/gateway.conf:/etc/nginx/conf.d/default.conf:ro
       - ./frontend/dist:/usr/share/nginx/html/frontend:ro
@@ -25,7 +25,7 @@ services:
     image: hashicorp/vault:1.15
     container_name: vault
     ports:
-      - "8200:8200"
+      - '8200:8200'
     env_file:
       - ./vault/.env.prod
     volumes:
@@ -41,14 +41,14 @@ services:
     image: postgres:15
     container_name: postgres
     ports:
-      - "5432:5432"
+      - '5432:5432'
     env_file:
       - ./postgres/.env.prod
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -57,22 +57,22 @@ services:
     image: redis:7-alpine
     container_name: redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru --replicaof no one
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 3
 
-    backend:
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: backend
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file:
       - ./backend/.env.prod
     environment:
@@ -98,15 +98,13 @@ services:
         condition: service_started
     restart: unless-stopped
 
- 
-
   admin:
     build:
       context: ./admin
       dockerfile: Dockerfile
     container_name: admin
     ports:
-      - "5173:80"
+      - '5173:80'
     restart: unless-stopped
 
   frontend:
@@ -117,7 +115,7 @@ services:
         - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     container_name: frontend
     ports:
-      - "5174:80"
+      - '5174:80'
     restart: unless-stopped
 
   docs:
@@ -129,7 +127,7 @@ services:
         - NODE_ENV=production
     container_name: docs
     ports:
-      - "5175:3000"
+      - '5175:3000'
     environment:
       - NODE_ENV=production
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
