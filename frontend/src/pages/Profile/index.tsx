@@ -46,22 +46,22 @@ const Profile = () => {
   if (!isConnected)
     return (
       <section className='flex items-center justify-center min-h-screen'>
-        <div className='text-center max-w-md mx-auto px-4'>
+        <div className='text-center max-w-md max-md:max-w-[37rem] mx-auto px-4'>
           <div className='mb-8'>
-            <div className='w-24 h-24 mx-auto mb-6 rounded-full bg-gray-transparent-20 border-2 border-stroke-light flex items-center justify-center'>
-              <svg className='w-12 h-12 text-white-transparent-50' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+            <div className='w-24 h-24 max-md:w-[7.9rem] max-md:h-[7.9rem] mx-auto mb-6 rounded-full bg-gray-transparent-20 border-2 border-stroke-light flex items-center justify-center'>
+              <svg className='w-12 h-12 max-md:w-[4rem] max-md:h-[4rem] text-white-transparent-50' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                 <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={1.5} d='M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z' />
               </svg>
             </div>
-            <h1 className='text-[2.5rem] font-bold mb-4'>Your wallet is not connected :(</h1>
-            <p className='text-white-transparent-75 text-[1.125rem] leading-relaxed'>
+            <h1 className='text-[2.5rem] max-md:text-[3.3rem] font-bold mb-4'>Your wallet is not connected :(</h1>
+            <p className='text-white-transparent-75 text-[1.125rem] max-md:text-[1.5rem] leading-relaxed'>
               Connect your wallet to view your presale statistics, purchase history, and manage your tokens.
             </p>
           </div>
           <div className='space-y-3'>
             <Button 
               color='purple' 
-              className='w-full h-[3.5rem] text-[1.125rem] font-semibold' 
+              className='w-full h-[3.5rem] max-md:h-[4.6rem] text-[1.125rem] max-md:text-[1.5rem] font-semibold' 
               onClick={async () => {
                 try {
                   setIsConnecting(true)
@@ -80,7 +80,7 @@ const Profile = () => {
               isLink
               to='/'
               color='dark' 
-              className='w-full h-[3.5rem] text-[1.125rem] font-semibold' 
+              className='w-full h-[3.5rem] max-md:h-[4.6rem] text-[1.125rem] max-md:text-[1.5rem] font-semibold' 
             >
               Go Home
             </Button>

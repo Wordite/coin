@@ -17,7 +17,7 @@ const styles: ButtonStyles = {
   purple: 'bg-purple-500 text-white'
 }
 
-const baseStyles = 'flex justify-center items-center gap-[.75rem] py-[1rem] px-[2.2rem] max-md:text-[1.4rem] font-semibold cursor-pointer rounded-md hover:brightness-120 transition-200'
+const baseStyles = 'flex justify-center items-center gap-[.75rem] py-[1rem] px-[2.2rem] max-md:text-[1.5rem] font-semibold cursor-pointer rounded-md hover:brightness-120 transition-200'
 
 const Button = ({ color, isLink = false, children, className, to, target, isLoading = false, ...props }: ButtonProps) => {
   const LoadingSpinner = () => (
