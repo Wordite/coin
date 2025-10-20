@@ -41,6 +41,17 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 echo "🔄 Restarting docs container to pick up content changes..."
 docker restart $DOCS_CONTAINER
 
+# Wait a moment for the container to fully restart
+sleep 3
+
+# Check if the container is running
+if ! docker ps | grep -q "docs"; then
+    echo "❌ Docs container failed to restart"
+    exit 1
+fi
+
+echo "✅ Docs container restarted successfully"
+
 echo "✅ Documentation rebuild completed successfully!"
 
 # Optional: Notify backend that rebuild is complete

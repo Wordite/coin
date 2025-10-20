@@ -131,6 +131,8 @@ services:
       - NODE_ENV=production
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
       - PORT=3000
+    volumes:
+      - ./docs/content:/app/content
     restart: unless-stopped
 
 networks:
