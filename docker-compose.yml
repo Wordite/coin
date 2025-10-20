@@ -91,6 +91,7 @@ services:
       - ./backend/.env.prod:/app/backend/.env.prod:ro
       - ./.env.prod:/app/.env.prod:ro
       - ./docs:/app/docs:ro
+      - ./postgres/.env.prod:/app/postgres/.env.prod:ro
     depends_on:
       postgres:
         condition: service_healthy
