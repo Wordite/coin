@@ -22,7 +22,7 @@ export const FailedWalletConnectModal = () => {
       </div>
 
       <Button
-        className='w-full h-[3.8rem] mt-[1.5rem]'
+        className='w-full h-[3.43rem] max-md:h-[4.62rem] mt-[1.5rem]'
         color='purple'
         onClick={() => closeModal(Modals.FAILED_WALLET_CONNECT)}
       >
