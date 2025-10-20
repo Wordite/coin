@@ -50,7 +50,6 @@
     // transform: translateX(-50%) translateY(var(--translate-y));
     transform: translateX(-50%);
 
-    --translate-y: 0 !important;
     top: var(--translate-y);
     
     backdrop-filter: blur(calc(0.625rem * var(--progress))) !important;
