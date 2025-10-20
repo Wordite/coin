@@ -39,10 +39,10 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 
 # Completely restart the docs container to pick up content changes
 echo "🔄 Completely restarting docs container to pick up content changes..."
-cd /app && docker compose down docs --remove-orphans
-# Create empty env file to avoid vault env file errors
-touch /app/vault/.env.prod
-cd /app && docker compose up -d docs --no-deps
+docker stop $DOCS_CONTAINER
+docker rm $DOCS_CONTAINER
+# Recreate docs container with same configuration
+docker run -d --name docs --network coin_default -p 5175:3000 -v /app/docs/content:/app/content -e NODE_ENV=production -e VITE_BACKEND_URL=${VITE_BACKEND_URL} -e PORT=3000 coin-docs
 
 # Wait a moment for the container to fully start
 sleep 5
