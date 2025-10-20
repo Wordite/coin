@@ -1,79 +1,78 @@
 #!/bin/bash
+# Rebuild docs: rebuild image -> restart container from new image
+# Intended to run inside a controller container (you already check /.dockerenv in original script)
+set -euo pipefail
 
-# Script to rebuild documentation in production
-# This script should be called by backend when documentation files change
+DOCS_DIR=${DOCS_DIR:-/home/coin/docs}
+IMAGE_NAME=${IMAGE_NAME:-coin-docs}
+CONTAINER_NAME=${CONTAINER_NAME:-docs}
+NETWORK_NAME=${NETWORK_NAME:-coin_default}
+HOST_CONTENT_DIR=${HOST_CONTENT_DIR:-${DOCS_DIR}/content}
+HOST_BUILD_DIR=${HOST_BUILD_DIR:-${DOCS_DIR}/build}
+PORT_MAPPING=${PORT_MAPPING:-5175:3000}
 
-set -e
+echo "🔄 Starting documentation rebuild (image build + container restart)..."
 
-echo "🔄 Starting documentation rebuild..."
-
-# Script permissions should be set by docker-compose
-
-# Check if we're in production
-if [ "$NODE_ENV" != "production" ]; then
-    echo "❌ This script should only run in production"
-    exit 1
+# basic checks
+if [ "${NODE_ENV:-}" != "production" ]; then
+  echo "❌ NODE_ENV != production. This script should run only in production."
+  exit 1
 fi
 
-# Check if we're running inside Docker
 if [ ! -f /.dockerenv ]; then
-    echo "❌ This script should only run inside Docker container"
-    exit 1
+  echo "❌ Not running inside Docker container. This script is intended to run inside Docker."
+  exit 1
 fi
 
-# Check if docs service is running
-if ! docker ps | grep -q "docs"; then
-    echo "❌ Docs service is not running"
-    exit 1
+if ! command -v docker &>/dev/null; then
+  echo "❌ docker CLI not found inside this container."
+  exit 1
 fi
 
-# Get the docs container name
-DOCS_CONTAINER=$(docker ps --format "table {{.Names}}" | grep docs | head -1)
+# Build image
+echo "📦 Building docker image '${IMAGE_NAME}' from '${DOCS_DIR}'..."
+docker build --pull \
+  --build-arg VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
+  --build-arg NODE_ENV=production \
+  -t "${IMAGE_NAME}" "${DOCS_DIR}"
 
-if [ -z "$DOCS_CONTAINER" ]; then
-    echo "❌ Could not find docs container"
-    exit 1
+# Stop + remove old container if exists
+if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+  echo "🛑 Stopping and removing existing container '${CONTAINER_NAME}'..."
+  docker rm -f "${CONTAINER_NAME}" || true
 fi
 
-echo "📦 Found docs container: $DOCS_CONTAINER"
-
-# Completely restart the docs container to pick up content changes
-echo "🔄 Completely restarting docs container to pick up content changes..."
-docker stop $DOCS_CONTAINER || true
-docker rm $DOCS_CONTAINER || true
-
-# Clear any potential cache before starting
-echo "🧹 Clearing potential cache..."
-rm -rf /home/coin/docs/build 2>/dev/null || true
-
-# Start the docs container with the same configuration as docker-compose
-echo "🚀 Starting new docs container..."
+# Start new container from rebuilt image
+echo "🚀 Starting new container '${CONTAINER_NAME}'..."
 docker run -d \
-  --name docs \
-  --network coin_default \
-  -p 5175:3000 \
-  -v /home/coin/docs/content:/app/content \
+  --name "${CONTAINER_NAME}" \
+  --network "${NETWORK_NAME}" \
+  -p ${PORT_MAPPING} \
+  -v "${HOST_CONTENT_DIR}":/app/content:ro \
   -e NODE_ENV=production \
-  -e VITE_BACKEND_URL=${VITE_BACKEND_URL} \
-  -e PORT=3000 \
-  -e FUMADOCS_CACHE=false \
-  coin-docs
+  -e VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
+  "${IMAGE_NAME}"
 
-# Wait a moment for the container to fully start
-sleep 5
+# Wait a little for the service to come up
+sleep 4
 
-# Check if the container is running
-if ! docker ps | grep -q "docs"; then
-    echo "❌ Docs container failed to restart"
-    exit 1
+# Basic verification
+echo "🔎 Verify container is running:"
+if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+  echo "✅ Container '${CONTAINER_NAME}' is running."
+else
+  echo "❌ Container '${CONTAINER_NAME}' is not running. Showing last 200 logs for debugging:"
+  docker logs "${CONTAINER_NAME}" --tail 200 || true
+  exit 1
 fi
 
-echo "✅ Docs container restarted successfully"
+echo "📁 Inspecting mounts:"
+docker inspect "${CONTAINER_NAME}" --format '{{json .Mounts}}' | jq .
 
-echo "✅ Documentation rebuild completed successfully!"
+echo "📄 Checking /app/build content inside the container (should exist if build succeeded):"
+docker exec "${CONTAINER_NAME}" sh -c "if [ -d /app/build ]; then ls -la /app/build | head -n 50; else echo '/app/build not found'; fi" || true
 
-# Optional: Notify backend that rebuild is complete
-echo "📡 Notifying backend of successful rebuild..."
-curl -X POST http://localhost:3000/api/docs/rebuild-complete || echo "⚠️ Could not notify backend"
+echo "🧾 Last 200 container logs:"
+docker logs "${CONTAINER_NAME}" --tail 200 || true
 
-echo "🎉 Documentation rebuild process finished!"
+echo "✅ Documentation rebuild finished successfully."
