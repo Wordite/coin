@@ -1,6 +1,4 @@
 .header {
-  top: env(safe-area-inset-top, 0) !important;
-
   --progress: 0;
   --translate-y: calc(1rem * var(--progress));
 
@@ -47,6 +45,8 @@
   }
 
   @media (max-width: 768px) {
+    top: env(safe-area-inset-top, 20rem) !important;
+  
     width: 90% !important;
     left: 50%;
     transform: translateX(-50%) translateY(var(--translate-y));
