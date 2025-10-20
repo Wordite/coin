@@ -17,11 +17,11 @@ const Advantage = ({ title, description, icon }: AdvantageProps) => {
         />
       </div>
 
-      <h4 className='text-white text-[1.688rem] max-md:text-[2.5rem] font-bold mt-[1rem] max-md:mt-[1.25rem] text-center'>
+      <h4 className='text-white text-[1.688rem] max-md:text-[3rem] font-bold mt-[1rem] max-md:mt-[1.25rem] text-center'>
         {title}
       </h4>
 
-      <p className='text-white-transparent-75 text-[.875rem] max-md:text-[1.25rem] text-center leading-[150%] mt-[1rem]'>
+      <p className='text-white-transparent-75 text-[.875rem] max-md:text-[1.5rem] text-center leading-[150%] mt-[1rem]'>
         {description}
       </p>
     </div>
