@@ -42,6 +42,10 @@ echo "🔄 Completely restarting docs container to pick up content changes..."
 docker stop $DOCS_CONTAINER || true
 docker rm $DOCS_CONTAINER || true
 
+# Clear any potential cache before starting
+echo "🧹 Clearing potential cache..."
+rm -rf /home/coin/docs/build 2>/dev/null || true
+
 # Start the docs container with the same configuration as docker-compose
 echo "🚀 Starting new docs container..."
 docker run -d \
@@ -52,6 +56,7 @@ docker run -d \
   -e NODE_ENV=production \
   -e VITE_BACKEND_URL=${VITE_BACKEND_URL} \
   -e PORT=3000 \
+  -e FUMADOCS_CACHE=false \
   coin-docs
 
 # Wait a moment for the container to fully start
