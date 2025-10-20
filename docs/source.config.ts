@@ -4,4 +4,9 @@ export const docs = defineDocs({
   dir: 'content/docs',
 });
 
-export default defineConfig();
+export default defineConfig({
+  mdxOptions: {
+    remarkPlugins: [],
+    rehypePlugins: [],
+  },
+});
