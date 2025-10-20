@@ -1,6 +1,7 @@
 .header {
   --progress: 0;
-  --translate-y: calc(1rem * var(--progress));
+  // --translate-y: calc(1rem * var(--progress));
+  --translate-y: 0;
 
   transform: translateZ(0);
   will-change: transform, width, height, left, border-radius, border, backdrop-filter;

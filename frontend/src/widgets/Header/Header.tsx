@@ -58,7 +58,7 @@ const Header = () => {
   return (
     <>
       <header
-        className={`header transform-gpu fixed top-[0dvh] left-0 w-full flex items-center z-40 ${
+        className={`header transform-gpu fixed top-0 left-0 w-full flex items-center z-40 ${
           isMobileMenuOpen ? 'mobile-menu-open' : ''
         }`}
       >
