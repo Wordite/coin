@@ -14,12 +14,13 @@ import { Burger } from './ui/Burger'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useHeaderStore } from '@/app/store/headerStore'
 import { useSectionData } from '@/hooks'
-import { useAppKit, useAppKitAccount } from '@reown/appkit/react'
+import { useAppKit } from '@reown/appkit/react'
 import { useState } from 'react'
 import { useToast } from '@/shared/Toast'
 import { useWalletStore } from '@/app/store/walletStore'
 import { useServerAccount } from './model/useServerAccount'
 import { ReactSVG } from 'react-svg'
+import { useIsSafari } from './model/useIsSafari'
 import './Header.scss'
 
 const Header = () => {
@@ -36,6 +37,7 @@ const Header = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useHeaderStore()
   const { showError} = useToast()
   useServerAccount()
+  const isSafari = useIsSafari()
 
   const handleConnectWallet = async () => {
     try {
@@ -48,11 +50,6 @@ const Header = () => {
     }
   }
 
-
-  const { address } = useAppKitAccount()
-  console.log('appkit account address:', address)
-
-
   if (isLoading || isHeaderLinksLoading || headerLinksError || error) return <HeaderSkeleton />
 
   return (
@@ -60,7 +57,7 @@ const Header = () => {
       <header
         className={`header transform-gpu fixed top-0 left-0 w-full flex items-center z-40 ${
           isMobileMenuOpen ? 'mobile-menu-open' : ''
-        }`}
+        } ${isSafari ? 'safari' : ''}`}
       >
         <div className='container flex items-center h-full justify-between'>
           <AnchorLink href={LinksConfig.Home} onClick={() => setIsMobileMenuOpen(false)}>

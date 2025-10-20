@@ -24,7 +24,7 @@
 
   &.mobile-menu-open {
     --translate-y: 1rem;
-    
+
     background: rgba(25, 24, 24, calc(0.7 * calc(1 - 0.1))) !important;
     backdrop-filter: blur(calc(0.625rem * 1)) !important;
     height: calc(5.25rem + (3rem - 1 * 3rem)) !important;
@@ -45,12 +45,12 @@
   }
 
   @media (max-width: 768px) {
-    top: env(safe-area-inset-top, 20rem) !important;
-  
+    top: env(safe-area-inset-top, 0) !important;
+
     width: 90% !important;
     left: 50%;
     transform: translateX(-50%) translateY(var(--translate-y));
-    
+
     backdrop-filter: blur(calc(0.625rem * var(--progress))) !important;
     -webkit-backdrop-filter: blur(calc(0.625rem * var(--progress))) !important;
 
