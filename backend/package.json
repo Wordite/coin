@@ -51,6 +51,7 @@
     "del": "^8.0.0",
     "globby": "^14.1.0",
     "gray-matter": "^4.0.3",
+    "helmet": "^8.1.0",
     "ioredis": "^5.7.0",
     "multer": "^2.0.2",
     "nest-winston": "^1.10.2",

@@ -5,6 +5,7 @@ import { WinstonModule } from 'nest-winston'
 import * as winston from 'winston'
 import cookieParser from 'cookie-parser'
 import DailyRotateFile from 'winston-daily-rotate-file'
+import helmet from 'helmet'
 
 async function bootstrap() {
 
@@ -72,6 +73,7 @@ async function bootstrap() {
   })
   app.setGlobalPrefix('api')
   app.use(cookieParser())
+  app.use(helmet())
   
   // Health endpoint outside of /api prefix for container health checks
   const httpAdapter: any = app.getHttpAdapter()

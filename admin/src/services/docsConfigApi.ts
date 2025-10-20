@@ -62,7 +62,7 @@ class DocsConfigApiService {
   }
 
   async rebuildDocs(): Promise<{ success: boolean; message: string }> {
-    const response = await api.post('/docs/config/rebuild')
+    const response = await api.post('/docs/content/rebuild')
     return response.data
   }
 }
