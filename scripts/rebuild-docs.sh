@@ -37,12 +37,13 @@ fi
 
 echo "📦 Found docs container: $DOCS_CONTAINER"
 
-# Restart the docs container to pick up content changes
-echo "🔄 Restarting docs container to pick up content changes..."
-docker restart $DOCS_CONTAINER
+# Completely restart the docs container to pick up content changes
+echo "🔄 Completely restarting docs container to pick up content changes..."
+docker compose -f /app/docker-compose.yml down docs
+docker compose -f /app/docker-compose.yml up -d docs
 
-# Wait a moment for the container to fully restart
-sleep 3
+# Wait a moment for the container to fully start
+sleep 5
 
 # Check if the container is running
 if ! docker ps | grep -q "docs"; then
