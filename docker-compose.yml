@@ -79,6 +79,7 @@ services:
       - NODE_OPTIONS=--dns-result-order=ipv4first
       - MX_CHECK_DNS_SERVERS=8.8.8.8,1.1.1.1
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+      - PROJECT_PATH=/home/coin
     dns:
       - 8.8.8.8
       - 1.1.1.1
