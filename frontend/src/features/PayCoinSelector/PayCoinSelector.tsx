@@ -26,7 +26,7 @@ const PayCoinSelector = <T extends Record<string, any>>({
       />
 
       <InputRadio
-        className='w-1/2 rounded-r-none border-r-0 h-full'
+        className='w-1/2 rounded-r-none border-r-0 h-full max-md:h-[3.96rem]'
         register={register}
         checked={payCoin === PayCoin.SOL}
         value={PayCoin.SOL}
@@ -39,7 +39,7 @@ const PayCoinSelector = <T extends Record<string, any>>({
       </InputRadio>
 
       <InputRadio
-        className='w-1/2 rounded-l-none border-l-0 h-full'
+        className='w-1/2 rounded-l-none border-l-0 h-full max-md:h-[3.96rem]'
         register={register}
         checked={payCoin === PayCoin.USDT}
         value={PayCoin.USDT}

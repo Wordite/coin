@@ -44,6 +44,41 @@ services:
       - IPC_LOCK
     restart: unless-stopped
     command: vault server -dev -dev-root-token-id=dev-root-token -dev-listen-address=0.0.0.0:8200
+    healthcheck:
+      test: ["CMD", "sh", "-c", "VAULT_ADDR=http://127.0.0.1:8200 vault status >/dev/null 2>&1"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  vault_init_dev:
+    image: hashicorp/vault:1.15
+    container_name: vault_init_dev
+    depends_on:
+      vault:
+        condition: service_healthy
+    entrypoint: ["/bin/sh","-c"]
+    command: >
+      "
+      set -ex;
+      export VAULT_ADDR=http://vault:8200;
+      export VAULT_TOKEN=dev-root-token;
+      echo 'Waiting for Vault dev status...';
+      for i in $(seq 1 60); do
+        vault status >/dev/null 2>&1 && break || true;
+        sleep 1;
+      done;
+      echo 'Enabling solana kv (v2) at path=solana with retries...';
+      for i in $(seq 1 10); do
+        vault secrets enable -path=solana -version=2 kv && break || true;
+        sleep 1;
+      done;
+      echo 'Verifying by writing a test key...';
+      vault kv put solana/root-wallet init_check=ok || true;
+      echo 'Listing secrets:';
+      vault secrets list || true;
+      echo 'Vault dev initialization complete.';
+      "
+    restart: "no"
 
   docs:
     build:
@@ -82,6 +117,8 @@ services:
         condition: service_healthy
       vault:
         condition: service_started
+      vault_init_dev:
+        condition: service_completed_successfully
       docs:
         condition: service_started
     restart: unless-stopped
