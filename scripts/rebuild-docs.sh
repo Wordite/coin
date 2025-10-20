@@ -41,9 +41,9 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 echo "🔄 Completely restarting docs container to pick up content changes..."
 docker stop $DOCS_CONTAINER || true
 docker rm $DOCS_CONTAINER || true
-# Use docker compose from project path
-cd $PROJECT_PATH && docker compose -f docker-compose.yml down docs --remove-orphans || true
-cd $PROJECT_PATH && docker compose -f docker-compose.yml up -d docs
+# Use docker compose from mounted docker-compose.yml
+docker compose -f /app/docker-compose.yml down docs --remove-orphans || true
+docker compose -f /app/docker-compose.yml up -d docs
 
 # Wait a moment for the container to fully start
 sleep 5
