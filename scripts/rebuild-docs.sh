@@ -48,7 +48,7 @@ docker run -d \
   --name docs \
   --network coin_default \
   -p 5175:3000 \
-  -v /app/docs/content:/app/content \
+  -v /home/coin/docs/content:/app/content \
   -e NODE_ENV=production \
   -e VITE_BACKEND_URL=${VITE_BACKEND_URL} \
   -e PORT=3000 \
