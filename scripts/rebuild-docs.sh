@@ -39,10 +39,10 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 
 # Completely restart the docs container to pick up content changes
 echo "🔄 Completely restarting docs container to pick up content changes..."
-docker stop $DOCS_CONTAINER
-docker rm $DOCS_CONTAINER
+docker stop $DOCS_CONTAINER || true
+docker rm $DOCS_CONTAINER || true
 # Use docker compose from project path
-cd $PROJECT_PATH && docker compose -f docker-compose.yml down docs --remove-orphans
+cd $PROJECT_PATH && docker compose -f docker-compose.yml down docs --remove-orphans || true
 cd $PROJECT_PATH && docker compose -f docker-compose.yml up -d docs
 
 # Wait a moment for the container to fully start
