@@ -74,6 +74,7 @@ jobs:
             
             echo "🔧 Fixing file permissions..."
             sudo chown -R 1001:65533 ./docs/content || echo "Permission fix completed"
+            chmod +x ./scripts/rebuild-docs.sh || echo "Script permissions set"
             
             echo "✅ Deployment complete!"
             docker compose ps
