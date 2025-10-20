@@ -1,7 +1,6 @@
 .header {
   --progress: 0;
-  // --translate-y: calc(1rem * var(--progress));
-  --translate-y: 0;
+  --translate-y: calc(1rem * var(--progress));
 
   transform: translateZ(0);
   will-change: transform, width, height, left, border-radius, border, backdrop-filter;
@@ -48,12 +47,16 @@
   @media (max-width: 768px) {
     width: 90% !important;
     left: 50%;
-    transform: translateX(-50%) translateY(var(--translate-y));
+    // transform: translateX(-50%) translateY(var(--translate-y));
+    transform: translateX(-50%);
+
+    --translate-y: 0 !important;
+    top: var(--translate-y);
     
     backdrop-filter: blur(calc(0.625rem * var(--progress))) !important;
     -webkit-backdrop-filter: blur(calc(0.625rem * var(--progress))) !important;
 
-    will-change: transform, backdrop-filter;
+    will-change: transform, backdrop-filter, top;
     justify-content: center;
 
     & .container {
