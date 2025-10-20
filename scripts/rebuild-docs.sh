@@ -41,9 +41,18 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 echo "🔄 Completely restarting docs container to pick up content changes..."
 docker stop $DOCS_CONTAINER || true
 docker rm $DOCS_CONTAINER || true
-# Use docker compose from host system
-cd /home/coin && docker compose down docs --remove-orphans || true
-cd /home/coin && docker compose up -d docs
+
+# Start the docs container with the same configuration as docker-compose
+echo "🚀 Starting new docs container..."
+docker run -d \
+  --name docs \
+  --network coin_default \
+  -p 5175:3000 \
+  -v /app/docs/content:/app/content \
+  -e NODE_ENV=production \
+  -e VITE_BACKEND_URL=${VITE_BACKEND_URL} \
+  -e PORT=3000 \
+  coin-docs
 
 # Wait a moment for the container to fully start
 sleep 5
