@@ -7,8 +7,7 @@ set -e
 
 echo "🔄 Starting documentation rebuild..."
 
-# Make sure script is executable
-chmod +x /app/scripts/rebuild-docs.sh
+# Script permissions should be set by docker-compose
 
 # Check if we're in production
 if [ "$NODE_ENV" != "production" ]; then
