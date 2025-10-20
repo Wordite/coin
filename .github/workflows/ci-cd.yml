@@ -79,5 +79,8 @@ jobs:
             echo "🔧 Setting script permissions in container..."
             docker exec backend chmod +x /app/scripts/rebuild-docs.sh || echo "Script permissions set in container"
             
+            echo "🔧 Setting Docker socket permissions..."
+            sudo chmod 666 /var/run/docker.sock || echo "Docker socket permissions set"
+            
             echo "✅ Deployment complete!"
             docker compose ps

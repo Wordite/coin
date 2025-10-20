@@ -34,6 +34,8 @@ WORKDIR /app
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
+# Add user to docker group for Docker socket access
+RUN addgroup nestjs docker
 
 ENV NODE_ENV=production
 

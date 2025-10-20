@@ -84,7 +84,7 @@ services:
     volumes:
       - backend_uploads:/app/uploads
       - ./docs/content:/app/docs-content
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock:rw
       - ./scripts/rebuild-docs.sh:/app/scripts/rebuild-docs.sh:rw
       - ./docker-compose.yml:/app/docker-compose.yml:ro
     depends_on:
