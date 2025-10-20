@@ -66,7 +66,7 @@ services:
       timeout: 3s
       retries: 3
 
-  backend:
+    backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -79,12 +79,14 @@ services:
       - NODE_OPTIONS=--dns-result-order=ipv4first
       - MX_CHECK_DNS_SERVERS=8.8.8.8,1.1.1.1
       - VITE_BACKEND_URL=${VITE_BACKEND_URL}
+      - DOCS_DIR=/home/coin/docs
     dns:
       - 8.8.8.8
       - 1.1.1.1
     volumes:
       - backend_uploads:/app/uploads
       - ./docs/content:/app/docs-content
+      - ./docs:/home/coin/docs:ro
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - ./scripts/rebuild-docs.sh:/app/scripts/rebuild-docs.sh:rw
     depends_on:
@@ -95,6 +97,8 @@ services:
       vault:
         condition: service_started
     restart: unless-stopped
+
+ 
 
   admin:
     build:

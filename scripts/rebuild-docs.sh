@@ -1,6 +1,5 @@
 #!/bin/bash
 # Rebuild docs: rebuild image -> restart container from new image
-# Intended to run inside a controller container (you already check /.dockerenv in original script)
 set -euo pipefail
 
 DOCS_DIR=${DOCS_DIR:-/home/coin/docs}
@@ -8,33 +7,61 @@ IMAGE_NAME=${IMAGE_NAME:-coin-docs}
 CONTAINER_NAME=${CONTAINER_NAME:-docs}
 NETWORK_NAME=${NETWORK_NAME:-coin_default}
 HOST_CONTENT_DIR=${HOST_CONTENT_DIR:-${DOCS_DIR}/content}
-HOST_BUILD_DIR=${HOST_BUILD_DIR:-${DOCS_DIR}/build}
 PORT_MAPPING=${PORT_MAPPING:-5175:3000}
+BUILD_LOG=${BUILD_LOG:-/tmp/docs-build.log}
 
 echo "🔄 Starting documentation rebuild (image build + container restart)..."
 
-# basic checks
+# env check
 if [ "${NODE_ENV:-}" != "production" ]; then
   echo "❌ NODE_ENV != production. This script should run only in production."
   exit 1
 fi
 
+# inside docker check okay (we run inside backend)
 if [ ! -f /.dockerenv ]; then
-  echo "❌ Not running inside Docker container. This script is intended to run inside Docker."
+  echo "❌ Not running inside Docker container. This script expected to run inside container."
   exit 1
 fi
 
+# path existence check (this will verify mount from host)
+if [ ! -d "${DOCS_DIR}" ]; then
+  echo "❌ Build context not found: ${DOCS_DIR}"
+  echo "Make sure you mounted host path ${DOCS_DIR} into the container (see docker-compose)."
+  exit 1
+fi
+
+# docker CLI check
 if ! command -v docker &>/dev/null; then
-  echo "❌ docker CLI not found inside this container."
+  echo "❌ docker CLI not found inside this container. Install docker CLI in backend image."
   exit 1
 fi
 
-# Build image
+# Build image (log output for debugging)
 echo "📦 Building docker image '${IMAGE_NAME}' from '${DOCS_DIR}'..."
-docker build --pull \
-  --build-arg VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
-  --build-arg NODE_ENV=production \
-  -t "${IMAGE_NAME}" "${DOCS_DIR}"
+# optional: disable BuildKit to avoid buildx warning: DOCKER_BUILDKIT=0
+DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
+if [ "$DOCKER_BUILDKIT" = "0" ]; then
+  echo "⚠️ BuildKit disabled (DOCKER_BUILDKIT=0)."
+  DOCKER_BUILDKIT=0 docker build --progress=plain --pull \
+    --build-arg VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
+    --build-arg NODE_ENV=production \
+    -t "${IMAGE_NAME}" "${DOCS_DIR}" 2>&1 | tee "${BUILD_LOG}"
+else
+  # default: allow BuildKit
+  docker build --progress=plain --pull \
+    --build-arg VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
+    --build-arg NODE_ENV=production \
+    -t "${IMAGE_NAME}" "${DOCS_DIR}" 2>&1 | tee "${BUILD_LOG}"
+fi
+
+BUILD_EXIT=${PIPESTATUS[0]:-0}
+if [ "$BUILD_EXIT" -ne 0 ]; then
+  echo "❌ docker build failed — see ${BUILD_LOG} for details."
+  # show tail for convenience
+  tail -n 200 "${BUILD_LOG}" || true
+  exit 1
+fi
 
 # Stop + remove old container if exists
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -67,7 +94,12 @@ else
 fi
 
 echo "📁 Inspecting mounts:"
-docker inspect "${CONTAINER_NAME}" --format '{{json .Mounts}}' | jq .
+# prefer jq if available, else show raw inspect
+if command -v jq &>/dev/null; then
+  docker inspect "${CONTAINER_NAME}" --format '{{json .Mounts}}' | jq .
+else
+  docker inspect "${CONTAINER_NAME}" --format '{{json .Mounts}}'
+fi
 
 echo "📄 Checking /app/build content inside the container (should exist if build succeeded):"
 docker exec "${CONTAINER_NAME}" sh -c "if [ -d /app/build ]; then ls -la /app/build | head -n 50; else echo '/app/build not found'; fi" || true

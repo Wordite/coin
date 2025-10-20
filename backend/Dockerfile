@@ -38,6 +38,9 @@ RUN adduser --system --uid 1001 nestjs
 RUN addgroup --system docker
 RUN adduser nestjs docker
 
+# TODO: remove this after testing
+RUN apk add --no-cache docker-cli jq
+
 ENV NODE_ENV=production
 
 # Copy built application and Prisma client
