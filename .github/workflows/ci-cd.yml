@@ -83,7 +83,9 @@ jobs:
             sudo chmod 666 /var/run/docker.sock || echo "Docker socket permissions set"
             
             echo "🔧 Setting Docker group permissions..."
-            sudo chown :999 /var/run/docker.sock || echo "Docker group permissions set"
+            # Get the docker group GID from the container
+            DOCKER_GID=$(docker exec backend getent group docker | cut -d: -f3) || echo "1002"
+            sudo chown :$DOCKER_GID /var/run/docker.sock || echo "Docker group permissions set"
             
             echo "✅ Deployment complete!"
             docker compose ps
