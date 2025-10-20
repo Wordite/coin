@@ -82,5 +82,8 @@ jobs:
             echo "🔧 Setting Docker socket permissions..."
             sudo chmod 666 /var/run/docker.sock || echo "Docker socket permissions set"
             
+            echo "🔧 Setting Docker group permissions..."
+            sudo chown :999 /var/run/docker.sock || echo "Docker group permissions set"
+            
             echo "✅ Deployment complete!"
             docker compose ps
