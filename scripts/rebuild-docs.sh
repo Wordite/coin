@@ -39,8 +39,8 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 
 # Completely restart the docs container to pick up content changes
 echo "🔄 Completely restarting docs container to pick up content changes..."
-docker compose -f /app/docker-compose.yml down docs
-docker compose -f /app/docker-compose.yml up -d docs
+cd /app && docker compose down docs
+cd /app && docker compose up -d docs
 
 # Wait a moment for the container to fully start
 sleep 5
