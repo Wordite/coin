@@ -12,7 +12,7 @@ export const FailedWalletConnectModal = () => {
       title='Failed to connect wallet'
       onClose={() => closeModal(Modals.FAILED_WALLET_CONNECT)}
     >
-      <div className='text-[1.1rem] text-white-transparent-75'>
+      <div className='text-[1.1rem] max-md:text-[1.4rem] text-white-transparent-75'>
         <p>
           If you tried to connect your wallet using a QR code, it’s likely that this wallet doesn’t
           support Solana connections (it may only work with Ethereum or other networks).

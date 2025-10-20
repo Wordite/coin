@@ -58,7 +58,7 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-    command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru --replicaof no one
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
