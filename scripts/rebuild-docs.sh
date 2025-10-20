@@ -41,8 +41,9 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 echo "🔄 Completely restarting docs container to pick up content changes..."
 docker stop $DOCS_CONTAINER
 docker rm $DOCS_CONTAINER
-# Recreate docs container with same configuration
-docker run -d --name docs --network coin_default -p 5175:3000 -v /app/docs/content:/app/content -e NODE_ENV=production -e VITE_BACKEND_URL=${VITE_BACKEND_URL} -e PORT=3000 coin-docs
+# Use docker compose from project path
+cd $PROJECT_PATH && docker compose -f docker-compose.yml down docs --remove-orphans
+cd $PROJECT_PATH && docker compose -f docker-compose.yml up -d docs
 
 # Wait a moment for the container to fully start
 sleep 5
