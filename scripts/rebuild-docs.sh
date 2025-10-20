@@ -41,9 +41,9 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 echo "🔄 Completely restarting docs container to pick up content changes..."
 docker stop $DOCS_CONTAINER || true
 docker rm $DOCS_CONTAINER || true
-# Use docker compose from mounted docker-compose.yml with specific env file and network
-docker compose --env-file /app/.env.prod -f /app/docker-compose.yml down docs --remove-orphans || true
-docker compose --env-file /app/.env.prod -f /app/docker-compose.yml up -d docs --no-deps
+# Use docker compose from host system
+cd /home/coin && docker compose down docs --remove-orphans || true
+cd /home/coin && docker compose up -d docs
 
 # Wait a moment for the container to fully start
 sleep 5

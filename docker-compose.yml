@@ -87,11 +87,6 @@ services:
       - ./docs/content:/app/docs-content
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - ./scripts/rebuild-docs.sh:/app/scripts/rebuild-docs.sh:rw
-      - ./docker-compose.yml:/app/docker-compose.yml:ro
-      - ./backend/.env.prod:/app/backend/.env.prod:ro
-      - ./.env.prod:/app/.env.prod:ro
-      - ./docs:/app/docs:ro
-      - ./postgres/.env.prod:/app/postgres/.env.prod:ro
     depends_on:
       postgres:
         condition: service_healthy
