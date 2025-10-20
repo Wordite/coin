@@ -1,6 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 # Rebuild docs: rebuild image -> restart container from new image
-set -euo pipefail
+# POSIX-compatible variant (works when called with `sh script`)
+
+set -eu
 
 DOCS_DIR=${DOCS_DIR:-/home/coin/docs}
 IMAGE_NAME=${IMAGE_NAME:-coin-docs}
@@ -18,7 +20,7 @@ if [ "${NODE_ENV:-}" != "production" ]; then
   exit 1
 fi
 
-# inside docker check okay (we run inside backend)
+# inside docker check ok (we expect to run inside backend container)
 if [ ! -f /.dockerenv ]; then
   echo "❌ Not running inside Docker container. This script expected to run inside container."
   exit 1
@@ -32,26 +34,29 @@ if [ ! -d "${DOCS_DIR}" ]; then
 fi
 
 # docker CLI check
-if ! command -v docker &>/dev/null; then
+if ! command -v docker >/dev/null 2>&1; then
   echo "❌ docker CLI not found inside this container. Install docker CLI in backend image."
   exit 1
 fi
 
-# Build image (log output for debugging)
+# Build image (write full log to file, then show last part)
 echo "📦 Building docker image '${IMAGE_NAME}' from '${DOCS_DIR}'..."
-BUILD_LOG=${BUILD_LOG:-/tmp/docs-build.log}
-# Отключаем BuildKit для совместимости внутри контейнера, убираем --progress
+# Use DOCKER_BUILDKIT=0 to avoid buildx issues if the CLI inside container is old
 DOCKER_BUILDKIT=0 docker build --pull \
   --build-arg VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
   --build-arg NODE_ENV=production \
-  -t "${IMAGE_NAME}" "${DOCS_DIR}" 2>&1 | tee "${BUILD_LOG}"
+  -t "${IMAGE_NAME}" "${DOCS_DIR}" > "${BUILD_LOG}" 2>&1 || BUILD_EXIT=$?
 
-BUILD_EXIT=${PIPESTATUS[0]:-0}
-if [ "$BUILD_EXIT" -ne 0 ]; then
+# Capture exit code (if not set above)
+BUILD_EXIT=${BUILD_EXIT:-$?}
+if [ "${BUILD_EXIT}" -ne 0 ]; then
   echo "❌ docker build failed — see ${BUILD_LOG} for details."
+  echo "----- build log (last 200 lines) -----"
   tail -n 200 "${BUILD_LOG}" || true
   exit 1
 fi
+
+echo "✅ docker build succeeded. (see ${BUILD_LOG} for details)"
 
 # Stop + remove old container if exists
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
@@ -84,8 +89,7 @@ else
 fi
 
 echo "📁 Inspecting mounts:"
-# prefer jq if available, else show raw inspect
-if command -v jq &>/dev/null; then
+if command -v jq >/dev/null 2>&1; then
   docker inspect "${CONTAINER_NAME}" --format '{{json .Mounts}}' | jq .
 else
   docker inspect "${CONTAINER_NAME}" --format '{{json .Mounts}}'
