@@ -37,13 +37,13 @@ fi
 
 echo "📦 Found docs container: $DOCS_CONTAINER"
 
-# Rebuild the docs container
+# Rebuild the docs container from the host context
 echo "🔨 Rebuilding docs container..."
-docker compose -f /app/docker-compose.yml build docs
+cd /app && VITE_BACKEND_URL=${VITE_BACKEND_URL} docker compose -f docker-compose.yml build docs
 
 # Restart the docs container
 echo "🔄 Restarting docs container..."
-docker compose -f /app/docker-compose.yml restart docs
+cd /app && docker compose -f docker-compose.yml restart docs
 
 echo "✅ Documentation rebuild completed successfully!"
 
