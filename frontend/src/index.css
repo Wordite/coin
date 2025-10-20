@@ -133,3 +133,17 @@ wui-card {
     opacity: 1;
   }
 }
+
+
+
+/* for safari on mobile */
+body {
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+html {
+  height: 100%;
+  overflow: hidden;
+}

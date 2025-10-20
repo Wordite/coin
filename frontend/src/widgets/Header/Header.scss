@@ -1,4 +1,6 @@
 .header {
+  top: env(safe-area-inset-top, 0) !important;
+
   --progress: 0;
   --translate-y: calc(1rem * var(--progress));
 
@@ -47,15 +49,12 @@
   @media (max-width: 768px) {
     width: 90% !important;
     left: 50%;
-    // transform: translateX(-50%) translateY(var(--translate-y));
-    transform: translateX(-50%);
-
-    top: var(--translate-y);
+    transform: translateX(-50%) translateY(var(--translate-y));
     
     backdrop-filter: blur(calc(0.625rem * var(--progress))) !important;
     -webkit-backdrop-filter: blur(calc(0.625rem * var(--progress))) !important;
 
-    will-change: transform, backdrop-filter, top;
+    will-change: transform, backdrop-filter;
     justify-content: center;
 
     & .container {
