@@ -39,26 +39,16 @@ fi
 
 # Build image (log output for debugging)
 echo "📦 Building docker image '${IMAGE_NAME}' from '${DOCS_DIR}'..."
-# optional: disable BuildKit to avoid buildx warning: DOCKER_BUILDKIT=0
-DOCKER_BUILDKIT=${DOCKER_BUILDKIT:-1}
-if [ "$DOCKER_BUILDKIT" = "0" ]; then
-  echo "⚠️ BuildKit disabled (DOCKER_BUILDKIT=0)."
-  DOCKER_BUILDKIT=0 docker build --progress=plain --pull \
-    --build-arg VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
-    --build-arg NODE_ENV=production \
-    -t "${IMAGE_NAME}" "${DOCS_DIR}" 2>&1 | tee "${BUILD_LOG}"
-else
-  # default: allow BuildKit
-  docker build --progress=plain --pull \
-    --build-arg VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
-    --build-arg NODE_ENV=production \
-    -t "${IMAGE_NAME}" "${DOCS_DIR}" 2>&1 | tee "${BUILD_LOG}"
-fi
+BUILD_LOG=${BUILD_LOG:-/tmp/docs-build.log}
+# Отключаем BuildKit для совместимости внутри контейнера, убираем --progress
+DOCKER_BUILDKIT=0 docker build --pull \
+  --build-arg VITE_BACKEND_URL="${VITE_BACKEND_URL:-}" \
+  --build-arg NODE_ENV=production \
+  -t "${IMAGE_NAME}" "${DOCS_DIR}" 2>&1 | tee "${BUILD_LOG}"
 
 BUILD_EXIT=${PIPESTATUS[0]:-0}
 if [ "$BUILD_EXIT" -ne 0 ]; then
   echo "❌ docker build failed — see ${BUILD_LOG} for details."
-  # show tail for convenience
   tail -n 200 "${BUILD_LOG}" || true
   exit 1
 fi
