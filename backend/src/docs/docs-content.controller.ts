@@ -201,8 +201,8 @@ export class DocsContentController {
 
       console.log('🔄 Starting documentation rebuild...');
       
-      // Execute the rebuild script
-      const { stdout, stderr } = await execAsync('/app/scripts/rebuild-docs.sh');
+      // Execute the rebuild script using bash
+      const { stdout, stderr } = await execAsync('bash /app/scripts/rebuild-docs.sh');
       
       console.log('✅ Documentation rebuild completed:', stdout);
       if (stderr) {

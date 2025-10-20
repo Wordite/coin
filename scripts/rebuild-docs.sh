@@ -40,11 +40,11 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 
 # Rebuild the docs container
 echo "🔨 Rebuilding docs container..."
-docker-compose -f /app/docker-compose.yml build docs
+docker compose -f /app/docker-compose.yml build docs
 
 # Restart the docs container
 echo "🔄 Restarting docs container..."
-docker-compose -f /app/docker-compose.yml restart docs
+docker compose -f /app/docker-compose.yml restart docs
 
 echo "✅ Documentation rebuild completed successfully!"
 
