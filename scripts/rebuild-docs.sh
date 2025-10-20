@@ -39,8 +39,10 @@ echo "📦 Found docs container: $DOCS_CONTAINER"
 
 # Completely restart the docs container to pick up content changes
 echo "🔄 Completely restarting docs container to pick up content changes..."
-cd /app && docker compose down docs
-cd /app && docker compose up -d docs
+cd /app && docker compose down docs --remove-orphans
+# Create empty env file to avoid vault env file errors
+touch /app/vault/.env.prod
+cd /app && docker compose up -d docs --no-deps
 
 # Wait a moment for the container to fully start
 sleep 5
