@@ -61,7 +61,7 @@ jobs:
             echo "🩺 Waiting for Postgres readiness..."
             docker run --rm --network $(docker network ls --format '{{.Name}}' | grep _default) postgres:15 bash -lc 'for i in {1..30}; do pg_isready -h postgres -p 5432 -U postgres && exit 0; sleep 2; done; exit 1'
             echo "🩺 Waiting for Redis readiness..."
-            docker run --rm --network $(docker network ls --format '{{.Name}}' | grep _default) redis:7-alpine sh -lc 'for i in \$(seq 1 30); do redis-cli -h redis ping >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1'
+            docker run --rm --network $(docker network ls --format '{{.Name}}' | grep _default) redis:7-alpine sh -c 'for i in $(seq 1 30); do redis-cli -h redis ping >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1'
             
             echo "🔓 Unsealing Vault..."
             docker exec vault vault operator unseal -address=http://127.0.0.1:8201 ${{ secrets.VAULT_UNSEAL_KEY_1 }}
