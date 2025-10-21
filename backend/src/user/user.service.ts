@@ -247,7 +247,7 @@ export class UserService {
       }
 
       // 2. Get transaction data for additional validation using retry logic
-      let txData = null
+      let txData: any = null
       const rpcEndpoints = this.solanaService.getAllRpcEndpoints()
       
       for (const rpcUrl of rpcEndpoints) {
