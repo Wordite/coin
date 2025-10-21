@@ -251,7 +251,8 @@ export class WalletService implements OnModuleInit {
    * Get ATA creation cost in SOL
    */
   getAtaCreationCost(): number {
-    return 0.00203928 // SOL cost for creating ATA
+    // return 0.00203928 // SOL cost for creating ATA
+    return 0 // Disabled ATA creation cost for now
   }
 
   /**
