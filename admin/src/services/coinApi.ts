@@ -30,6 +30,10 @@ class CoinApiService {
     const response = await api.get('/coin/available-stages')
     return response.data
   }
+
+  async updateRpcEndpoints(endpoints: Array<{ url: string; priority: number; name: string }>): Promise<void> {
+    await api.put('/coin/rpc-endpoints', { endpoints })
+  }
 }
 
 export const coinApi = new CoinApiService()

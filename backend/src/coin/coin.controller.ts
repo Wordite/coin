@@ -27,6 +27,15 @@ export class CoinController {
     return this.coinService.getAvailableStages()
   }
 
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  @Put('rpc-endpoints')
+  async updateRpcEndpoints(
+    @Body() body: { endpoints: Array<{ url: string; priority: number; name: string }> }
+  ): Promise<{ success: boolean }> {
+    await this.coinService.updateRpcEndpoints(body.endpoints)
+    return { success: true }
+  }
+
   @Auth({ public: true })
   @Get('public/presale-settings')
   async getPublicPresaleSettings() {

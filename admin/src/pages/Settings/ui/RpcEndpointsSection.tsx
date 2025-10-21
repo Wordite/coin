@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardBody, CardHeader, Button, Input, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip, Select, SelectItem } from '@heroui/react'
 import type { PresaleSettingsSectionProps } from '../model/types'
+import { coinApi } from '../../../services/coinApi'
 
 interface RpcEndpoint {
   url: string
@@ -19,6 +20,8 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
     name: ''
   })
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [primaryRpc, setPrimaryRpc] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(false)
   const { isOpen, onOpen, onOpenChange } = useDisclosure()
 
   useEffect(() => {
@@ -26,22 +29,36 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
     if (presaleSettings.rpcEndpoints && Array.isArray(presaleSettings.rpcEndpoints)) {
       setEndpoints(presaleSettings.rpcEndpoints)
     }
-  }, [presaleSettings.rpcEndpoints])
+    if (presaleSettings.rpc) {
+      setPrimaryRpc(presaleSettings.rpc)
+    }
+  }, [presaleSettings.rpcEndpoints, presaleSettings.rpc])
 
-  const handleAddEndpoint = () => {
+  const handleAddEndpoint = async () => {
     if (!newEndpoint.url || !newEndpoint.name) {
       return
     }
 
-    const updatedEndpoints = [...endpoints, newEndpoint]
-    setEndpoints(updatedEndpoints)
-    setPresaleSettings({
-      ...presaleSettings,
-      rpcEndpoints: updatedEndpoints
-    })
+    setIsLoading(true)
+    try {
+      const updatedEndpoints = [...endpoints, newEndpoint]
+      
+      // Save to server
+      await coinApi.updateRpcEndpoints(updatedEndpoints)
+      
+      setEndpoints(updatedEndpoints)
+      setPresaleSettings({
+        ...presaleSettings,
+        rpcEndpoints: updatedEndpoints
+      })
 
-    setNewEndpoint({ url: '', priority: 1, name: '' })
-    onOpenChange()
+      setNewEndpoint({ url: '', priority: 1, name: '' })
+      onOpenChange()
+    } catch (error) {
+      console.error('Failed to add endpoint:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleEditEndpoint = (index: number) => {
@@ -50,35 +67,79 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
     onOpenChange()
   }
 
-  const handleUpdateEndpoint = () => {
+  const handleUpdateEndpoint = async () => {
     if (editingIndex !== null && newEndpoint.url && newEndpoint.name) {
-      const updatedEndpoints = [...endpoints]
-      updatedEndpoints[editingIndex] = newEndpoint
+      setIsLoading(true)
+      try {
+        const updatedEndpoints = [...endpoints]
+        updatedEndpoints[editingIndex] = newEndpoint
+        
+        // Save to server
+        await coinApi.updateRpcEndpoints(updatedEndpoints)
+        
+        setEndpoints(updatedEndpoints)
+        setPresaleSettings({
+          ...presaleSettings,
+          rpcEndpoints: updatedEndpoints
+        })
+
+        setEditingIndex(null)
+        setNewEndpoint({ url: '', priority: 1, name: '' })
+        onOpenChange()
+      } catch (error) {
+        console.error('Failed to update endpoint:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+  }
+
+  const handleDeleteEndpoint = async (index: number) => {
+    setIsLoading(true)
+    try {
+      const updatedEndpoints = endpoints.filter((_, i) => i !== index)
+      
+      // Save to server
+      await coinApi.updateRpcEndpoints(updatedEndpoints)
+      
       setEndpoints(updatedEndpoints)
       setPresaleSettings({
         ...presaleSettings,
         rpcEndpoints: updatedEndpoints
       })
-
-      setEditingIndex(null)
-      setNewEndpoint({ url: '', priority: 1, name: '' })
-      onOpenChange()
+    } catch (error) {
+      console.error('Failed to delete endpoint:', error)
+    } finally {
+      setIsLoading(false)
     }
-  }
-
-  const handleDeleteEndpoint = (index: number) => {
-    const updatedEndpoints = endpoints.filter((_, i) => i !== index)
-    setEndpoints(updatedEndpoints)
-    setPresaleSettings({
-      ...presaleSettings,
-      rpcEndpoints: updatedEndpoints
-    })
   }
 
   const handleCancel = () => {
     setEditingIndex(null)
     setNewEndpoint({ url: '', priority: 1, name: '' })
     onOpenChange()
+  }
+
+  const handleSetPrimaryRpc = async () => {
+    if (!primaryRpc.trim()) return
+    
+    setIsLoading(true)
+    try {
+      // Save to server
+      await coinApi.updatePresaleSettings({
+        ...presaleSettings,
+        rpc: primaryRpc.trim()
+      })
+      
+      setPresaleSettings({
+        ...presaleSettings,
+        rpc: primaryRpc.trim()
+      })
+    } catch (error) {
+      console.error('Failed to set primary RPC:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const getPriorityColor = (priority: number) => {
@@ -104,13 +165,41 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
           </div>
         </CardHeader>
         <CardBody className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-foreground/70">
-              Primary RPC: <code className="bg-gray-100 px-2 py-1 rounded text-xs">{presaleSettings.rpc || 'Not set'}</code>
-            </p>
-            <Button color="primary" onPress={onOpen}>
-              Add Endpoint
-            </Button>
+          <div className="space-y-4">
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-foreground/70 mb-2 block">
+                  Primary RPC
+                </label>
+                <Input
+                  placeholder="https://api.mainnet-beta.solana.com"
+                  value={primaryRpc}
+                  onChange={(e) => setPrimaryRpc(e.target.value)}
+                  className="text-foreground"
+                  classNames={{
+                    input: "text-foreground",
+                    inputWrapper: "bg-background"
+                  }}
+                />
+              </div>
+              <Button 
+                color="primary" 
+                onPress={handleSetPrimaryRpc}
+                isDisabled={!primaryRpc.trim() || isLoading}
+                isLoading={isLoading}
+              >
+                Set Primary
+              </Button>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-foreground/70">
+                Current: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs text-foreground">{presaleSettings.rpc || 'Not set'}</code>
+              </p>
+              <Button color="primary" onPress={onOpen} isDisabled={isLoading}>
+                Add Endpoint
+              </Button>
+            </div>
           </div>
 
           {endpoints.length > 0 ? (
@@ -126,7 +215,7 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
                   <TableRow key={index}>
                     <TableCell>{endpoint.name}</TableCell>
                     <TableCell>
-                      <code className="bg-gray-100 px-2 py-1 rounded text-xs">
+                      <code className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs text-foreground">
                         {endpoint.url.length > 50 ? `${endpoint.url.substring(0, 50)}...` : endpoint.url}
                       </code>
                     </TableCell>
@@ -141,6 +230,7 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
                           size="sm"
                           variant="light"
                           onPress={() => handleEditEndpoint(index)}
+                          isDisabled={isLoading}
                         >
                           Edit
                         </Button>
@@ -149,6 +239,7 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
                           color="danger"
                           variant="light"
                           onPress={() => handleDeleteEndpoint(index)}
+                          isDisabled={isLoading}
                         >
                           Delete
                         </Button>
@@ -167,7 +258,15 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
         </CardBody>
       </Card>
 
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+      <Modal classNames={{
+        base: "dark",
+        header: "dark",
+        body: "dark",
+        footer: "dark",
+        backdrop: "dark",
+        closeButton: "dark",
+        wrapper: "dark", 
+      }} isOpen={isOpen} onOpenChange={onOpenChange}>
         <ModalContent>
           {(onClose) => (
             <>
@@ -182,6 +281,10 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
                     value={newEndpoint.name}
                     onChange={(e) => setNewEndpoint({ ...newEndpoint, name: e.target.value })}
                     description="A friendly name for this endpoint"
+                    classNames={{
+                      input: "text-foreground",
+                      inputWrapper: "bg-background"
+                    }}
                   />
                   
                   <Input
@@ -190,10 +293,28 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
                     value={newEndpoint.url}
                     onChange={(e) => setNewEndpoint({ ...newEndpoint, url: e.target.value })}
                     description="The Solana RPC endpoint URL"
+                    classNames={{
+                      input: "text-foreground",
+                      inputWrapper: "bg-background"
+                    }}
                   />
                   
                   <Select
                     label="Priority"
+                    classNames={{
+                      base: 'dark text-foreground',
+                      popoverContent: 'dark',
+                      trigger: 'dark',
+                      label: 'dark',
+                      listbox: 'dark',
+                      value: 'dark text-foreground',
+                      listboxWrapper: 'dark text-white',
+                      clearButton: 'dark text-foreground',
+                      helperWrapper: 'dark text-foreground',
+                      endWrapper: 'dark text-foreground',
+                      endContent: 'dark text-foreground',
+                      spinner: 'dark text-foreground',
+                    }}
                     placeholder="Select priority"
                     selectedKeys={[newEndpoint.priority.toString()]}
                     onSelectionChange={(keys) => {
@@ -202,11 +323,11 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
                     }}
                     description="Lower numbers have higher priority"
                   >
-                    <SelectItem key="1" value="1">1 - Highest Priority</SelectItem>
-                    <SelectItem key="2" value="2">2 - High Priority</SelectItem>
-                    <SelectItem key="3" value="3">3 - Medium Priority</SelectItem>
-                    <SelectItem key="4" value="4">4 - Low Priority</SelectItem>
-                    <SelectItem key="5" value="5">5 - Lowest Priority</SelectItem>
+                    <SelectItem classNames={{ base: 'dark text-foreground'}} key="1" value="1">1 - Highest Priority</SelectItem>
+                    <SelectItem classNames={{ base: 'dark text-foreground'}} key="2" value="2">2 - High Priority</SelectItem>
+                    <SelectItem classNames={{ base: 'dark text-foreground'}} key="3" value="3">3 - Medium Priority</SelectItem>
+                    <SelectItem classNames={{ base: 'dark text-foreground'}} key="4" value="4">4 - Low Priority</SelectItem>
+                    <SelectItem classNames={{ base: 'dark text-foreground'}} key="5" value="5">5 - Lowest Priority</SelectItem>
                   </Select>
                 </div>
               </ModalBody>
@@ -217,7 +338,8 @@ export const RpcEndpointsSection: React.FC<PresaleSettingsSectionProps> = ({
                 <Button
                   color="primary"
                   onPress={editingIndex !== null ? handleUpdateEndpoint : handleAddEndpoint}
-                  isDisabled={!newEndpoint.url || !newEndpoint.name}
+                  isDisabled={!newEndpoint.url || !newEndpoint.name || isLoading}
+                  isLoading={isLoading}
                 >
                   {editingIndex !== null ? 'Update' : 'Add'} Endpoint
                 </Button>
