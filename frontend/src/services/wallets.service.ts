@@ -17,10 +17,6 @@ import { api } from '@/app/api'
 
 class Wallets {
   static isConnected: boolean = false
-  // static connection: Connection = new Connection(
-  //   'https://snowy-sleek-ensemble.solana-devnet.quiknode.pro/ebfc31a05c0b5b2d3fea04c3abe6692bc49031af/'
-  // )
-
   static connection: Connection = new Connection(clusterApiUrl('mainnet-beta'))
 
   static async init() {
@@ -129,21 +125,22 @@ class Wallets {
     useWalletStore.setState({ isConnected: false })
   }
 
-  static async airdrop(lamports: number, address: string): Promise<string> {
-    try {
-      const publicKey = new PublicKey(address)
-      const signature = await this.connection.requestAirdrop(publicKey, lamports)
+  // Airdrop is not needed anymore. Just for tests
+  // static async airdrop(lamports: number, address: string): Promise<string> {
+  //   try {
+  //     const publicKey = new PublicKey(address)
+  //     const signature = await this.connection.requestAirdrop(publicKey, lamports)
 
-      await this.confirmTransaction(signature)
-      await this.getBalance(address)
+  //     await this.confirmTransaction(signature)
+  //     await this.getBalance(address)
 
-      console.log(`Airdropped ${lamports} lamports to ${publicKey.toBase58()}`)
-      return signature
-    } catch (e) {
-      console.error('Airdrop failed:', e)
-      throw e
-    }
-  }
+  //     console.log(`Airdropped ${lamports} lamports to ${publicKey.toBase58()}`)
+  //     return signature
+  //   } catch (e) {
+  //     console.error('Airdrop failed:', e)
+  //     throw e
+  //   }
+  // }
 
   private static async sendSolForPurchase(
     toPublicKey: string,

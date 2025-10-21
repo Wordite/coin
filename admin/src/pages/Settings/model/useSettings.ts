@@ -27,6 +27,8 @@ export const useSettings = () => {
     minBuyAmount: 100,
     maxBuyAmount: 1000000,
     mintAddress: '',
+    rpc: '',
+    rpcEndpoints: [],
   })
   
   const [availableStages, setAvailableStages] = useState<number[]>([1, 2, 3, 4, 5])

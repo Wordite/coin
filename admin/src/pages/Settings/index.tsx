@@ -7,6 +7,7 @@ import {
   PresaleSettingsSection,
   ExchangeRatesSection,
   CoinSettingsSection,
+  RpcEndpointsSection,
   WalletModal,
   DeleteWalletModal,
   useSettings
@@ -141,6 +142,12 @@ const Settings = () => {
         setPresaleSettings={setPresaleSettings}
         availableStages={availableStages}
         setAvailableStages={setAvailableStages}
+      />
+
+      {/* RPC Endpoints */}
+      <RpcEndpointsSection
+        presaleSettings={presaleSettings}
+        setPresaleSettings={setPresaleSettings}
       />
 
           {/* Vault Root Wallet Management */}

@@ -52,7 +52,7 @@ export class UserController {
   }
 
   @Post('purchase')
-  @Auth({ public: true, fingerprint: true, antiSpam: false })
+  @Auth({ public: true, fingerprint: true, antiSpam: true })
   async purchaseCoins(@Body() purchaseCoinsDto: PurchaseCoinsDto, @Req() req: Request) {
     console.log('purhase endpoint')
     return await this.user.purchaseCoins(purchaseCoinsDto.address, purchaseCoinsDto, req)

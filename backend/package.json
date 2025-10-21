@@ -44,6 +44,7 @@
     "@types/sharp": "^0.31.1",
     "@types/uuid": "^10.0.0",
     "bcrypt": "^6.0.0",
+    "bottleneck": "^2.0.1",
     "cache-manager-redis-store": "^3.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",

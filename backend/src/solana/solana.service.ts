@@ -1,30 +1,494 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { Connection, clusterApiUrl, ParsedTransactionWithMeta } from '@solana/web3.js'
+import {
+  Connection,
+  clusterApiUrl,
+  ParsedTransactionWithMeta,
+  SignatureResult,
+  RpcResponseAndContext,
+  PublicKey,
+  Transaction,
+  LAMPORTS_PER_SOL,
+  Keypair,
+} from '@solana/web3.js'
+import { CoinService } from 'src/coin/coin.service'
 import { PrismaService } from 'src/prisma/prisma.service'
+import {
+  createTransferInstruction,
+  createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddress,
+} from '@solana/spl-token'
+import { WalletService } from 'src/wallet/wallet.service'
+import { RedisService } from 'src/redis/redis.service'
+import Bottleneck from 'bottleneck'
+import { makeProxyConnection } from './proxy-connection'
+import { EndpointManager, RpcEndpoint } from './endpoint-manager'
+
 
 @Injectable()
 export class SolanaService {
-    connection: Connection
+  private proxyConnection: Connection
+  private readonly fallbackConnection: Connection = new Connection(clusterApiUrl('mainnet-beta'))
+  private _resolveInitialized!: () => void
+  private logger = new Logger(SolanaService.name)
 
-    constructor(private readonly prisma: PrismaService, private readonly config: ConfigService) {
-        const isProductuion = this.config.get('NODE_ENV') === 'production'
-        const rpcUrl = clusterApiUrl('mainnet-beta')
-        // const rpcUrl = this.config.get('SOLANA_RPC_URL') || clusterApiUrl(isProductuion ? 'mainnet-beta' : 'devnet')
+  private readLimiter: Bottleneck
+  private writeLimiter: Bottleneck
+  private endpointManager: EndpointManager
+  private connections: Map<string, Connection> = new Map()
+  private proxyConnections: Map<string, Connection> = new Map()
 
-        this.connection = new Connection(rpcUrl)
+  private isInitialized = new Promise<void>((res) => {
+    this._resolveInitialized = res
+  })
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+    private readonly coin: CoinService,
+    private readonly wallet: WalletService,
+    private readonly redis: RedisService
+  ) {
+    this.initializeService()
+  }
+
+  private async initializeService(): Promise<void> {
+    try {
+      // Get rate limits and endpoints from database
+      const [rateLimits, endpoints] = await Promise.all([
+        this.coin.getRateLimits(),
+        this.coin.getRpcEndpoints(),
+      ])
+
+      // Create Redis-backed limiters
+      this.readLimiter = new Bottleneck({
+        id: 'solana-read-limiter',
+        datastore: 'ioredis',
+        clientOptions: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD,
+        },
+        reservoir: rateLimits.readLimit,
+        reservoirRefreshAmount: rateLimits.readLimit,
+        reservoirRefreshInterval: 1000,
+        maxConcurrent: Math.min(rateLimits.readLimit, 10),
+        minTime: Math.floor(1000 / rateLimits.readLimit),
+      })
+
+      this.writeLimiter = new Bottleneck({
+        id: 'solana-write-limiter',
+        datastore: 'ioredis',
+        clientOptions: {
+          host: process.env.REDIS_HOST || 'localhost',
+          port: parseInt(process.env.REDIS_PORT || '6379'),
+          password: process.env.REDIS_PASSWORD,
+        },
+        reservoir: rateLimits.writeLimit,
+        reservoirRefreshAmount: rateLimits.writeLimit,
+        reservoirRefreshInterval: 1000,
+        maxConcurrent: Math.min(rateLimits.writeLimit, 3),
+        minTime: Math.floor(1000 / rateLimits.writeLimit),
+      })
+
+      // Initialize endpoint manager
+      this.endpointManager = new EndpointManager(endpoints)
+
+      // Create connections for each endpoint
+      for (const endpoint of endpoints) {
+        const connection = new Connection(endpoint.url)
+        this.connections.set(endpoint.url, connection)
+
+        // Create proxy connection with rate limiting
+        const proxyConnection = makeProxyConnection(connection, {
+          readLimiter: this.readLimiter,
+          writeLimiter: this.writeLimiter,
+        })
+        this.proxyConnections.set(endpoint.url, proxyConnection)
+      }
+
+      // Set the primary proxy connection
+      const primaryEndpoint = this.endpointManager.getNextEndpoint()
+      if (primaryEndpoint) {
+        this.proxyConnection = this.proxyConnections.get(primaryEndpoint.url)!
+      } else {
+        // Fallback to public RPC with rate limiting
+        const fallbackProxy = makeProxyConnection(this.fallbackConnection, {
+          readLimiter: this.readLimiter,
+          writeLimiter: this.writeLimiter,
+        })
+        this.proxyConnection = fallbackProxy
+      }
+
+      this._resolveInitialized()
+      this.logger.log(`SolanaService initialized with ${endpoints.length} endpoints and rate limits: ${rateLimits.readLimit} read/s, ${rateLimits.writeLimit} write/s`)
+    } catch (error) {
+      this.logger.error('Failed to initialize SolanaService:', error)
+      // Fallback to public RPC
+      this.proxyConnection = this.fallbackConnection
+      this._resolveInitialized()
+    }
+  }
+
+  private async executeWithRetry<T>(
+    operation: (conn: Connection) => Promise<T>,
+    maxRetries: number = 3
+  ): Promise<T> {
+    let lastError: any
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const endpoint = this.endpointManager.getNextEndpoint()
+        if (!endpoint) {
+          throw new Error('No healthy endpoints available')
+        }
+
+        const connection = this.proxyConnections.get(endpoint.url)
+        if (!connection) {
+          throw new Error(`No connection found for endpoint: ${endpoint.url}`)
+        }
+
+        const result = await operation(connection)
+        
+        // Mark success
+        this.endpointManager.markSuccess(endpoint)
+        return result
+      } catch (error) {
+        lastError = error
+        
+        // Mark failure if we have endpoint info
+        const endpoint = this.endpointManager.getNextEndpoint()
+        if (endpoint) {
+          this.endpointManager.markFailure(endpoint, error)
+        }
+
+        this.logger.warn(`Attempt ${attempt}/${maxRetries} failed:`, error.message)
+
+        if (attempt === maxRetries) {
+          break
+        }
+
+        // Exponential backoff
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
     }
 
-    getTransactionData(signature: string): Promise<ParsedTransactionWithMeta | null> {
-        const transaction = this.connection.getParsedTransaction(signature, {
-            commitment: 'confirmed',
-            maxSupportedTransactionVersion: 0,
-        }).catch(() => null)
-
-        return transaction
+    // If all endpoints failed, try fallback
+    try {
+      const fallbackProxy = makeProxyConnection(this.fallbackConnection, {
+        readLimiter: this.readLimiter,
+        writeLimiter: this.writeLimiter,
+      })
+      return await operation(fallbackProxy)
+    } catch (fallbackError) {
+      this.logger.error('All endpoints and fallback failed:', fallbackError)
+      throw lastError || fallbackError
     }
+  }
 
-    getConnection(): Connection {
-        return this.connection
+  getTransactionData(signature: string): Promise<ParsedTransactionWithMeta | null> {
+    return this.executeWithRetry(conn =>
+      conn.getParsedTransaction(signature, {
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0,
+      })
+    ).catch(() => null)
+  }
+
+  getConnection(): Connection {
+    return this.proxyConnection ?? this.fallbackConnection
+  }
+
+  async sendSplToken(
+    toPublicKey: string,
+    amount: number | string, // human-readable amount (e.g. "1.23" или 1.23)
+    fromAddress: string, // sender public key (string)
+    mintParam?: string | PublicKey,
+    connectionParam?: Connection
+  ): Promise<string> {
+    const conn = connectionParam ?? this.proxyConnection ?? this.fallbackConnection
+
+    try {
+      // --- resolve mint
+      const mintAddrRaw = mintParam
+        ? typeof mintParam === 'string'
+          ? new PublicKey(mintParam)
+          : mintParam
+        : await this.coin.getMintAddress()
+      const mint =
+        typeof mintAddrRaw === 'string' ? new PublicKey(mintAddrRaw) : (mintAddrRaw as PublicKey)
+
+      // --- fetch decimals
+      let decimals = 0
+      try {
+        const supply = await this.executeWithRetry(conn => conn.getTokenSupply(mint))
+        decimals = supply?.value?.decimals ?? 0
+      } catch (err) {
+        this.logger.warn('Failed to fetch token supply/decimals, defaulting to 0', err)
+        decimals = 0
+      }
+
+      // --- convert amount to raw BigInt
+      const rawAmount = this.amountToRaw(amount, decimals)
+      if (rawAmount <= 0n) throw new Error('Amount must be positive')
+
+      // --- resolve keypair (local signer)
+      const keypair: Keypair = await this.wallet.getKeypair()
+      const senderPub = keypair.publicKey
+      const sender = new PublicKey(fromAddress)
+
+      if (!sender.equals(senderPub)) {
+        this.logger.warn('fromAddress does not equal wallet.getKeypair().publicKey')
+      }
+
+      const receiver = new PublicKey(toPublicKey)
+
+      // --- ATA addresses
+      const senderTokenAccount = await getAssociatedTokenAddress(mint, sender)
+      const receiverTokenAccount = await getAssociatedTokenAddress(mint, receiver)
+
+      // --- check sender token account / balance
+      let senderBalanceRaw = 0n
+      try {
+        const balanceResp = await this.executeWithRetry(conn => conn.getTokenAccountBalance(senderTokenAccount))
+        senderBalanceRaw = BigInt(balanceResp?.value?.amount ?? '0')
+      } catch (err) {
+        // if account doesn't exist or failed, treat as zero
+        senderBalanceRaw = 0n
+      }
+
+      if (senderBalanceRaw < rawAmount) {
+        throw new Error('Insufficient token balance')
+      }
+
+      // --- build instructions: create receiver ATA if missing
+      const instructions: any[] = []
+      const receiverInfo = await this.executeWithRetry(conn => conn.getAccountInfo(receiverTokenAccount))
+      if (!receiverInfo) {
+        instructions.push(
+          createAssociatedTokenAccountInstruction(
+            sender, // payer
+            receiverTokenAccount,
+            receiver,
+            mint
+          )
+        )
+      }
+
+      // transfer instruction; createTransferInstruction accepts BigInt in latest versions
+      instructions.push(
+        createTransferInstruction(
+          senderTokenAccount,
+          receiverTokenAccount,
+          sender,
+          rawAmount, // BigInt
+          []
+        )
+      )
+
+      // --- prepare transaction
+      const tx = new Transaction()
+      tx.add(...instructions)
+
+      const { blockhash, lastValidBlockHeight } = await this.getBlockhashWithRetry()
+      tx.recentBlockhash = blockhash
+      tx.feePayer = sender
+
+      // --- signer: local keypair
+      tx.sign(keypair) // signs with keypair; if need multiple signers, add here
+
+      // --- send raw tx
+      const signedRaw = tx.serialize()
+      const signature = await this.executeWithRetry(conn => conn.sendRawTransaction(signedRaw))
+
+      this.logger.log('Transaction signature:', signature)
+
+      // --- confirm (finalized)
+      await this.executeWithRetry(conn => conn.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'finalized'))
+
+      this.logger.log('Transaction confirmed', signature)
+      return signature
+    } catch (err) {
+      this.logger.error('Failed to send SPL token:', err)
+      throw err
     }
+  }
+
+  private async confirmTransaction(
+    signature: string
+  ): Promise<RpcResponseAndContext<SignatureResult> | null> {
+    try {
+      const confirmation = await this.executeWithRetry(conn => 
+        conn.confirmTransaction(signature, 'confirmed')
+      )
+      return confirmation
+    } catch (e) {
+      this.logger.warn(
+        `Transaction confirmation failed, but transaction may still be processed:`,
+        e
+      )
+      return null
+    }
+  }
+
+  private async getBlockhashWithRetry(
+    maxRetries: number = 3,
+    delay: number = 1000
+  ): Promise<{ blockhash: string; lastValidBlockHeight: number }> {
+    return this.executeWithRetry(conn => 
+      conn.getLatestBlockhash('finalized')
+    )
+  }
+
+  async getBalance(address?: string): Promise<{ sol: number; usdt: number; coin: number }> {
+    if (!address) return { sol: 0, usdt: 0, coin: 0 }
+    await this.isInitialized
+
+    const [solBalance, usdtBalance, coinBalance] = await Promise.all([
+      this.getSolBalance(address),
+      this.getUsdtBalance(address),
+      this.getCoinBalance(address),
+    ])
+
+    return { sol: solBalance, usdt: usdtBalance, coin: coinBalance }
+  }
+
+  private async getSolBalance(address: string): Promise<number> {
+    try {
+      const pub = new PublicKey(address)
+      const lamports = await this.executeWithRetry(conn => 
+        conn.getBalance(pub, 'confirmed')
+      )
+
+      return lamports / LAMPORTS_PER_SOL
+    } catch (e) {
+      this.logger.error(`getSolBalance failed for ${address}`, e as any)
+      return 0
+    }
+  }
+
+  private async getParsedTokenBalanceByMint(address: string, mint: PublicKey): Promise<number> {
+    try {
+      const owner = new PublicKey(address)
+
+      const resp = await this.executeWithRetry(conn => 
+        conn.getParsedTokenAccountsByOwner(owner, { mint })
+      )
+
+      if (!resp || !resp.value || resp.value.length === 0) return 0
+
+      let total = 0
+      for (const item of resp.value) {
+        try {
+          const parsed = (item.account.data as any).parsed
+          const tokenInfo = parsed?.info?.tokenAmount
+          if (!tokenInfo) continue
+
+          // prefer uiAmount if available
+          if (typeof tokenInfo.uiAmount === 'number' && tokenInfo.uiAmount !== null) {
+            total += tokenInfo.uiAmount
+          } else {
+            // fallback: amount is integer string, decimals available
+            const amountRaw = Number(tokenInfo.amount || 0)
+            const decimals = Number(tokenInfo.decimals || 0)
+            if (decimals >= 0) {
+              total += amountRaw / Math.pow(10, decimals)
+            } else {
+              total += amountRaw
+            }
+          }
+        } catch (inner) {
+          // ignore particular account parse errors
+          this.logger.warn('Failed to parse token account', inner)
+        }
+      }
+
+      return total
+    } catch (e) {
+      this.logger.error(
+        `getParsedTokenBalanceByMint failed for ${address} mint ${mint.toBase58()}`,
+        e as any
+      )
+      return 0
+    }
+  }
+
+  // --- USDT balance (reads mint from config or fallback to canonical mainnet mint)
+  private async getUsdtBalance(address: string): Promise<number> {
+    try {
+      const usdtMintStr =
+        this.config.get<string>('USDT_MINT') || 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' // official USDT mint on Solana mainnet
+      const usdtMint = new PublicKey(usdtMintStr)
+      return await this.getParsedTokenBalanceByMint(address, usdtMint)
+    } catch (e) {
+      this.logger.error(`getUsdtBalance failed for ${address}`, e as any)
+      return 0
+    }
+  }
+
+  // --- coin SPL token balance (mint from coin service)
+  private async getCoinBalance(address: string): Promise<number> {
+    try {
+      const mintAddress = await this.coin.getMintAddress()
+      const mint = typeof mintAddress === 'string' ? new PublicKey(mintAddress) : mintAddress
+
+      return await this.getParsedTokenBalanceByMint(address, mint)
+    } catch (e) {
+      this.logger.error(`getCoinBalance failed for ${address}`, e as any)
+      return 0
+    }
+  }
+
+  /**
+   * Get endpoint health status
+   */
+  getEndpointHealth() {
+    return this.endpointManager.getHealthStatus()
+  }
+
+  /**
+   * Get endpoint statistics
+   */
+  getEndpointStats() {
+    return this.endpointManager.getStats()
+  }
+
+  /**
+   * Reset all endpoints to healthy state
+   */
+  resetEndpoints() {
+    this.endpointManager.resetAll()
+    this.logger.log('All endpoints reset to healthy state')
+  }
+
+  /**
+   * Get current rate limiter status
+   */
+  async getLimiterStatus() {
+    return {
+      read: {
+        queued: this.readLimiter.queued(),
+        running: this.readLimiter.running(),
+      },
+      write: {
+        queued: this.writeLimiter.queued(),
+        running: this.writeLimiter.running(),
+      },
+    }
+  }
+
+  /**
+   * Convert human-readable amount to raw BigInt
+   */
+  private amountToRaw(amount: number | string, decimals: number): bigint {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+    if (isNaN(numAmount) || numAmount < 0) {
+      throw new Error('Invalid amount')
+    }
+    
+    const multiplier = Math.pow(10, decimals)
+    const rawAmount = Math.floor(numAmount * multiplier)
+    return BigInt(rawAmount)
+  }
 }

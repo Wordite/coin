@@ -7,6 +7,7 @@ import { SolanaService } from 'src/solana/solana.service'
 import { WalletService } from 'src/wallet/wallet.service'
 import { AntiSpamService } from 'src/anti-spam/anti-spam.service'
 import { SettingsService } from 'src/settings/settings.service'
+import { CoinService } from 'src/coin/coin.service'
 import { Request } from 'express'
 
 // ===== INTERFACES FOR USERS MANAGEMENT =====
@@ -54,7 +55,8 @@ export class UserService {
     private solanaService: SolanaService,
     private walletService: WalletService,
     private antiSpamService: AntiSpamService,
-    private settingsService: SettingsService
+    private settingsService: SettingsService,
+    private coinService: CoinService
   ) {}
 
   private readonly logger = new Logger(UserService.name)
@@ -190,28 +192,15 @@ export class UserService {
   }
 
   async purchaseCoins(address: string, transaction: any, req: Request): Promise<void> {
+    this.logger.log(`[PURCHASE START] Address: ${address}, Signature: ${transaction.signature}`)
+    
     try {
-      console.log(`Purchasing coins for address: ${address}`) 
-      const rootWalletAddress = await this.walletService.getPublicKey()
-      const txData = await this.solanaService.getTransactionData(transaction.signature)
+      // 1. Check transaction through WalletService
+      const txCheck = await this.walletService.checkIsReceived(transaction.signature)
+      this.logger.log(`[TX CHECK] Exists: ${txCheck.exists}, Success: ${txCheck.isSuccessful}, Finalized: ${txCheck.isFinalized}`)
 
-      this.logger.log(`Transaction data: ${JSON.stringify(txData)}`)
-
-      // Дополнительная проверка статуса транзакции
-      const connection = this.solanaService.getConnection()
-      const status = await connection.getSignatureStatuses([transaction.signature], { searchTransactionHistory: true })
-      const info = status && status.value[0]
-      const errFromStatus = info?.err
-      const confirmationStatus = info?.confirmationStatus
-      const errFromTxData = txData?.meta?.err
-      const effectiveErr = errFromTxData !== undefined ? errFromTxData : errFromStatus
-
-      this.logger.log(
-        `Transaction status check: errFromTxData=${JSON.stringify(errFromTxData)}, errFromStatus=${JSON.stringify(errFromStatus)}, confirmationStatus=${confirmationStatus}`
-      )
-
-      // Если ни txData, ни status не дали результата - транзакция не найдена
-      if (!txData && !info) {
+      // If transaction doesn't exist, add spam points and throw error
+      if (!txCheck.exists) {
         if (req) {
           const key = req.ip || 'unknown'
           await this.antiSpamService.addPoints(key, 20, {
@@ -226,15 +215,15 @@ export class UserService {
         throw new BadRequestException('Transaction not found')
       }
 
-      // Проверяем наличие ошибок, используя доступные данные
-      if (effectiveErr !== null && effectiveErr !== undefined) {
+      // If transaction failed, add spam points and throw error
+      if (!txCheck.isSuccessful) {
         if (req) {
           const key = req.ip || 'unknown'
           await this.antiSpamService.addPoints(key, 30, {
             reason: 'transaction_rejected',
             address,
             signature: transaction.signature,
-            error: effectiveErr,
+            error: txCheck.error,
             ip: req.ip,
             ua: req.get?.('user-agent'),
             timestamp: Date.now()
@@ -243,15 +232,14 @@ export class UserService {
         throw new BadRequestException('Transaction was rejected')
       }
 
-      // Если есть информация о статусе, убеждаемся, что транзакция финализирована
-      if (info && confirmationStatus !== 'finalized') {
+      // If transaction not finalized, add spam points and throw error
+      if (!txCheck.isFinalized) {
         if (req) {
           const key = req.ip || 'unknown'
           await this.antiSpamService.addPoints(key, 15, {
             reason: 'transaction_not_finalized',
             address,
             signature: transaction.signature,
-            confirmationStatus,
             ip: req.ip,
             ua: req.get?.('user-agent'),
             timestamp: Date.now()
@@ -260,6 +248,8 @@ export class UserService {
         throw new BadRequestException('Transaction is not finalized yet')
       }
 
+      // 2. Get transaction data for additional validation
+      const txData = await this.solanaService.getTransactionData(transaction.signature)
       if (!txData) {
         if (req) {
           const key = req.ip || 'unknown'
@@ -275,7 +265,9 @@ export class UserService {
         throw new BadRequestException('Transaction details are not available yet. Please try again later')
       }
 
-      this.logger.log(`Root wallet address: ${rootWalletAddress}`)
+      // 3. Validate transaction is sent to our wallet
+      const rootWalletAddress = await this.walletService.getPublicKey()
+      this.logger.log(`[ROOT WALLET] Address: ${rootWalletAddress}`)
 
       const isSentToOurWallet = txData.meta?.postTokenBalances?.some(
         (balance: any) => balance.owner === rootWalletAddress
@@ -298,6 +290,7 @@ export class UserService {
         throw new BadRequestException('Transaction is not sent to our wallet')
       }
       
+      // 4. Validate sender address
       const senderAddress = txData.transaction.message.accountKeys[0]?.pubkey.toBase58()
       if (senderAddress !== address) {
         if (req) {
@@ -314,32 +307,39 @@ export class UserService {
         }
         throw new BadRequestException('Transaction sender does not match provided address')
       }
-      
-      const isSuccessful = (effectiveErr === null || effectiveErr === undefined) && (info ? confirmationStatus === 'finalized' : true)
-      
+
+      // 5. Get settings and rates
       const settings = await this.settingsService.getSettings()
+      const presaleSettings = await this.coinService.getPresaleSettings()
       const rate = transaction.type === 'SOL' 
         ? (settings?.solToCoinRate || 0) 
         : (settings?.usdtToCoinRate || 0)
       
-      const coinsPurchased = isSuccessful 
-        ? Math.floor((transaction.amount || 0) * rate) 
-        : 0
+      this.logger.log(`[RATE] Type: ${transaction.type}, Rate: ${rate}`)
+
+      // 6. Check min/max amounts
+      const purchaseAmount = transaction.amount || 0
+      if (purchaseAmount < presaleSettings.minBuyAmount) {
+        throw new BadRequestException(`Minimum purchase amount is ${presaleSettings.minBuyAmount}`)
+      }
       
-      const newTransaction: Transaction = {
-        id: transaction.signature,
-        type: transaction.type || 'SOL',
-        amount: transaction.amount || 0,
-        rate: rate,
-        coinsPurchased: coinsPurchased,
-        timestamp: new Date().toISOString(),
-        txHash: transaction.signature,
-        isReceived: false,
-        isSuccessful
+      let actualPurchaseAmount = purchaseAmount
+      if (purchaseAmount > presaleSettings.maxBuyAmount) {
+        actualPurchaseAmount = presaleSettings.maxBuyAmount
+        this.logger.warn(`[AMOUNT CAP] Requested: ${purchaseAmount}, Capped to: ${actualPurchaseAmount}`)
       }
 
-      console.log('newTransaction', newTransaction)
-      
+      // 7. Calculate coins to purchase
+      const coinsToPurchase = Math.floor(actualPurchaseAmount * rate)
+      this.logger.log(`[CALC] Amount: ${actualPurchaseAmount}, Coins: ${coinsToPurchase}`)
+
+      // 8. Check available amount
+      const availableAmount = await this.coinService.getCurrentAvailableAmount()
+      if (coinsToPurchase > availableAmount) {
+        throw new BadRequestException(`Not enough coins available. Available: ${availableAmount}, Requested: ${coinsToPurchase}`)
+      }
+
+      // 9. Find user
       const user = await this.prisma.user.findFirst({
         where: { walletAddress: address }
       })
@@ -358,7 +358,23 @@ export class UserService {
         }
         throw new NotFoundException('User not found')
       }
-      
+
+      // 10. Create transaction record
+      const newTransaction: Transaction = {
+        id: transaction.signature,
+        type: transaction.type || 'SOL',
+        amount: actualPurchaseAmount,
+        rate: rate,
+        coinsPurchased: coinsToPurchase,
+        timestamp: new Date().toISOString(),
+        txHash: transaction.signature,
+        isReceived: false,
+        isSuccessful: txCheck.isSuccessful && txCheck.isFinalized
+      }
+
+      this.logger.log(`[NEW TRANSACTION] ${JSON.stringify(newTransaction)}`)
+
+      // 11. Save transaction to user
       const currentTransactions = user.transactions ? JSON.parse(user.transactions as string) : []
       const updatedTransactions = [...currentTransactions, newTransaction]
       
@@ -368,11 +384,17 @@ export class UserService {
           transactions: JSON.stringify(updatedTransactions)
         }
       })
+
+      // 12. If successful, update soldAmount
+      if (txCheck.isSuccessful && txCheck.isFinalized) {
+        await this.coinService.updateSoldAmount(coinsToPurchase)
+        this.logger.log(`[SOLD UPDATED] Added ${coinsToPurchase} to soldAmount`)
+      }
       
-      this.logger.log(`Transaction ${transaction.signature} processed for user ${address}`)
+      this.logger.log(`[PURCHASE COMPLETE] User: ${address}, Coins: ${coinsToPurchase}`)
       
     } catch (error) {
-      this.logger.error(`Error processing transaction: ${error.message}`)
+      this.logger.error(`[PURCHASE ERROR] Address: ${address}, Error: ${error.message}`)
       
       if (req && error instanceof BadRequestException) {
         const key = req.ip || 'unknown'

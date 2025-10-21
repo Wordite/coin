@@ -11,6 +11,8 @@ export interface CoinPresaleSettings {
   minBuyAmount: number
   maxBuyAmount: number
   mintAddress?: string
+  rpc?: string
+  rpcEndpoints?: Array<{ url: string; priority: number; name: string }>
 }
 
 class CoinApiService {
