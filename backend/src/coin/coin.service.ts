@@ -132,7 +132,7 @@ export class CoinService {
           maxBuyAmount: settings.maxBuyAmount ?? existingCoin.maxBuyAmount,
           mintAddress: settings.mintAddress ?? existingCoin.mintAddress,
           rpc: settings.rpc ?? existingCoin.rpc,
-          rpcEndpoints: settings.rpcEndpoints ?? existingCoin.rpcEndpoints,
+          rpcEndpoints: settings.rpcEndpoints ? JSON.parse(JSON.stringify(settings.rpcEndpoints)) : existingCoin.rpcEndpoints,
         },
       })
 
@@ -324,7 +324,7 @@ export class CoinService {
     await this.prisma.coin.update({
       where: { id: coin.id },
       data: {
-        rpcEndpoints: endpoints,
+        rpcEndpoints: JSON.parse(JSON.stringify(endpoints)),
       },
     })
 
