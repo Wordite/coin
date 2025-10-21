@@ -131,6 +131,8 @@ export class CoinService {
           minBuyAmount: settings.minBuyAmount ?? existingCoin.minBuyAmount,
           maxBuyAmount: settings.maxBuyAmount ?? existingCoin.maxBuyAmount,
           mintAddress: settings.mintAddress ?? existingCoin.mintAddress,
+          rpc: settings.rpc ?? existingCoin.rpc,
+          rpcEndpoints: settings.rpcEndpoints ?? existingCoin.rpcEndpoints,
         },
       })
 
@@ -145,6 +147,8 @@ export class CoinService {
         minBuyAmount: updated.minBuyAmount,
         maxBuyAmount: updated.maxBuyAmount,
         mintAddress: updated.mintAddress || undefined,
+        rpc: updated.rpc,
+        rpcEndpoints: updated.rpcEndpoints as Array<{ url: string; priority: number; name: string }> || [],
       }
     } else {
       // Create new coin settings
@@ -325,8 +329,12 @@ export class CoinService {
     })
 
     // Invalidate cache
-    await this.redis.del('rpc_endpoints')
+    await this.redis.del('presale_settings')
 
     return endpoints
+  }
+
+  async clearPresaleSettingsCache(): Promise<void> {
+    await this.redis.del('presale_settings')
   }
 }

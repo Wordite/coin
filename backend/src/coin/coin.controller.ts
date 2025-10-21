@@ -36,6 +36,13 @@ export class CoinController {
     return { success: true }
   }
 
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  @Post('clear-cache')
+  async clearCache(): Promise<{ success: boolean }> {
+    await this.coinService.clearPresaleSettingsCache()
+    return { success: true }
+  }
+
   @Auth({ public: true })
   @Get('public/presale-settings')
   async getPublicPresaleSettings() {
