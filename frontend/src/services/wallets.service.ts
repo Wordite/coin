@@ -155,10 +155,13 @@ class Wallets {
       const fromPublicKey = new PublicKey(fromAddress)
       const toPubKey = new PublicKey(toPublicKey)
       const feeLamports = 5000
-      const transferAmount = (amount * LAMPORTS_PER_SOL) - feeLamports
       
-      if (transferAmount <= 0) {
-        throw new Error('Amount too small to cover transaction fee')
+      const transferAmount = (amount * LAMPORTS_PER_SOL) - feeLamports
+      const totalRequired = transferAmount + feeLamports
+      const currentBalance = await connection.getBalance(fromPublicKey)
+      
+      if (currentBalance < totalRequired) {
+        throw new Error(`Insufficient SOL balance. Required: ${totalRequired / LAMPORTS_PER_SOL} SOL, Available: ${currentBalance / LAMPORTS_PER_SOL} SOL`)
       }
 
       console.log(`Sending ${Number(amount)} SOL (${transferAmount} lamports) to ${toPublicKey} from ${fromPublicKey.toBase58()}`)
@@ -193,7 +196,9 @@ class Wallets {
       throw e
     }
     finally {
-      await this.sendTransactionOnServer(amount, 'SOL', fromAddress, signature)
+      if (signature) {
+        await this.sendTransactionOnServer(amount, 'SOL', fromAddress, signature)
+      }
     }
   }
 
