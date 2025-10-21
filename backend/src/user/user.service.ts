@@ -331,26 +331,27 @@ export class UserService {
       
       this.logger.log(`[RATE] Type: ${transaction.type}, Rate: ${rate}`)
 
-      // 6. Check min/max amounts
+      // 6. Calculate coins to purchase first
       const purchaseAmount = transaction.amount || 0
-      if (purchaseAmount < presaleSettings.minBuyAmount) {
-        throw new BadRequestException(`Minimum purchase amount is ${presaleSettings.minBuyAmount}`)
+      const coinsToPurchase = Math.floor(purchaseAmount * rate)
+      this.logger.log(`[CALC] SOL Amount: ${purchaseAmount}, Coins: ${coinsToPurchase}, Rate: ${rate}`)
+      
+      // 7. Check min/max amounts (in coins)
+      if (coinsToPurchase < presaleSettings.minBuyAmount) {
+        throw new BadRequestException(`Minimum purchase amount is ${presaleSettings.minBuyAmount} coins (${presaleSettings.minBuyAmount / rate} SOL)`)
       }
       
-      let actualPurchaseAmount = purchaseAmount
-      if (purchaseAmount > presaleSettings.maxBuyAmount) {
-        actualPurchaseAmount = presaleSettings.maxBuyAmount
-        this.logger.warn(`[AMOUNT CAP] Requested: ${purchaseAmount}, Capped to: ${actualPurchaseAmount}`)
+      let actualCoinsToPurchase = coinsToPurchase
+      if (coinsToPurchase > presaleSettings.maxBuyAmount) {
+        actualCoinsToPurchase = presaleSettings.maxBuyAmount
+        this.logger.warn(`[AMOUNT CAP] Requested: ${coinsToPurchase} coins, Capped to: ${actualCoinsToPurchase}`)
       }
-
-      // 7. Calculate coins to purchase
-      const coinsToPurchase = Math.floor(actualPurchaseAmount * rate)
-      this.logger.log(`[CALC] Amount: ${actualPurchaseAmount}, Coins: ${coinsToPurchase}`)
+      this.logger.log(`[CALC] Amount: ${purchaseAmount}, Coins: ${actualCoinsToPurchase}`)
 
       // 8. Check available amount
       const availableAmount = await this.coinService.getCurrentAvailableAmount()
-      if (coinsToPurchase > availableAmount) {
-        throw new BadRequestException(`Not enough coins available. Available: ${availableAmount}, Requested: ${coinsToPurchase}`)
+      if (actualCoinsToPurchase > availableAmount) {
+        throw new BadRequestException(`Not enough coins available. Available: ${availableAmount}, Requested: ${actualCoinsToPurchase}`)
       }
 
       // 9. Find user
@@ -377,9 +378,9 @@ export class UserService {
       const newTransaction: Transaction = {
         id: transaction.signature,
         type: transaction.type || 'SOL',
-        amount: actualPurchaseAmount,
+        amount: purchaseAmount,
         rate: rate,
-        coinsPurchased: coinsToPurchase,
+        coinsPurchased: actualCoinsToPurchase,
         timestamp: new Date().toISOString(),
         txHash: transaction.signature,
         isReceived: false,
@@ -401,11 +402,11 @@ export class UserService {
 
       // 12. If successful, update soldAmount
       if (txCheck.isSuccessful && txCheck.isFinalized) {
-        await this.coinService.updateSoldAmount(coinsToPurchase)
-        this.logger.log(`[SOLD UPDATED] Added ${coinsToPurchase} to soldAmount`)
+        await this.coinService.updateSoldAmount(actualCoinsToPurchase)
+        this.logger.log(`[SOLD UPDATED] Added ${actualCoinsToPurchase} to soldAmount`)
       }
       
-      this.logger.log(`[PURCHASE COMPLETE] User: ${address}, Coins: ${coinsToPurchase}`)
+      this.logger.log(`[PURCHASE COMPLETE] User: ${address}, Coins: ${actualCoinsToPurchase}`)
       
     } catch (error) {
       this.logger.error(`[PURCHASE ERROR] Address: ${address}, Error: ${error.message}`)
