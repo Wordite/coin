@@ -15,6 +15,8 @@ export interface CoinPresaleSettings {
   minBuyAmount: number
   maxBuyAmount: number
   mintAddress?: string
+  rpc?: string
+  rpcEndpoints?: Array<{ url: string; priority: number; name: string }>
 }
 
 @Injectable()
@@ -98,6 +100,8 @@ export class CoinService {
       minBuyAmount: coin.minBuyAmount,
       maxBuyAmount: coin.maxBuyAmount,
       mintAddress: coin.mintAddress || undefined,
+      rpc: coin.rpc,
+      rpcEndpoints: coin.rpcEndpoints as Array<{ url: string; priority: number; name: string }> || [],
     }
 
     await this.redis.setex(cacheKey, 900, JSON.stringify(settings))
