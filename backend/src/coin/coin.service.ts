@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Inject, forwardRef } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CoinStatus } from '@prisma/client'
 import { RedisService } from '../redis/redis.service'
@@ -22,6 +22,7 @@ export class CoinService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    @Inject(forwardRef(() => WalletService))
     private readonly wallet: WalletService
   ) {}
 

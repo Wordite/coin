@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import {
   Connection,
@@ -45,7 +45,9 @@ export class SolanaService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    @Inject(forwardRef(() => CoinService))
     private readonly coin: CoinService,
+    @Inject(forwardRef(() => WalletService))
     private readonly wallet: WalletService,
     private readonly redis: RedisService
   ) {

@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
+import { Injectable, OnModuleInit, Logger, Inject, forwardRef } from '@nestjs/common'
 import { Keypair, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { SolanaService } from 'src/solana/solana.service'
 import { VaultService } from 'src/vault/vault.service'
@@ -13,8 +13,10 @@ export class WalletService implements OnModuleInit {
   private initializationPromise: Promise<boolean> | null = null
 
   constructor(
+    @Inject(forwardRef(() => SolanaService))
     private readonly solana: SolanaService,
     private readonly vault: VaultService,
+    @Inject(forwardRef(() => CoinService))
     private readonly coin: CoinService,
     private readonly config: ConfigService
   ) {}

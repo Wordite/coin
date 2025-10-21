@@ -10,9 +10,10 @@ import { SolanaModule } from '../solana/solana.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { AntiSpamModule } from '../anti-spam/anti-spam.module';
 import { SettingsModule } from '../settings/settings.module';
+import { CoinModule } from '../coin/coin.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, forwardRef(() => SessionModule), forwardRef(() => AuthModule), SolanaModule, WalletModule, AntiSpamModule, SettingsModule],
+  imports: [PrismaModule, RedisModule, forwardRef(() => SessionModule), forwardRef(() => AuthModule), SolanaModule, WalletModule, AntiSpamModule, SettingsModule, forwardRef(() => CoinModule)],
   controllers: [UserController],
   providers: [UserService, TokenInvalidationService],
   exports: [UserService],

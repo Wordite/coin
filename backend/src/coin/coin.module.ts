@@ -5,9 +5,10 @@ import { SessionModule } from '../session/session.module';
 import { AuthModule } from '../auth/auth.module';
 import { RedisModule } from '../redis/redis.module';
 import { SolanaModule } from '../solana/solana.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
-  imports: [SessionModule, forwardRef(() => AuthModule), RedisModule, forwardRef(() => SolanaModule)],
+  imports: [SessionModule, forwardRef(() => AuthModule), RedisModule, forwardRef(() => SolanaModule), forwardRef(() => WalletModule)],
   controllers: [CoinController],
   providers: [CoinService],
   exports: [CoinService],
