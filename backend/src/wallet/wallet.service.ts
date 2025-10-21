@@ -163,41 +163,63 @@ export class WalletService implements OnModuleInit {
   }> {
     this.logger.log(`[CHECK RECEIVED START] Signature: ${signature}`)
     
-    try {
-      // Get transaction data
-      const txData = await this.solana.getTransactionData(signature)
-      this.logger.log(`[TX DATA] Found: ${!!txData}`)
+    const maxAttempts = 3
+    const delayMs = 2000 // 2 seconds between attempts
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      this.logger.log(`[TX CHECK ATTEMPT ${attempt}/${maxAttempts}] Checking across all RPCs`)
       
-      if (!txData) {
-        this.logger.log(`[CHECK RECEIVED RESULT] Exists: false`)
-        return { exists: false, isSuccessful: false, isFinalized: false }
+      // Get all available RPC endpoints
+      const rpcEndpoints = this.solana.getAllRpcEndpoints()
+      this.logger.log(`[TX CHECK] Found ${rpcEndpoints.length} RPC endpoints to check`)
+      
+      // Try each RPC endpoint
+      for (const rpcUrl of rpcEndpoints) {
+        try {
+          this.logger.log(`[TX CHECK] Trying RPC: ${rpcUrl}`)
+          const txData = await this.solana.getTransactionFromRpc(signature, rpcUrl)
+          
+          if (txData) {
+            this.logger.log(`[TX CHECK] Transaction found on RPC: ${rpcUrl}`)
+            
+            // Check signature status
+            const connection = this.solana.getConnection()
+            const status = await connection.getSignatureStatuses([signature], { searchTransactionHistory: true })
+            const statusInfo = status?.value?.[0]
+            
+            const errFromTxData = txData.meta?.err
+            const errFromStatus = statusInfo?.err
+            const confirmationStatus = statusInfo?.confirmationStatus
+            const effectiveErr = errFromTxData !== undefined ? errFromTxData : errFromStatus
+            
+            const isSuccessful = effectiveErr === null || effectiveErr === undefined
+            const isFinalized = confirmationStatus === 'finalized'
+            
+            this.logger.log(`[CHECK RECEIVED RESULT] Exists: true, Success: ${isSuccessful}, Finalized: ${isFinalized}`)
+            
+            return {
+              exists: true,
+              isSuccessful,
+              isFinalized,
+              error: effectiveErr
+            }
+          }
+        } catch (error) {
+          this.logger.warn(`[TX CHECK] Error checking RPC ${rpcUrl}:`, error)
+          continue
+        }
       }
       
-      // Check signature status
-      const connection = this.solana.getConnection()
-      const status = await connection.getSignatureStatuses([signature], { searchTransactionHistory: true })
-      const statusInfo = status?.value?.[0]
-      
-      const errFromTxData = txData.meta?.err
-      const errFromStatus = statusInfo?.err
-      const confirmationStatus = statusInfo?.confirmationStatus
-      const effectiveErr = errFromTxData !== undefined ? errFromTxData : errFromStatus
-      
-      const isSuccessful = effectiveErr === null || effectiveErr === undefined
-      const isFinalized = confirmationStatus === 'finalized'
-      
-      this.logger.log(`[CHECK RECEIVED RESULT] Exists: true, Success: ${isSuccessful}, Finalized: ${isFinalized}, Error: ${JSON.stringify(effectiveErr)}`)
-      
-      return {
-        exists: true,
-        isSuccessful,
-        isFinalized,
-        error: effectiveErr
+      // If not found after trying all RPCs, wait before next attempt
+      if (attempt < maxAttempts) {
+        this.logger.log(`[TX CHECK] Transaction not found, waiting ${delayMs}ms before retry...`)
+        await new Promise(resolve => setTimeout(resolve, delayMs))
       }
-    } catch (error) {
-      this.logger.error(`[CHECK RECEIVED ERROR] Signature: ${signature}, Error: ${error.message}`)
-      return { exists: false, isSuccessful: false, isFinalized: false, error }
     }
+    
+    // Transaction not found after all attempts
+    this.logger.log(`[CHECK RECEIVED RESULT] Transaction not found after ${maxAttempts} attempts across all RPCs`)
+    return { exists: false, isSuccessful: false, isFinalized: false }
   }
 
   /**

@@ -202,6 +202,43 @@ export class SolanaService {
     return this.proxyConnection ?? this.fallbackConnection
   }
 
+  /**
+   * Get all available RPC endpoints (including fallback)
+   */
+  getAllRpcEndpoints(): string[] {
+    const endpoints: string[] = []
+    
+    // Add all configured proxy connections
+    for (const [url] of this.proxyConnections.entries()) {
+      endpoints.push(url)
+    }
+    
+    // Add fallback if not already included
+    const fallbackUrl = this.fallbackConnection.rpcEndpoint
+    if (!endpoints.includes(fallbackUrl)) {
+      endpoints.push(fallbackUrl)
+    }
+    
+    return endpoints
+  }
+
+  /**
+   * Check transaction on specific RPC endpoint
+   */
+  async getTransactionFromRpc(signature: string, rpcUrl: string): Promise<ParsedTransactionWithMeta | null> {
+    const conn = this.connections.get(rpcUrl) || this.proxyConnections.get(rpcUrl) || new Connection(rpcUrl)
+    
+    try {
+      return await conn.getParsedTransaction(signature, {
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0,
+      })
+    } catch (error) {
+      this.logger.warn(`Failed to get transaction from ${rpcUrl}:`, error)
+      return null
+    }
+  }
+
   async sendSplToken(
     toPublicKey: string,
     amount: number | string, // human-readable amount (e.g. "1.23" или 1.23)
