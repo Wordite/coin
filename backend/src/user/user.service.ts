@@ -246,8 +246,24 @@ export class UserService {
         throw new BadRequestException('Transaction is not finalized yet')
       }
 
-      // 2. Get transaction data for additional validation
-      const txData = await this.solanaService.getTransactionData(transaction.signature)
+      // 2. Get transaction data for additional validation using retry logic
+      let txData = null
+      const rpcEndpoints = this.solanaService.getAllRpcEndpoints()
+      
+      for (const rpcUrl of rpcEndpoints) {
+        try {
+          this.logger.log(`[TX DATA] Trying to get transaction data from RPC: ${rpcUrl}`)
+          txData = await this.solanaService.getTransactionFromRpc(transaction.signature, rpcUrl)
+          if (txData) {
+            this.logger.log(`[TX DATA] Transaction data found on RPC: ${rpcUrl}`)
+            break
+          }
+        } catch (error) {
+          this.logger.warn(`[TX DATA] Error getting transaction data from RPC ${rpcUrl}:`, error)
+          continue
+        }
+      }
+      
       if (!txData) {
         if (req) {
           const key = req.ip || 'unknown'
