@@ -164,7 +164,7 @@ export class WalletService implements OnModuleInit {
     this.logger.log(`[CHECK RECEIVED START] Signature: ${signature}`)
     
     const maxAttempts = 3
-    const delayMs = 2000 // 2 seconds between attempts
+    const delayMs = 2000
     
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       this.logger.log(`[TX CHECK ATTEMPT ${attempt}/${maxAttempts}] Checking across all RPCs`)
@@ -209,6 +209,8 @@ export class WalletService implements OnModuleInit {
           continue
         }
       }
+
+      await new Promise(resolve => setTimeout(resolve, delayMs))
       
       // If not found after trying all RPCs, wait before next attempt
       if (attempt < maxAttempts) {

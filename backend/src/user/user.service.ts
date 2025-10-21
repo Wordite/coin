@@ -195,11 +195,9 @@ export class UserService {
     this.logger.log(`[PURCHASE START] Address: ${address}, Signature: ${transaction.signature}`)
     
     try {
-      // 1. Check transaction through WalletService
       const txCheck = await this.walletService.checkIsReceived(transaction.signature)
       this.logger.log(`[TX CHECK] Exists: ${txCheck.exists}, Success: ${txCheck.isSuccessful}, Finalized: ${txCheck.isFinalized}`)
 
-      // If transaction doesn't exist, add spam points and throw error
       if (!txCheck.exists) {
         if (req) {
           const key = req.ip || 'unknown'
