@@ -967,6 +967,7 @@ export class UserService {
     walletBalance: number
     requiredAmount: number
   }> {
+    console.log('[SERVICE] validateTokenBalance called with userId:', userId)
     this.logger.log(`[VALIDATE BALANCE] Checking balance for: ${userId || 'all users'}`)
     
     try {
@@ -1006,7 +1007,9 @@ export class UserService {
       const hasEnough = walletBalance >= requiredAmount
       this.logger.log(`[VALIDATE BALANCE] Has enough: ${hasEnough} (Balance: ${walletBalance}, Required: ${requiredAmount})`)
       
-      return { hasEnough, walletBalance, requiredAmount }
+      const result = { hasEnough, walletBalance, requiredAmount }
+      console.log('[SERVICE] validateTokenBalance returning:', JSON.stringify(result))
+      return result
     } catch (error) {
       this.logger.error('[VALIDATE BALANCE] Error:', error)
       throw error
