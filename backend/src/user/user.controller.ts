@@ -111,9 +111,16 @@ export class UserController {
     return result
   }
 
-  @Get('validate-token-balance/:id?')
+  @Get('validate-token-balance')
   @Auth({ roles: [Roles.ADMIN], strong: true })
-  async validateBalance(@Param('id') id?: string) {
+  async validateBalance() {
+    const result = await this.user.validateTokenBalance()
+    return result
+  }
+
+  @Get('validate-token-balance/:id')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async validateBalanceById(@Param('id') id: string) {
     const result = await this.user.validateTokenBalance(id)
     return result
   }
