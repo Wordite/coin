@@ -51,7 +51,10 @@ export class SolanaService {
     private readonly wallet: WalletService,
     private readonly redis: RedisService
   ) {
-    this.initializeService()
+    // Initialize service asynchronously
+    this.initializeService().catch(error => {
+      this.logger.error('Failed to initialize SolanaService:', error)
+    })
   }
 
   private async initializeService(): Promise<void> {
@@ -150,6 +153,11 @@ export class SolanaService {
   ): Promise<T> {
     this.logger.log(`[EXECUTE WITH RETRY] Starting executeWithRetry with maxRetries: ${maxRetries}`)
     
+    // Wait for service initialization
+    this.logger.log(`[EXECUTE WITH RETRY] Waiting for service initialization...`)
+    await this.isInitialized
+    this.logger.log(`[EXECUTE WITH RETRY] Service initialization completed`)
+    
     // Check if service is initialized
     if (!this.endpointManager) {
       this.logger.error(`[EXECUTE WITH RETRY] Service not initialized! endpointManager is null`)
@@ -227,7 +235,8 @@ export class SolanaService {
     }
   }
 
-  getTransactionData(signature: string): Promise<ParsedTransactionWithMeta | null> {
+  async getTransactionData(signature: string): Promise<ParsedTransactionWithMeta | null> {
+    await this.isInitialized
     return this.executeWithRetry(conn =>
       conn.getParsedTransaction(signature, {
         commitment: 'confirmed',
@@ -236,14 +245,16 @@ export class SolanaService {
     ).catch(() => null)
   }
 
-  getConnection(): Connection {
+  async getConnection(): Promise<Connection> {
+    await this.isInitialized
     return this.proxyConnection ?? this.fallbackConnection
   }
 
   /**
    * Get all available RPC endpoints (including fallback)
    */
-  getAllRpcEndpoints(): string[] {
+  async getAllRpcEndpoints(): Promise<string[]> {
+    await this.isInitialized
     const endpoints: string[] = []
     
     // Add all configured proxy connections
@@ -264,6 +275,7 @@ export class SolanaService {
    * Check transaction on specific RPC endpoint
    */
   async getTransactionFromRpc(signature: string, rpcUrl: string): Promise<ParsedTransactionWithMeta | null> {
+    await this.isInitialized
     const conn = this.connections.get(rpcUrl) || this.proxyConnections.get(rpcUrl) || new Connection(rpcUrl)
     
     try {
@@ -284,6 +296,7 @@ export class SolanaService {
     mintParam?: string | PublicKey,
     connectionParam?: Connection
   ): Promise<string> {
+    await this.isInitialized
     const conn = connectionParam ?? this.proxyConnection ?? this.fallbackConnection
 
     try {
@@ -395,6 +408,7 @@ export class SolanaService {
   private async confirmTransaction(
     signature: string
   ): Promise<RpcResponseAndContext<SignatureResult> | null> {
+    await this.isInitialized
     try {
       const confirmation = await this.executeWithRetry(conn => 
         conn.confirmTransaction(signature, 'confirmed')
@@ -413,6 +427,7 @@ export class SolanaService {
     maxRetries: number = 3,
     delay: number = 1000
   ): Promise<{ blockhash: string; lastValidBlockHeight: number }> {
+    await this.isInitialized
     return this.executeWithRetry(conn => 
       conn.getLatestBlockhash('finalized')
     )
@@ -432,6 +447,7 @@ export class SolanaService {
   }
 
   private async getSolBalance(address: string): Promise<number> {
+    await this.isInitialized
     try {
       const pub = new PublicKey(address)
       const lamports = await this.executeWithRetry(conn => 
@@ -446,6 +462,7 @@ export class SolanaService {
   }
 
   async getParsedTokenBalanceByMint(address: string, mint: PublicKey): Promise<number> {
+    await this.isInitialized
     this.logger.log(`[GET TOKEN BALANCE] Fetching balance for address: ${address}, mint: ${mint.toBase58()}`)
     
     try {
@@ -509,6 +526,7 @@ export class SolanaService {
 
   // --- USDT balance (reads mint from config or fallback to canonical mainnet mint)
   private async getUsdtBalance(address: string): Promise<number> {
+    await this.isInitialized
     try {
       const usdtMintStr =
         this.config.get<string>('USDT_MINT') || 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB' // official USDT mint on Solana mainnet
@@ -522,6 +540,7 @@ export class SolanaService {
 
   // --- coin SPL token balance (mint from coin service)
   private async getCoinBalance(address: string): Promise<number> {
+    await this.isInitialized
     try {
       const mintAddress = await this.coin.getMintAddress()
       const mint = typeof mintAddress === 'string' ? new PublicKey(mintAddress) : mintAddress
