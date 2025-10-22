@@ -90,12 +90,6 @@ export class UserController {
     return { message: 'User deleted successfully' }
   }
 
-  @Get('wallet/token-balance')
-  @Auth({ roles: [Roles.ADMIN], strong: true })
-  async getTokenBalance() {
-    const balance = await this.user.getWalletTokenBalance()
-    return { balance }
-  }
 
   @Post(':id/issue-tokens')
   @Auth({ roles: [Roles.ADMIN], strong: true })

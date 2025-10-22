@@ -89,7 +89,7 @@ class UsersApiService {
   }
 
   async getWalletTokenBalance(): Promise<number> {
-    const response = await api.get('/user/wallet/token-balance')
+    const response = await api.get('/wallet/token-balance')
     return response.data.balance
   }
 

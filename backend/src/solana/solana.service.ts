@@ -136,9 +136,11 @@ export class SolanaService {
     operation: (conn: Connection) => Promise<T>,
     maxRetries: number = 3
   ): Promise<T> {
+    this.logger.log(`[EXECUTE WITH RETRY] Starting executeWithRetry with maxRetries: ${maxRetries}`)
     let lastError: any
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      this.logger.log(`[EXECUTE WITH RETRY] Attempt ${attempt}/${maxRetries}`)
       try {
         const endpoint = this.endpointManager.getNextEndpoint()
         if (!endpoint) {
@@ -150,8 +152,10 @@ export class SolanaService {
           throw new Error(`No connection found for endpoint: ${endpoint.url}`)
         }
 
+        this.logger.log(`[EXECUTE WITH RETRY] Using endpoint: ${endpoint.url}`)
         const result = await operation(connection)
         
+        this.logger.log(`[EXECUTE WITH RETRY] Operation successful on attempt ${attempt}`)
         // Mark success
         this.endpointManager.markSuccess(endpoint)
         return result
@@ -414,9 +418,13 @@ export class SolanaService {
       const owner = new PublicKey(address)
 
       this.logger.log(`[GET TOKEN BALANCE] Querying token accounts...`)
-      const resp = await this.executeWithRetry(conn => 
-        conn.getParsedTokenAccountsByOwner(owner, { mint })
-      )
+      this.logger.log(`[GET TOKEN BALANCE] Owner PublicKey: ${owner.toBase58()}`)
+      this.logger.log(`[GET TOKEN BALANCE] Mint PublicKey: ${mint.toBase58()}`)
+      
+      const resp = await this.executeWithRetry(conn => {
+        this.logger.log(`[GET TOKEN BALANCE] Inside executeWithRetry, calling getParsedTokenAccountsByOwner...`)
+        return conn.getParsedTokenAccountsByOwner(owner, { mint })
+      })
 
       this.logger.log(`[GET TOKEN BALANCE] Response received, accounts found: ${resp?.value?.length || 0}`)
 

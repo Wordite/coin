@@ -39,4 +39,11 @@ export class WalletController {
       throw new Error(`Failed to refresh wallet: ${error.message}`)
     }
   }
+
+  @Get('token-balance')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async getTokenBalance() {
+    const balance = await this.walletService.getMintTokenBalance()
+    return { balance }
+  }
 }
