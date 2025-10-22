@@ -1,4 +1,11 @@
 import { forwardRef, useEffect, useRef } from 'react'
+import { 
+  ExclamationTriangleIcon, 
+  InformationCircleIcon, 
+  BugAntIcon,
+  DocumentTextIcon,
+  XCircleIcon
+} from '@heroicons/react/24/outline'
 
 interface LogViewerProps {
   logs: string[]
@@ -55,16 +62,16 @@ const getLevelColor = (level: string) => {
 const getLevelIcon = (level: string) => {
   switch (level.toLowerCase()) {
     case 'error':
-      return '❌'
+      return <XCircleIcon className="w-4 h-4 text-red-400" />
     case 'warn':
     case 'warning':
-      return '⚠️'
+      return <ExclamationTriangleIcon className="w-4 h-4 text-yellow-400" />
     case 'info':
-      return 'ℹ️'
+      return <InformationCircleIcon className="w-4 h-4 text-blue-400" />
     case 'debug':
-      return '🐛'
+      return <BugAntIcon className="w-4 h-4 text-gray-400" />
     default:
-      return '📝'
+      return <DocumentTextIcon className="w-4 h-4 text-gray-300" />
   }
 }
 
@@ -81,16 +88,14 @@ export const LogViewer = forwardRef<HTMLDivElement, LogViewerProps>(
     return (
       <div
         ref={ref}
-        className="h-[calc(100vh-300px)] overflow-y-auto bg-[#0d1117] text-[#d4d4d4] font-mono text-sm"
+        className="h-[calc(100vh-300px)] overflow-y-auto bg-[#0d1117] text-[#d4d4d4] font-mono text-xs"
         style={{ fontFamily: 'JetBrains Mono, Consolas, monospace' }}
       >
-        <div ref={containerRef} className="p-4 space-y-1">
+        <div ref={containerRef} className="p-2 space-y-0.5">
           {logs.length === 0 ? (
             <div className="text-center text-gray-500 py-8">
               <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                  <span className="text-xs">📝</span>
-                </div>
+                <DocumentTextIcon className="w-6 h-6 text-gray-600" />
                 <span>No logs available</span>
                 <span className="text-xs text-gray-600">Logs will appear here when available</span>
               </div>
@@ -104,42 +109,39 @@ export const LogViewer = forwardRef<HTMLDivElement, LogViewerProps>(
               return (
                 <div
                   key={index}
-                  className={`py-2 px-3 rounded-lg hover:bg-gray-800/30 transition-all duration-200 border-l-4 ${levelColor} group`}
+                  className={`py-1 px-2 rounded hover:bg-gray-800/30 transition-colors border-l-2 ${levelColor} group`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-2">
                     {/* Line number */}
-                    <span className="text-gray-600 text-xs flex-shrink-0 mt-1 font-mono">
-                      {String(index + 1).padStart(4, '0')}
+                    <span className="text-gray-600 text-xs flex-shrink-0 font-mono w-8">
+                      {String(index + 1).padStart(3, '0')}
                     </span>
                     
                     {/* Level icon */}
-                    <span className="text-lg flex-shrink-0 mt-0.5">
+                    <div className="flex-shrink-0">
                       {levelIcon}
-                    </span>
+                    </div>
                     
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      {/* Header with timestamp and context */}
-                      <div className="flex items-center gap-2 mb-1">
-                        {parsed.timestamp && (
-                          <span className="text-gray-500 text-xs font-mono">
-                            {parsed.timestamp}
-                          </span>
-                        )}
-                        {parsed.context && (
-                          <span className="text-gray-400 text-xs bg-gray-800 px-2 py-0.5 rounded">
-                            {parsed.context}
-                          </span>
-                        )}
-                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded ${levelColor}`}>
-                          {parsed.level}
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      {/* Timestamp */}
+                      {parsed.timestamp && (
+                        <span className="text-gray-500 text-xs font-mono flex-shrink-0">
+                          {parsed.timestamp}
                         </span>
-                      </div>
+                      )}
+                      
+                      {/* Context */}
+                      {parsed.context && (
+                        <span className="text-gray-400 text-xs bg-gray-800 px-1.5 py-0.5 rounded flex-shrink-0">
+                          {parsed.context}
+                        </span>
+                      )}
                       
                       {/* Message */}
-                      <div className="text-gray-200 break-words">
+                      <span className="text-gray-200 break-words text-xs">
                         {parsed.message}
-                      </div>
+                      </span>
                     </div>
                   </div>
                 </div>
