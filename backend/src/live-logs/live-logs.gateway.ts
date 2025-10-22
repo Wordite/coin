@@ -34,7 +34,9 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
   private readonly logger = new Logger(LiveLogsGateway.name);
   private readonly connectedClients = new Map<string, { socket: Socket; subscriptions: Set<string> }>();
 
-  constructor(private readonly liveLogsService: LiveLogsService) {}
+  constructor(private readonly liveLogsService: LiveLogsService) {
+    this.logger.log('[LIVE LOGS] Gateway initialized with namespace: /live-logs');
+  }
 
   async handleConnection(client: Socket) {
     this.logger.log(`[LIVE LOGS] Client connected: ${client.id}`);
