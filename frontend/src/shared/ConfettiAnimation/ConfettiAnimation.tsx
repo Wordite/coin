@@ -31,7 +31,7 @@ export const ConfettiAnimation = () => {
       confetti.style.left = `${Math.random() * 100}%`
       confetti.style.top = '0px'
       confetti.style.pointerEvents = 'none'
-      confetti.style.zIndex = '9999'
+      confetti.style.zIndex = '999999'
 
       container.appendChild(confetti)
       confettiElements.push(confetti)
@@ -91,7 +91,7 @@ export const ConfettiAnimation = () => {
         width: '100vw',
         height: '100vh',
         pointerEvents: 'none',
-        zIndex: 9999,
+        zIndex: 999999,
       }}
     />
   )
