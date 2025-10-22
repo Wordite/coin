@@ -9,7 +9,8 @@ export const UsersTable: React.FC<UsersTableProps> = ({
   onViewUser,
   onIssueUserTokens,
   filterType = 'all',
-  onFilterChange
+  onFilterChange,
+  issuingUserId
 }) => {
   const formatAmount = (amount: number) => {
     if (isNaN(amount) || !amount) return '0'
@@ -139,8 +140,10 @@ export const UsersTable: React.FC<UsersTableProps> = ({
                         size="sm"
                         color="success"
                         onPress={() => onIssueUserTokens(user.id)}
+                        isLoading={issuingUserId === user.id}
+                        isDisabled={issuingUserId !== null}
                       >
-                        Issue Tokens
+                        {issuingUserId === user.id ? 'Issuing...' : 'Issue Tokens'}
                       </Button>
                     )}
                   </div>

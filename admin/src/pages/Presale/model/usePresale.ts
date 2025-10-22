@@ -12,6 +12,7 @@ export const usePresale = () => {
   const [initialLoading, setInitialLoading] = useState(true)
   const [usersLoading, setUsersLoading] = useState(false)
   const [issuingTokens, setIssuingTokens] = useState(false)
+  const [issuingUserId, setIssuingUserId] = useState<string | null>(null)
   const [selectedUser, setSelectedUser] = useState<UserWithTransactions | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -65,12 +66,17 @@ export const usePresale = () => {
       const result = await usersApi.issueAllTokens()
       
       if (result.success > 0) {
-        Notify.success(`Successfully issued tokens to ${result.success} users. ${result.failed} failed.`)
+        const message = result.failed > 0 
+          ? `✅ Successfully issued tokens to ${result.success} users. ⚠️ ${result.failed} failed.`
+          : `✅ Successfully issued tokens to ${result.success} users.`
+        Notify.success(message)
         // Reload data to reflect changes
         await loadInitialData()
         await loadUsersData()
+      } else if (result.failed > 0) {
+        Notify.error(`❌ Failed to issue tokens to ${result.failed} users.`)
       } else {
-        Notify.warn('No tokens were issued. All users may already have their tokens.')
+        Notify.warn('ℹ️ No tokens were issued. All users may already have their tokens.')
       }
     } catch (err) {
       Notify.error('Failed to issue tokens')
@@ -82,6 +88,7 @@ export const usePresale = () => {
 
   const handleIssueUserTokens = async (userId: string) => {
     try {
+      setIssuingUserId(userId)
       // Validate balance first
       const validation = await usersApi.validateTokenBalance(userId)
       if (!validation.hasEnough) {
@@ -103,6 +110,8 @@ export const usePresale = () => {
     } catch (err) {
       Notify.error('Failed to issue tokens to user')
       console.error(err)
+    } finally {
+      setIssuingUserId(null)
     }
   }
 
@@ -189,6 +198,7 @@ export const usePresale = () => {
     initialLoading,
     usersLoading,
     issuingTokens,
+    issuingUserId,
     selectedUser,
     setSelectedUser,
     currentPage,

@@ -30,6 +30,7 @@ export interface UsersTableProps {
   onIssueUserTokens: (userId: string) => void
   filterType?: 'all' | 'pending' | 'issued'
   onFilterChange?: (filterType: 'all' | 'pending' | 'issued') => void
+  issuingUserId?: string | null
 }
 
 export interface UserDetailsModalProps {

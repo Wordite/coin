@@ -46,7 +46,7 @@ export const TokenDistribution: React.FC<TokenDistributionProps> = ({
               isDisabled={usersWithPendingTokens === 0}
               startContent={!issuingTokens && <CheckCircleIcon className="w-4 h-4" />}
             >
-              {issuingTokens ? 'Issuing...' : 'Issue All Tokens'}
+              {issuingTokens ? 'Processing...' : 'Issue All Tokens'}
             </Button>
           </div>
         </div>

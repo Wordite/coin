@@ -109,6 +109,7 @@ export class UserController {
   @Auth({ roles: [Roles.ADMIN], strong: true })
   async validateBalance() {
     const result = await this.user.validateTokenBalance()
+    console.log('[CONTROLLER] validateBalance result:', result)
     return result
   }
 
@@ -116,6 +117,7 @@ export class UserController {
   @Auth({ roles: [Roles.ADMIN], strong: true })
   async validateBalanceById(@Param('id') id: string) {
     const result = await this.user.validateTokenBalance(id)
+    console.log('[CONTROLLER] validateBalanceById result:', result)
     return result
   }
 }

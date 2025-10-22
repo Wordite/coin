@@ -17,6 +17,7 @@ const Presale = () => {
     initialLoading,
     usersLoading,
     issuingTokens,
+    issuingUserId,
     selectedUser,
     currentPage,
     totalPages,
@@ -109,6 +110,7 @@ const Presale = () => {
         onIssueUserTokens={handleIssueUserTokens}
         filterType={filterType}
         onFilterChange={handleFilterChange}
+        issuingUserId={issuingUserId}
       />
 
       {/* Pagination */}
