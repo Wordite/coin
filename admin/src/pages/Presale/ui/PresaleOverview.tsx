@@ -1,6 +1,6 @@
 import React from 'react'
 import { Card, CardBody, CardHeader, Progress, Divider } from '@heroui/react'
-import { ChartBarIcon, WalletIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon } from '@heroicons/react/24/outline'
 import type { PresaleOverviewProps } from '../model/types'
 
 export const PresaleOverview: React.FC<PresaleOverviewProps> = ({
@@ -52,9 +52,6 @@ export const PresaleOverview: React.FC<PresaleOverviewProps> = ({
               <div className="text-sm text-foreground/60">Available Tokens</div>
             </div>
             <div className="text-center p-4 bg-warning/5 rounded-lg">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <WalletIcon className="w-5 h-5 text-warning" />
-              </div>
               <div className="text-2xl font-bold text-warning">
                 {walletBalance !== undefined ? formatAmount(walletBalance) : 'Loading...'}
               </div>

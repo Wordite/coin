@@ -193,7 +193,8 @@ export class CoinService {
     }
 
     const cacheKey = 'presale_settings'
-    await this.redis.setex(cacheKey, 900, JSON.stringify(result))
+    // Invalidate cache so next read will fetch fresh data
+    await this.redis.del(cacheKey)
 
     return result
   }

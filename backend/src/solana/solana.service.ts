@@ -408,27 +408,36 @@ export class SolanaService {
   }
 
   async getParsedTokenBalanceByMint(address: string, mint: PublicKey): Promise<number> {
+    this.logger.log(`[GET TOKEN BALANCE] Fetching balance for address: ${address}, mint: ${mint.toBase58()}`)
+    
     try {
       const owner = new PublicKey(address)
 
+      this.logger.log(`[GET TOKEN BALANCE] Querying token accounts...`)
       const resp = await this.executeWithRetry(conn => 
         conn.getParsedTokenAccountsByOwner(owner, { mint })
       )
 
-      if (!resp || !resp.value || resp.value.length === 0) return 0
+      this.logger.log(`[GET TOKEN BALANCE] Response received, accounts found: ${resp?.value?.length || 0}`)
+
+      if (!resp || !resp.value || resp.value.length === 0) {
+        this.logger.warn(`[GET TOKEN BALANCE] No token accounts found for this mint`)
+        return 0
+      }
 
       let total = 0
       for (const item of resp.value) {
         try {
           const parsed = (item.account.data as any).parsed
           const tokenInfo = parsed?.info?.tokenAmount
+          
+          this.logger.log(`[GET TOKEN BALANCE] Parsing token account, tokenInfo:`, JSON.stringify(tokenInfo))
+          
           if (!tokenInfo) continue
 
-          // prefer uiAmount if available
           if (typeof tokenInfo.uiAmount === 'number' && tokenInfo.uiAmount !== null) {
             total += tokenInfo.uiAmount
           } else {
-            // fallback: amount is integer string, decimals available
             const amountRaw = Number(tokenInfo.amount || 0)
             const decimals = Number(tokenInfo.decimals || 0)
             if (decimals >= 0) {
@@ -438,17 +447,18 @@ export class SolanaService {
             }
           }
         } catch (inner) {
-          // ignore particular account parse errors
-          this.logger.warn('Failed to parse token account', inner)
+          this.logger.warn('[GET TOKEN BALANCE] Failed to parse token account:', inner)
         }
       }
 
+      this.logger.log(`[GET TOKEN BALANCE] Total balance calculated: ${total}`)
       return total
     } catch (e) {
       this.logger.error(
-        `getParsedTokenBalanceByMint failed for ${address} mint ${mint.toBase58()}`,
-        e as any
+        `[GET TOKEN BALANCE] ERROR - Address: ${address}, Mint: ${mint.toBase58()}`,
+        e
       )
+      this.logger.error(`[GET TOKEN BALANCE] Error details:`, JSON.stringify(e, null, 2))
       return 0
     }
   }
