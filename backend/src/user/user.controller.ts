@@ -59,11 +59,6 @@ export class UserController {
     return await this.user.purchaseCoins(purchaseCoinsDto.address, purchaseCoinsDto, req)
   }
 
-  @Get(':id')
-  @Auth({ roles: [Roles.ADMIN], strong: true })
-  async getUserById(@Param('id') id: string): Promise<UserWithTransactions | null> {
-    return this.user.getUserById(id)
-  }
 
   @Put(':id/coins')
   @Auth({ roles: [Roles.ADMIN], strong: true })
@@ -123,5 +118,11 @@ export class UserController {
     const result = await this.user.validateTokenBalance(id)
     console.log('[CONTROLLER] validateBalanceById result:', result)
     return result
+  }
+
+  @Get(':id')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async getUserById(@Param('id') id: string): Promise<UserWithTransactions | null> {
+    return this.user.getUserById(id)
   }
 }
