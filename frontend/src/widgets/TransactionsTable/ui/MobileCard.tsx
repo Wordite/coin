@@ -1,5 +1,6 @@
 import Button from '@/shared/Button'
 import ClockIcon from '@/assets/icons/clock.svg'
+import ServerIcon from '@/assets/icons/server.svg'
 import type { Transaction } from '@/app/types/transaction.type'
 
 interface MobileCardProps {
@@ -31,18 +32,32 @@ const MobileCard = ({ transaction, onDetailsClick }: MobileCardProps) => {
             <span className='text-white text-base text-[1.2rem] leading-[1em] font-semibold'>
               {transaction.coinsPurchased}
             </span>
-            {!transaction.isReceived && (
-              <div className='relative group -translate-y-[0.125rem]'>
-                <div className='w-[1.5rem] h-[1.5rem] rounded border-1 border-stroke-dark bg-gray-transparent-70 flex items-center justify-center'>
-                  <ClockIcon className='w-[1rem] h-[1rem]' />
+            <div className='flex items-center gap-1 -translate-y-[0.125rem]'>
+              {transaction.txHash === 'ADMIN_ADJUSTMENT' && (
+                <div className='relative group'>
+                  <div className='w-[1.5rem] h-[1.5rem] rounded border-1 border-stroke-dark bg-gray-transparent-70 flex items-center justify-center'>
+                    <ServerIcon className='w-[1rem] h-[1rem] [&>path]:fill-white' />
+                  </div>
+                  {/* Tooltip - сверху, центрирован */}
+                  <div className='absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-dark-200 border border-stroke-dark rounded-lg text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-10'>
+                    Issued by admin
+                    <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-stroke-dark'></div>
+                  </div>
                 </div>
-                {/* Tooltip */}
-                <div className='absolute bottom-full right-0 mb-2 px-3 py-2 bg-dark-200 border border-stroke-dark rounded-lg text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transform scale-95 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-10'>
-                  Will be received after presale end
-                  <div className='absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-stroke-dark'></div>
+              )}
+              {!transaction.isReceived && (
+                <div className='relative group'>
+                  <div className='w-[1.5rem] h-[1.5rem] rounded border-1 border-stroke-dark bg-gray-transparent-70 flex items-center justify-center'>
+                    <ClockIcon className='w-[1rem] h-[1rem]' />
+                  </div>
+                  {/* Tooltip - снизу, центрирован */}
+                  <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-dark-200 border border-stroke-dark rounded-lg text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-10'>
+                    Will be received after presale end
+                    <div className='absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-stroke-dark'></div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
