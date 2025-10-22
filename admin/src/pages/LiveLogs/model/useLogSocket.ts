@@ -15,35 +15,38 @@ export const useLogSocket = () => {
     console.log('[LOG SOCKET] Protocol:', window.location.protocol)
     console.log('[LOG SOCKET] Namespace: /live-logs')
     
-    const socket = io(`${backendUrl}/live-logs`, {
+    const socket = io(backendUrl, {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       timeout: 20000,
       forceNew: true
     })
     
-    socket.on('connect', () => {
-      console.log('[LOG SOCKET] ✅ Connected to server')
+    // Connect to the live-logs namespace
+    const liveLogsSocket = socket as any
+    
+    liveLogsSocket.on('connect', () => {
+      console.log('[LOG SOCKET] ✅ Connected to live-logs namespace')
       setIsConnected(true)
     })
     
-    socket.on('disconnect', (reason) => {
-      console.log('[LOG SOCKET] ❌ Disconnected from server. Reason:', reason)
+    liveLogsSocket.on('disconnect', (reason: any) => {
+      console.log('[LOG SOCKET] ❌ Disconnected from live-logs namespace. Reason:', reason)
       setIsConnected(false)
     })
     
-    socket.on('connect_error', (error) => {
-      console.error('[LOG SOCKET] ❌ Connection error:', error)
+    liveLogsSocket.on('connect_error', (error: any) => {
+      console.error('[LOG SOCKET] ❌ Live-logs connection error:', error)
       setIsConnected(false)
     })
     
-    socket.on('log-history', (history: string[]) => {
+    liveLogsSocket.on('log-history', (history: string[]) => {
       console.log('[LOG SOCKET] 📜 Received log history:', history.length, 'lines')
       console.log('[LOG SOCKET] First few lines:', history.slice(0, 3))
       setLogs(history)
     })
     
-    socket.on('log-update', (newLines: string[]) => {
+    liveLogsSocket.on('log-update', (newLines: string[]) => {
       console.log('[LOG SOCKET] 🔄 Received new log lines:', newLines.length)
       setLogs(prev => {
         const updated = [...newLines, ...prev]
@@ -52,27 +55,27 @@ export const useLogSocket = () => {
       })
     })
     
-    socket.on('log-subscribed', (data: { filename: string }) => {
+    liveLogsSocket.on('log-subscribed', (data: { filename: string }) => {
       console.log('[LOG SOCKET] ✅ Subscribed to logs:', data.filename)
     })
     
-    socket.on('log-unsubscribed', (data: { filename: string }) => {
+    liveLogsSocket.on('log-unsubscribed', (data: { filename: string }) => {
       console.log('[LOG SOCKET] 📤 Unsubscribed from logs:', data.filename)
     })
     
-    socket.on('log-error', (error: { message: string }) => {
+    liveLogsSocket.on('log-error', (error: { message: string }) => {
       console.error('[LOG SOCKET] ❌ Error:', error.message)
     })
     
     // Subscribe to all logs initially
     console.log('[LOG SOCKET] 📡 Emitting subscribe-logs event')
-    socket.emit('subscribe-logs', { logType: 'all' })
+    liveLogsSocket.emit('subscribe-logs', { logType: 'all' })
     
-    socketRef.current = socket
+    socketRef.current = liveLogsSocket
     
     return () => {
       console.log('[LOG SOCKET] 🧹 Cleaning up socket connection')
-      socket.disconnect()
+      liveLogsSocket.disconnect()
     }
   }, [])
 
