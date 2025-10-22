@@ -13,6 +13,7 @@ import { Contacts } from '@/pages/Contacts'
 import Documentation from '@/pages/Documentation'
 import DocumentationContent from '@/pages/DocumentationContent'
 import DocumentationSettings from '@/pages/DocumentationSettings'
+import LiveLogs from '@/pages/LiveLogs'
 import { EmptyContainer } from '@/app/container/EmptyContainer'
 
 export const router = createBrowserRouter([
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
       { path: 'settings', Component: Settings },
       { path: 'users', Component: Users },
       { path: 'contacts', Component: Contacts },
+      { path: 'live-logs', Component: LiveLogs },
       { path: 'documentation', Component: Documentation },
       { path: 'documentation/content', Component: DocumentationContent },
       { path: 'documentation/settings', Component: DocumentationSettings },

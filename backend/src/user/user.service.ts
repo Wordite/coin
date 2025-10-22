@@ -574,6 +574,16 @@ export class UserService {
     const currentTotalCoins = this.transactionService.calculateTotalCoins(transactions)
     console.log('currentTotalCoins', currentTotalCoins)
 
+    // Calculate the difference to update soldAmount
+    const difference = newCoinsAmount - currentTotalCoins
+    console.log('difference', difference)
+
+    // Update soldAmount in coin settings if there's a difference
+    if (difference !== 0) {
+      await this.coinService.updateSoldAmount(difference)
+      this.logger.log(`[UPDATE USER COINS] Updated soldAmount by ${difference} for user ${id}`)
+    }
+
     // Create adjustment transaction
     const adjustmentTransaction = this.transactionService.createAdjustmentTransaction(currentTotalCoins, newCoinsAmount)
     console.log('adjustmentAmount', adjustmentTransaction.coinsPurchased)

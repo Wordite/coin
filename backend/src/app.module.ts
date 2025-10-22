@@ -24,6 +24,7 @@ import { SolanaService } from './solana/solana.service';
 import { SolanaModule } from './solana/solana.module';
 import { WalletModule } from './wallet/wallet.module';
 import { TransactionService } from './transaction/transaction.service';
+import { LiveLogsModule } from './live-logs/live-logs.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { TransactionService } from './transaction/transaction.service';
     CleanupModule,
     SolanaModule,
     WalletModule,
+    LiveLogsModule,
   ],
   providers: [SolanaService, TransactionService],
 })

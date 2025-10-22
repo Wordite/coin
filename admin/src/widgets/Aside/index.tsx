@@ -17,6 +17,7 @@ import {
   BookOpenIcon,
   CurrencyDollarIcon,
   EnvelopeIcon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline'
 import { Link as RouterLink } from 'react-router'
 import { Auth } from '@/services/auth'
@@ -167,6 +168,15 @@ const Aside = () => {
               >
                 <EnvelopeIcon className='w-4 h-4' />
                 Contacts
+              </RouterLink>
+
+              {/* Live Logs Link */}
+              <RouterLink
+                to='/live-logs'
+                className='w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/60 hover:text-foreground hover:bg-default-100 rounded-lg transition-colors'
+              >
+                <CommandLineIcon className='w-4 h-4' />
+                Live Logs
               </RouterLink>
 
               {/* Documentation Link */}

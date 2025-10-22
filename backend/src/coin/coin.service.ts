@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common'
+import { Injectable, Inject, forwardRef, Logger, NotFoundException } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CoinStatus } from '@prisma/client'
 import { RedisService } from '../redis/redis.service'
@@ -290,43 +290,6 @@ export class CoinService {
     return endpoints
   }
 
-  async updateSoldAmount(amount: number): Promise<CoinPresaleSettings> {
-    const coin = await this.prisma.coin.findFirst()
-
-    if (!coin) {
-      throw new Error('Coin not found')
-    }
-
-    const newSoldAmount = coin.soldAmount + amount
-    const newCurrentAmount = coin.totalAmount - newSoldAmount
-
-    const updated = await this.prisma.coin.update({
-      where: { id: coin.id },
-      data: {
-        soldAmount: newSoldAmount,
-        currentAmount: newCurrentAmount,
-      },
-    })
-
-    // Invalidate cache
-    await this.redis.del('presale_settings')
-
-    const settings = {
-      totalAmount: updated.totalAmount,
-      stage: updated.stage,
-      soldAmount: updated.soldAmount,
-      currentAmount: updated.currentAmount,
-      status: updated.status,
-      name: updated.name,
-      decimals: updated.decimals,
-      minBuyAmount: updated.minBuyAmount,
-      maxBuyAmount: updated.maxBuyAmount,
-      mintAddress: updated.mintAddress || undefined,
-    }
-
-    await this.redis.setex('presale_settings', 900, JSON.stringify(settings))
-    return settings
-  }
 
   async getCurrentAvailableAmount(): Promise<number> {
     const coin = await this.prisma.coin.findFirst()
@@ -371,5 +334,36 @@ export class CoinService {
 
   async clearPresaleSettingsCache(): Promise<void> {
     await this.redis.del('presale_settings')
+  }
+
+  async updateSoldAmount(deltaAmount: number): Promise<void> {
+    this.logger.log(`[UPDATE SOLD AMOUNT] Updating soldAmount by ${deltaAmount}`)
+    
+    const coin = await this.prisma.coin.findFirst()
+    if (!coin) {
+      throw new NotFoundException('Coin settings not found')
+    }
+    
+    const newSoldAmount = Math.max(0, coin.soldAmount + deltaAmount)
+    const newCurrentAmount = coin.totalAmount - newSoldAmount
+    
+    this.logger.log(`[UPDATE SOLD AMOUNT] Old soldAmount: ${coin.soldAmount}, New soldAmount: ${newSoldAmount}`)
+    this.logger.log(`[UPDATE SOLD AMOUNT] Old currentAmount: ${coin.currentAmount}, New currentAmount: ${newCurrentAmount}`)
+    
+    await this.prisma.coin.update({
+      where: { id: coin.id },
+      data: { 
+        soldAmount: newSoldAmount,
+        currentAmount: newCurrentAmount
+      }
+    })
+    
+    // Invalidate cache
+    const cacheKey = 'presale_settings'
+    console.log(`[UPDATE SOLD AMOUNT] Deleting cache key: ${cacheKey}`)
+    await this.redis.del(cacheKey)
+    console.log(`[UPDATE SOLD AMOUNT] Cache deleted successfully`)
+    
+    this.logger.log(`[UPDATE SOLD AMOUNT] Successfully updated soldAmount and currentAmount`)
   }
 }
