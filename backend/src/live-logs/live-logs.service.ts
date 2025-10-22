@@ -11,43 +11,31 @@ export class LiveLogsService {
 
   async getLogFiles(): Promise<string[]> {
     try {
-      this.logger.log(`[LIVE LOGS] Checking logs directory: ${this.logsDir}`);
-      
       if (!fs.existsSync(this.logsDir)) {
-        this.logger.error(`[LIVE LOGS] Logs directory does not exist: ${this.logsDir}`);
         return [];
       }
       
       const allFiles = fs.readdirSync(this.logsDir);
-      this.logger.log(`[LIVE LOGS] All files in directory:`, allFiles);
-      
       const logFiles = allFiles
         .filter(file => file.endsWith('.log'))
         .map(file => path.join(this.logsDir, file));
       
-      this.logger.log(`[LIVE LOGS] Found ${logFiles.length} log files:`, logFiles);
       return logFiles;
     } catch (error) {
-      this.logger.error('[LIVE LOGS] Error reading log files:', error);
       return [];
     }
   }
 
   async getLastLines(filename: string, lines: number = 1000): Promise<string[]> {
     try {
-      this.logger.log(`[LIVE LOGS] Getting last ${lines} lines from: ${filename}`);
-      
       const filePath = path.resolve(filename);
-      this.logger.log(`[LIVE LOGS] Resolved file path: ${filePath}`);
       
       // Security check - ensure file is in logs directory
       if (!filePath.startsWith(this.logsDir)) {
-        this.logger.error(`[LIVE LOGS] Access denied: File outside logs directory. File: ${filePath}, LogsDir: ${this.logsDir}`);
         throw new Error('Access denied: File outside logs directory');
       }
 
       if (!fs.existsSync(filePath)) {
-        this.logger.error(`[LIVE LOGS] File does not exist: ${filePath}`);
         return [];
       }
 
@@ -55,10 +43,8 @@ export class LiveLogsService {
       const allLines = content.split('\n').filter(line => line.trim());
       const lastLines = allLines.slice(-lines);
       
-      this.logger.log(`[LIVE LOGS] Retrieved ${lastLines.length} lines from ${filename} (total lines in file: ${allLines.length})`);
       return lastLines;
     } catch (error) {
-      this.logger.error(`[LIVE LOGS] Error reading file ${filename}:`, error);
       return [];
     }
   }
@@ -93,18 +79,17 @@ export class LiveLogsService {
             callback(newLines);
           }
         } catch (error) {
-          this.logger.error(`[LIVE LOGS] Error processing file change for ${filename}:`, error);
+          // Silent error handling
         }
       });
 
       watcher.on('error', (error) => {
-        this.logger.error(`[LIVE LOGS] Watcher error for ${filename}:`, error);
+        // Silent error handling
       });
 
       this.watchers.set(filename, watcher);
-      this.logger.log(`[LIVE LOGS] Started watching ${filename}`);
     } catch (error) {
-      this.logger.error(`[LIVE LOGS] Error setting up watcher for ${filename}:`, error);
+      // Silent error handling
     }
   }
 
@@ -113,14 +98,12 @@ export class LiveLogsService {
     if (watcher) {
       watcher.close();
       this.watchers.delete(filename);
-      this.logger.log(`[LIVE LOGS] Stopped watching ${filename}`);
     }
   }
 
   stopAllWatchers(): void {
-    this.watchers.forEach((watcher, filename) => {
+    this.watchers.forEach((watcher) => {
       watcher.close();
-      this.logger.log(`[LIVE LOGS] Stopped watching ${filename}`);
     });
     this.watchers.clear();
   }

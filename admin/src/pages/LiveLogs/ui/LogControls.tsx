@@ -14,8 +14,6 @@ interface LogControlsProps {
   onDownloadLogs: () => void
   searchTerm: string
   onSearchChange: (value: string) => void
-  selectedLogType: string
-  onLogTypeChange: (value: string) => void
 }
 
 export const LogControls = ({
@@ -24,9 +22,7 @@ export const LogControls = ({
   onClearLogs,
   onDownloadLogs,
   searchTerm,
-  onSearchChange,
-  selectedLogType,
-  onLogTypeChange
+  onSearchChange
 }: LogControlsProps) => {
   return (
     <div className="flex flex-wrap items-center gap-4 p-4 bg-default-50 rounded-lg">

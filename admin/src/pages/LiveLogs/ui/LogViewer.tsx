@@ -2,11 +2,74 @@ import { forwardRef, useEffect, useRef } from 'react'
 
 interface LogViewerProps {
   logs: string[]
-  getLogLevelColor: (log: string) => string
+}
+
+interface ParsedLog {
+  timestamp?: string
+  level: string
+  context?: string
+  message: string
+  raw: string
+}
+
+const parseLogLine = (logLine: string): ParsedLog => {
+  try {
+    // Try to parse as JSON first
+    const parsed = JSON.parse(logLine)
+    return {
+      timestamp: parsed.timestamp || parsed.time,
+      level: parsed.level || 'info',
+      context: parsed.context,
+      message: parsed.message || logLine,
+      raw: logLine
+    }
+  } catch {
+    // If not JSON, try to extract level from text
+    const levelMatch = logLine.match(/\b(error|warn|info|debug)\b/i)
+    const level = levelMatch ? levelMatch[1].toLowerCase() : 'info'
+    
+    return {
+      level,
+      message: logLine,
+      raw: logLine
+    }
+  }
+}
+
+const getLevelColor = (level: string) => {
+  switch (level.toLowerCase()) {
+    case 'error':
+      return 'text-red-400 border-red-500/30 bg-red-500/5'
+    case 'warn':
+    case 'warning':
+      return 'text-yellow-400 border-yellow-500/30 bg-yellow-500/5'
+    case 'info':
+      return 'text-blue-400 border-blue-500/30 bg-blue-500/5'
+    case 'debug':
+      return 'text-gray-400 border-gray-500/30 bg-gray-500/5'
+    default:
+      return 'text-gray-300 border-gray-500/30 bg-gray-500/5'
+  }
+}
+
+const getLevelIcon = (level: string) => {
+  switch (level.toLowerCase()) {
+    case 'error':
+      return '❌'
+    case 'warn':
+    case 'warning':
+      return '⚠️'
+    case 'info':
+      return 'ℹ️'
+    case 'debug':
+      return '🐛'
+    default:
+      return '📝'
+  }
 }
 
 export const LogViewer = forwardRef<HTMLDivElement, LogViewerProps>(
-  ({ logs, getLogLevelColor }, ref) => {
+  ({ logs }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -18,8 +81,8 @@ export const LogViewer = forwardRef<HTMLDivElement, LogViewerProps>(
     return (
       <div
         ref={ref}
-        className="h-[calc(100vh-300px)] overflow-y-auto bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm"
-        style={{ fontFamily: 'Courier New, monospace' }}
+        className="h-[calc(100vh-300px)] overflow-y-auto bg-[#0d1117] text-[#d4d4d4] font-mono text-sm"
+        style={{ fontFamily: 'JetBrains Mono, Consolas, monospace' }}
       >
         <div ref={containerRef} className="p-4 space-y-1">
           {logs.length === 0 ? (
@@ -33,24 +96,55 @@ export const LogViewer = forwardRef<HTMLDivElement, LogViewerProps>(
               </div>
             </div>
           ) : (
-            logs.map((log, index) => (
-              <div
-                key={index}
-                className={`py-1 px-2 rounded hover:bg-gray-800/50 transition-colors border-l-2 border-transparent hover:border-gray-600 ${getLogLevelColor(log)}`}
-                style={{
-                  borderLeftColor: log.toLowerCase().includes('error') ? '#ef4444' : 
-                                 log.toLowerCase().includes('warn') ? '#f59e0b' : 
-                                 log.toLowerCase().includes('info') ? '#3b82f6' : 'transparent'
-                }}
-              >
-                <div className="flex items-start gap-2">
-                  <span className="text-gray-500 text-xs flex-shrink-0 mt-0.5">
-                    {String(index + 1).padStart(4, '0')}
-                  </span>
-                  <span className="flex-1 break-all">{log}</span>
+            logs.map((log, index) => {
+              const parsed = parseLogLine(log)
+              const levelColor = getLevelColor(parsed.level)
+              const levelIcon = getLevelIcon(parsed.level)
+              
+              return (
+                <div
+                  key={index}
+                  className={`py-2 px-3 rounded-lg hover:bg-gray-800/30 transition-all duration-200 border-l-4 ${levelColor} group`}
+                >
+                  <div className="flex items-start gap-3">
+                    {/* Line number */}
+                    <span className="text-gray-600 text-xs flex-shrink-0 mt-1 font-mono">
+                      {String(index + 1).padStart(4, '0')}
+                    </span>
+                    
+                    {/* Level icon */}
+                    <span className="text-lg flex-shrink-0 mt-0.5">
+                      {levelIcon}
+                    </span>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      {/* Header with timestamp and context */}
+                      <div className="flex items-center gap-2 mb-1">
+                        {parsed.timestamp && (
+                          <span className="text-gray-500 text-xs font-mono">
+                            {parsed.timestamp}
+                          </span>
+                        )}
+                        {parsed.context && (
+                          <span className="text-gray-400 text-xs bg-gray-800 px-2 py-0.5 rounded">
+                            {parsed.context}
+                          </span>
+                        )}
+                        <span className={`text-xs font-semibold uppercase px-2 py-0.5 rounded ${levelColor}`}>
+                          {parsed.level}
+                        </span>
+                      </div>
+                      
+                      {/* Message */}
+                      <div className="text-gray-200 break-words">
+                        {parsed.message}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
       </div>

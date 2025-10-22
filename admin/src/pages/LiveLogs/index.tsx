@@ -1,13 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Card, CardBody, Button, Switch, Chip, Tabs, Tab } from '@heroui/react'
+import { Card, CardBody, Chip } from '@heroui/react'
 import { 
   PlayIcon, 
-  PauseIcon, 
-  TrashIcon, 
-  ArrowDownTrayIcon,
-  CommandLineIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon
+  CommandLineIcon
 } from '@heroicons/react/24/outline'
 import { LogViewer } from './ui/LogViewer'
 import { LogControls } from './ui/LogControls'
@@ -16,29 +11,13 @@ import { useLogSocket } from './model/useLogSocket'
 const LiveLogs = () => {
   const { logs, isConnected } = useLogSocket()
   const [autoScroll, setAutoScroll] = useState(true)
-  const [selectedLogType, setSelectedLogType] = useState('all')
   const [filteredLogs, setFilteredLogs] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const logViewerRef = useRef<HTMLDivElement>(null)
 
-  // Filter logs based on selected type and search term
+  // Filter logs based on search term only
   useEffect(() => {
     let filtered = logs
-
-    // Filter by log type
-    if (selectedLogType !== 'all') {
-      filtered = filtered.filter(log => {
-        const level = log.toLowerCase()
-        if (selectedLogType === 'error') {
-          return level.includes('error') || level.includes('fatal')
-        } else if (selectedLogType === 'warn') {
-          return level.includes('warn')
-        } else if (selectedLogType === 'info') {
-          return level.includes('info')
-        }
-        return true
-      })
-    }
 
     // Filter by search term
     if (searchTerm.trim()) {
@@ -48,7 +27,7 @@ const LiveLogs = () => {
     }
 
     setFilteredLogs(filtered)
-  }, [logs, selectedLogType, searchTerm])
+  }, [logs, searchTerm])
 
   // Auto-scroll to bottom when new logs arrive
   useEffect(() => {
@@ -72,18 +51,6 @@ const LiveLogs = () => {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-  }
-
-  const getLogLevelColor = (log: string) => {
-    const level = log.toLowerCase()
-    if (level.includes('error') || level.includes('fatal')) {
-      return 'text-red-400'
-    } else if (level.includes('warn')) {
-      return 'text-yellow-400'
-    } else if (level.includes('info')) {
-      return 'text-blue-400'
-    }
-    return 'text-gray-300'
   }
 
   return (
@@ -118,8 +85,6 @@ const LiveLogs = () => {
         onDownloadLogs={handleDownloadLogs}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        selectedLogType={selectedLogType}
-        onLogTypeChange={setSelectedLogType}
       />
 
       {/* Log Viewer */}
@@ -127,16 +92,7 @@ const LiveLogs = () => {
         <CardBody className="p-0">
           <div className="flex items-center justify-between p-4 border-b border-divider">
             <div className="flex items-center gap-4">
-              <Tabs
-                selectedKey={selectedLogType}
-                onSelectionChange={(key) => setSelectedLogType(key as string)}
-                size="sm"
-              >
-                <Tab key="all" title="All Logs" />
-                <Tab key="error" title="Errors" />
-                <Tab key="warn" title="Warnings" />
-                <Tab key="info" title="Info" />
-              </Tabs>
+              <h3 className="text-lg font-semibold">Server Logs</h3>
             </div>
             
             <div className="flex items-center gap-2 text-sm text-foreground/60">
@@ -153,7 +109,6 @@ const LiveLogs = () => {
           <LogViewer
             ref={logViewerRef}
             logs={filteredLogs}
-            getLogLevelColor={getLogLevelColor}
           />
         </CardBody>
       </Card>

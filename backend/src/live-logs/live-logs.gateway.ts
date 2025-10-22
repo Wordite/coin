@@ -47,12 +47,9 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
   }
 
   async handleConnection(client: Socket) {
-    this.logger.log(`[LIVE LOGS] Client attempting to connect: ${client.id}`);
-    
     // Extract cookies from handshake
     const cookies = client.handshake.headers.cookie;
     if (!cookies) {
-      this.logger.error(`[LIVE LOGS] No cookies found for client: ${client.id}`);
       client.disconnect();
       return;
     }
@@ -60,7 +57,6 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
     // Parse refresh token from cookies
     const refreshToken = this.extractCookie(cookies, 'refreshToken');
     if (!refreshToken) {
-      this.logger.error(`[LIVE LOGS] No refresh token found for client: ${client.id}`);
       client.disconnect();
       return;
     }
@@ -71,7 +67,6 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
       const session = await this.sessionService.find(sessionId);
       
       if (!session || !session.userId) {
-        this.logger.error(`[LIVE LOGS] Unauthorized access attempt: ${client.id}`);
         client.disconnect();
         return;
       }
@@ -79,24 +74,18 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
       // Get user details to check roles
       const user = await this.userService.findById(session.userId);
       if (!user || user.role !== 'ADMIN') {
-        this.logger.error(`[LIVE LOGS] Unauthorized access attempt: ${client.id}`);
         client.disconnect();
         return;
       }
-      
-      this.logger.log(`[LIVE LOGS] Client authenticated: ${client.id}, User: ${user.id}`);
     } catch (error) {
-      this.logger.error(`[LIVE LOGS] Authentication failed: ${error.message}`);
       client.disconnect();
       return;
     }
     
-    this.logger.log(`[LIVE LOGS] Client origin: ${client.handshake.headers.origin}`);
     this.connectedClients.set(client.id, { socket: client, subscriptions: new Set() });
   }
 
   async handleDisconnect(client: Socket) {
-    this.logger.log(`[LIVE LOGS] Client disconnected: ${client.id}`);
     const clientData = this.connectedClients.get(client.id);
     
     if (clientData) {
@@ -115,11 +104,8 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
     @MessageBody() data: { logType: string; filename?: string }
   ) {
     try {
-      this.logger.log(`[LIVE LOGS] Client ${client.id} subscribing to logs:`, data);
-      
       const clientData = this.connectedClients.get(client.id);
       if (!clientData) {
-        this.logger.error(`[LIVE LOGS] Client data not found for ${client.id}`);
         client.emit('log-error', { message: 'Client not found' });
         return;
       }
@@ -128,33 +114,22 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
       
       if (data.filename) {
         targetFile = data.filename;
-        this.logger.log(`[LIVE LOGS] Using specified filename: ${targetFile}`);
       } else {
-        // Default to all.log for 'all' type
-        this.logger.log(`[LIVE LOGS] Getting available log files...`);
         const logFiles = await this.liveLogsService.getLogFiles();
-        this.logger.log(`[LIVE LOGS] Available log files:`, logFiles);
-        
         targetFile = logFiles.find(file => file.includes('all.log')) || logFiles[0];
-        this.logger.log(`[LIVE LOGS] Selected target file: ${targetFile}`);
       }
 
       if (!targetFile) {
-        this.logger.error(`[LIVE LOGS] No target file found`);
         client.emit('log-error', { message: 'No log files found' });
         return;
       }
 
       // Send initial log history
-      this.logger.log(`[LIVE LOGS] Getting initial log history from ${targetFile}`);
       const history = await this.liveLogsService.getLastLines(targetFile, 1000);
-      this.logger.log(`[LIVE LOGS] Sending ${history.length} lines to client`);
       client.emit('log-history', history);
 
       // Set up file watching
-      this.logger.log(`[LIVE LOGS] Setting up file watcher for ${targetFile}`);
       this.liveLogsService.watchLogFile(targetFile, (newLines: string[]) => {
-        this.logger.log(`[LIVE LOGS] File changed, sending ${newLines.length} new lines to client`);
         client.emit('log-update', newLines);
       });
 
@@ -162,10 +137,8 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
       clientData.subscriptions.add(targetFile);
       
       client.emit('log-subscribed', { filename: targetFile });
-      this.logger.log(`[LIVE LOGS] Client ${client.id} subscribed to ${targetFile}`);
       
     } catch (error) {
-      this.logger.error(`[LIVE LOGS] Error handling subscription:`, error);
       client.emit('log-error', { message: 'Failed to subscribe to logs' });
     }
   }
@@ -176,8 +149,6 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
     @MessageBody() data: { filename: string }
   ) {
     try {
-      this.logger.log(`[LIVE LOGS] Client ${client.id} unsubscribing from:`, data.filename);
-      
       const clientData = this.connectedClients.get(client.id);
       if (clientData) {
         this.liveLogsService.stopWatching(data.filename);
@@ -185,7 +156,6 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
         client.emit('log-unsubscribed', { filename: data.filename });
       }
     } catch (error) {
-      this.logger.error(`[LIVE LOGS] Error handling unsubscription:`, error);
       client.emit('log-error', { message: 'Failed to unsubscribe from logs' });
     }
   }
@@ -196,7 +166,6 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
       const logFiles = await this.liveLogsService.getLogFiles();
       client.emit('log-files', logFiles);
     } catch (error) {
-      this.logger.error(`[LIVE LOGS] Error getting log files:`, error);
       client.emit('log-error', { message: 'Failed to get log files' });
     }
   }
