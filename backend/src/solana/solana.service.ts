@@ -78,6 +78,19 @@ export class SolanaService {
       this.logger.log(`[SOLANA INIT] Endpoints:`, endpoints)
       this.logger.log(`[SOLANA INIT] Endpoints length:`, endpoints?.length || 0)
 
+      // Validate each endpoint
+      for (let i = 0; i < endpoints.length; i++) {
+        const endpoint = endpoints[i]
+        if (!endpoint.url || typeof endpoint.url !== 'string') {
+          this.logger.error(`[SOLANA INIT] Invalid endpoint at index ${i}:`, endpoint)
+          throw new Error(`Invalid endpoint at index ${i}: missing or invalid URL`)
+        }
+        if (!endpoint.name || typeof endpoint.name !== 'string') {
+          this.logger.error(`[SOLANA INIT] Invalid endpoint at index ${i}:`, endpoint)
+          throw new Error(`Invalid endpoint at index ${i}: missing or invalid name`)
+        }
+      }
+
       // Check if we have valid data
       if (!rateLimits || !endpoints || endpoints.length === 0) {
         this.logger.error(`[SOLANA INIT] Invalid initialization data:`, {
@@ -106,54 +119,93 @@ export class SolanaService {
       }
 
       // Create Redis-backed limiters
-      this.readLimiter = new Bottleneck({
-        id: 'solana-read-limiter',
-        datastore: 'ioredis',
-        clientOptions: {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: parseInt(process.env.REDIS_PORT || '6379'),
-          password: process.env.REDIS_PASSWORD,
-        },
-        reservoir: rateLimits.readLimit,
-        reservoirRefreshAmount: rateLimits.readLimit,
-        reservoirRefreshInterval: 1000,
-        maxConcurrent: Math.min(rateLimits.readLimit, 10),
-        minTime: Math.floor(1000 / rateLimits.readLimit),
+      this.logger.log(`[SOLANA INIT] Creating Redis limiters...`)
+      this.logger.log(`[SOLANA INIT] Redis config:`, {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD ? '[HIDDEN]' : 'none'
       })
 
-      this.writeLimiter = new Bottleneck({
-        id: 'solana-write-limiter',
-        datastore: 'ioredis',
-        clientOptions: {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: parseInt(process.env.REDIS_PORT || '6379'),
-          password: process.env.REDIS_PASSWORD,
-        },
-        reservoir: rateLimits.writeLimit,
-        reservoirRefreshAmount: rateLimits.writeLimit,
-        reservoirRefreshInterval: 1000,
-        maxConcurrent: Math.min(rateLimits.writeLimit, 3),
-        minTime: Math.floor(1000 / rateLimits.writeLimit),
-      })
+      try {
+        this.readLimiter = new Bottleneck({
+          id: 'solana-read-limiter',
+          datastore: 'ioredis',
+          clientOptions: {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            password: process.env.REDIS_PASSWORD,
+          },
+          reservoir: rateLimits.readLimit,
+          reservoirRefreshAmount: rateLimits.readLimit,
+          reservoirRefreshInterval: 1000,
+          maxConcurrent: Math.min(rateLimits.readLimit, 10),
+          minTime: Math.floor(1000 / rateLimits.readLimit),
+        })
+        this.logger.log(`[SOLANA INIT] Read limiter created successfully`)
+      } catch (error) {
+        this.logger.error(`[SOLANA INIT] Failed to create read limiter:`, error)
+        throw error
+      }
+
+      try {
+        this.writeLimiter = new Bottleneck({
+          id: 'solana-write-limiter',
+          datastore: 'ioredis',
+          clientOptions: {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+            password: process.env.REDIS_PASSWORD,
+          },
+          reservoir: rateLimits.writeLimit,
+          reservoirRefreshAmount: rateLimits.writeLimit,
+          reservoirRefreshInterval: 1000,
+          maxConcurrent: Math.min(rateLimits.writeLimit, 3),
+          minTime: Math.floor(1000 / rateLimits.writeLimit),
+        })
+        this.logger.log(`[SOLANA INIT] Write limiter created successfully`)
+      } catch (error) {
+        this.logger.error(`[SOLANA INIT] Failed to create write limiter:`, error)
+        throw error
+      }
 
       // Initialize endpoint manager
       this.logger.log(`[SOLANA INIT] Initializing endpoint manager with ${endpoints.length} endpoints`)
-      this.endpointManager = new EndpointManager(endpoints)
+      this.logger.log(`[SOLANA INIT] Endpoints for manager:`, endpoints)
+
+      try {
+        this.endpointManager = new EndpointManager(endpoints)
+        this.logger.log(`[SOLANA INIT] Endpoint manager created successfully`)
+      } catch (error) {
+        this.logger.error(`[SOLANA INIT] Failed to create endpoint manager:`, error)
+        throw error
+      }
 
       // Create connections for each endpoint
       this.logger.log(`[SOLANA INIT] Creating connections for endpoints...`)
       for (const endpoint of endpoints) {
         this.logger.log(`[SOLANA INIT] Creating connection for: ${endpoint.url}`)
-        const connection = new Connection(endpoint.url)
-        this.connections.set(endpoint.url, connection)
 
-        // Create proxy connection with rate limiting
-        const proxyConnection = makeProxyConnection(connection, {
-          readLimiter: this.readLimiter,
-          writeLimiter: this.writeLimiter,
-        })
-        this.proxyConnections.set(endpoint.url, proxyConnection)
-        this.logger.log(`[SOLANA INIT] Proxy connection created for: ${endpoint.url}`)
+        try {
+          const connection = new Connection(endpoint.url)
+          this.connections.set(endpoint.url, connection)
+          this.logger.log(`[SOLANA INIT] Basic connection created for: ${endpoint.url}`)
+
+          // Create proxy connection with rate limiting
+          try {
+            const proxyConnection = makeProxyConnection(connection, {
+              readLimiter: this.readLimiter,
+              writeLimiter: this.writeLimiter,
+            })
+            this.proxyConnections.set(endpoint.url, proxyConnection)
+            this.logger.log(`[SOLANA INIT] Proxy connection created for: ${endpoint.url}`)
+          } catch (error) {
+            this.logger.error(`[SOLANA INIT] Failed to create proxy connection for ${endpoint.url}:`, error)
+            throw error
+          }
+        } catch (error) {
+          this.logger.error(`[SOLANA INIT] Failed to create basic connection for ${endpoint.url}:`, error)
+          throw error
+        }
       }
       
       this.logger.log(`[SOLANA INIT] Total proxyConnections created: ${this.proxyConnections.size}`)
