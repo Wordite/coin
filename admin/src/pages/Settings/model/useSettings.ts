@@ -75,7 +75,15 @@ export const useSettings = () => {
       await settingsApi.updateSettings(settings)
       
       // Сохраняем настройки пресейла
-      await coinApi.updatePresaleSettings(presaleSettings)
+      const updatedPresaleSettings = await coinApi.updatePresaleSettings(presaleSettings)
+      
+      // Update local state with the updated settings (including recalculated currentAmount)
+      setPresaleSettings(updatedPresaleSettings)
+      
+      // Dispatch custom event to notify other components that presale settings have been updated
+      window.dispatchEvent(new CustomEvent('presaleSettingsUpdated', { 
+        detail: updatedPresaleSettings 
+      }))
       
       Notify.success('Settings saved successfully!')
     } catch (error) {

@@ -70,7 +70,7 @@ export const usePresale = () => {
         await loadInitialData()
         await loadUsersData()
       } else {
-        Notify.warning('No tokens were issued. All users may already have their tokens.')
+        Notify.warn('No tokens were issued. All users may already have their tokens.')
       }
     } catch (err) {
       Notify.error('Failed to issue tokens')
@@ -98,7 +98,7 @@ export const usePresale = () => {
         await loadInitialData()
         await loadUsersData()
       } else {
-        Notify.warning('No tokens to issue for this user')
+        Notify.warn('No tokens to issue for this user')
       }
     } catch (err) {
       Notify.error('Failed to issue tokens to user')
@@ -165,6 +165,20 @@ export const usePresale = () => {
   useEffect(() => {
     loadUsersData()
   }, [currentPage, filterType])
+
+  // Listen for presale settings updates from settings page
+  useEffect(() => {
+    const handlePresaleSettingsUpdate = () => {
+      console.log('Presale settings updated, refreshing data...')
+      loadInitialData()
+    }
+
+    window.addEventListener('presaleSettingsUpdated', handlePresaleSettingsUpdate)
+    
+    return () => {
+      window.removeEventListener('presaleSettingsUpdated', handlePresaleSettingsUpdate)
+    }
+  }, [])
 
   return {
     // State

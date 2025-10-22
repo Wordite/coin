@@ -31,33 +31,35 @@ export const PresaleOverview: React.FC<PresaleOverviewProps> = ({
         </div>
       </CardHeader>
       <CardBody className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-primary/5 rounded-lg">
-            <div className="text-2xl font-bold text-primary">
-              {formatAmount(presaleSettings.totalAmount)}
+        <div className="flex justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-6xl">
+            <div className="text-center p-4 bg-primary/5 rounded-lg">
+              <div className="text-2xl font-bold text-primary">
+                {formatAmount(presaleSettings.totalAmount)}
+              </div>
+              <div className="text-sm text-foreground/60">Total Tokens</div>
             </div>
-            <div className="text-sm text-foreground/60">Total Tokens</div>
-          </div>
-          <div className="text-center p-4 bg-success/5 rounded-lg">
-            <div className="text-2xl font-bold text-success">
-              {formatAmount(presaleSettings.soldAmount)}
+            <div className="text-center p-4 bg-success/5 rounded-lg">
+              <div className="text-2xl font-bold text-success">
+                {formatAmount(presaleSettings.soldAmount)}
+              </div>
+              <div className="text-sm text-foreground/60">Sold Tokens</div>
             </div>
-            <div className="text-sm text-foreground/60">Sold Tokens</div>
-          </div>
-          <div className="text-center p-4 bg-warning/5 rounded-lg">
-            <div className="text-2xl font-bold text-warning">
-              {formatAmount(presaleSettings.currentAmount)}
+            <div className="text-center p-4 bg-warning/5 rounded-lg">
+              <div className="text-2xl font-bold text-warning">
+                {formatAmount(presaleSettings.currentAmount)}
+              </div>
+              <div className="text-sm text-foreground/60">Available Tokens</div>
             </div>
-            <div className="text-sm text-foreground/60">Available Tokens</div>
-          </div>
-          <div className="text-center p-4 bg-warning/5 rounded-lg">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <WalletIcon className="w-5 h-5 text-warning" />
+            <div className="text-center p-4 bg-warning/5 rounded-lg">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <WalletIcon className="w-5 h-5 text-warning" />
+              </div>
+              <div className="text-2xl font-bold text-warning">
+                {walletBalance !== undefined ? formatAmount(walletBalance) : 'Loading...'}
+              </div>
+              <div className="text-sm text-foreground/60">Wallet Balance Tokens</div>
             </div>
-            <div className="text-2xl font-bold text-warning">
-              {walletBalance !== undefined ? formatAmount(walletBalance) : 'Loading...'}
-            </div>
-            <div className="text-sm text-foreground/60">Wallet Balance</div>
           </div>
         </div>
         

@@ -122,14 +122,20 @@ export class CoinService {
     let result: CoinPresaleSettings
 
     if (existingCoin) {
+      // Calculate new values
+      const newTotalAmount = settings.totalAmount ?? existingCoin.totalAmount
+      const newSoldAmount = settings.soldAmount ?? existingCoin.soldAmount
+      // Recalculate currentAmount when totalAmount changes
+      const newCurrentAmount = settings.currentAmount ?? (newTotalAmount - newSoldAmount)
+
       // Update existing coin settings
       const updated = await this.prisma.coin.update({
         where: { id: existingCoin.id },
         data: {
-          totalAmount: settings.totalAmount ?? existingCoin.totalAmount,
+          totalAmount: newTotalAmount,
           stage: settings.stage ?? existingCoin.stage,
-          soldAmount: settings.soldAmount ?? existingCoin.soldAmount,
-          currentAmount: settings.currentAmount ?? existingCoin.currentAmount,
+          soldAmount: newSoldAmount,
+          currentAmount: newCurrentAmount,
           status: settings.status ?? existingCoin.status,
           name: settings.name ?? existingCoin.name,
           decimals: settings.decimals ?? existingCoin.decimals,
@@ -142,10 +148,10 @@ export class CoinService {
       })
 
       result = {
-        totalAmount: updated.totalAmount,
+        totalAmount: newTotalAmount,
         stage: updated.stage,
-        soldAmount: updated.soldAmount,
-        currentAmount: updated.currentAmount,
+        soldAmount: newSoldAmount,
+        currentAmount: newCurrentAmount,
         status: updated.status,
         name: updated.name,
         decimals: updated.decimals,
