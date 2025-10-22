@@ -9,13 +9,17 @@ export const useLogSocket = () => {
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
     
-    console.log('[LOG SOCKET] Initializing WebSocket connection to:', backendUrl)
+    console.log('[LOG SOCKET] 🔍 Debug info:')
+    console.log('[LOG SOCKET] Backend URL:', backendUrl)
+    console.log('[LOG SOCKET] Current location:', window.location.href)
+    console.log('[LOG SOCKET] Protocol:', window.location.protocol)
     console.log('[LOG SOCKET] Namespace: /live-logs')
     
-    const socket = io(backendUrl, {
+    const socket = io(`${backendUrl}/live-logs`, {
       path: '/socket.io',
-      transports: ['websocket'],
-      namespace: '/live-logs'
+      transports: ['websocket', 'polling'],
+      timeout: 20000,
+      forceNew: true
     })
     
     socket.on('connect', () => {

@@ -22,6 +22,7 @@ import { LiveLogsService } from './live-logs.service';
     credentials: true,
   },
   namespace: '/live-logs',
+  transports: ['websocket', 'polling'],
 })
 export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
