@@ -19,6 +19,7 @@ import { RedisModule } from '../redis/redis.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AntiSpamModule } from '../anti-spam/anti-spam.module';
 import { StrongAuthGuard } from './guards/strong.guard';
+import { TransactionModule } from '../transaction/transaction.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { StrongAuthGuard } from './guards/strong.guard';
     SessionModule,
     ActivationLinkModule,
     MailModule,
+    TransactionModule,
   ],
   controllers: [AuthController],
   providers: [

@@ -8,36 +8,12 @@ import { WalletService } from 'src/wallet/wallet.service'
 import { AntiSpamService } from 'src/anti-spam/anti-spam.service'
 import { SettingsService } from 'src/settings/settings.service'
 import { CoinService } from 'src/coin/coin.service'
+import { TransactionService } from 'src/transaction/transaction.service'
 import { Request } from 'express'
 
 // ===== INTERFACES FOR USERS MANAGEMENT =====
 
-export interface Transaction {
-  id: string
-  type: 'SOL' | 'USDT'
-  amount: number
-  rate: number
-  coinsPurchased: number
-  timestamp: string
-  txHash?: string
-  isReceived: boolean
-  isSuccessful: boolean
-}
-
-export interface UserWithTransactions {
-  id: string
-  email: string | null
-  walletAddress: string | null
-  role: string
-  createdAt: string
-  updatedAt: string
-  transactions: Transaction[]
-  totalSpentSOL: number
-  totalSpentUSDT: number
-  totalCoinsPurchased: number
-  totalCoinsReceived: number
-  totalPendingTokens: number
-}
+import { Transaction, UserWithTransactions } from 'src/transaction/transaction.types'
 
 export interface UsersListResponse {
   users: UserWithTransactions[]
@@ -56,7 +32,8 @@ export class UserService {
     private walletService: WalletService,
     private antiSpamService: AntiSpamService,
     private settingsService: SettingsService,
-    private coinService: CoinService
+    private coinService: CoinService,
+    private transactionService: TransactionService
   ) {}
 
   private readonly logger = new Logger(UserService.name)
@@ -591,28 +568,17 @@ export class UserService {
       throw new NotFoundException('User not found')
     }
 
-    const transactions = (user.transactions as any as Transaction[]) || []
+    const transactions = this.transactionService.parseTransactions(user.transactions)
 
     // Calculate current total coins
-    const currentTotalCoins = transactions.reduce((sum, tx) => sum + tx.coinsPurchased, 0)
+    const currentTotalCoins = this.transactionService.calculateTotalCoins(transactions)
     console.log('currentTotalCoins', currentTotalCoins)
 
     // Create adjustment transaction
-    const adjustmentAmount = newCoinsAmount - currentTotalCoins
-    console.log('adjustmentAmount', adjustmentAmount)
-    const adjustmentTransaction: Transaction = {
-      id: `adjustment-${Date.now()}`,
-      type: 'SOL', // Default type for adjustments
-      amount: 0,
-      rate: 0,
-      coinsPurchased: adjustmentAmount,
-      timestamp: new Date().toISOString(),
-      txHash: 'ADMIN_ADJUSTMENT',
-      isReceived: adjustmentAmount < 0,
-      isSuccessful: true,
-    }
+    const adjustmentTransaction = this.transactionService.createAdjustmentTransaction(currentTotalCoins, newCoinsAmount)
+    console.log('adjustmentAmount', adjustmentTransaction.coinsPurchased)
 
-    const updatedTransactions = [...transactions, adjustmentTransaction]
+    const updatedTransactions = this.transactionService.addTransaction(user.transactions, adjustmentTransaction)
 
     const updatedUser = await this.prisma.user.update({
       where: { id },
@@ -632,38 +598,8 @@ export class UserService {
   }
 
   private calculateUserStats(user: any): UserWithTransactions {
-    // Handle transactions as JSON string or array
-    let transactions: Transaction[] = []
-    if (user.transactions) {
-      if (typeof user.transactions === 'string') {
-        try {
-          transactions = JSON.parse(user.transactions) || []
-        } catch (error) {
-          console.error('Error parsing transactions JSON:', error)
-          transactions = []
-        }
-      } else if (Array.isArray(user.transactions)) {
-        transactions = user.transactions
-      }
-    }
-
-    const totalSpentSOL = transactions
-      .filter((tx) => tx.type === 'SOL')
-      .reduce((sum, tx) => sum + tx.amount, 0)
-
-    const totalSpentUSDT = transactions
-      .filter((tx) => tx.type === 'USDT')
-      .reduce((sum, tx) => sum + tx.amount, 0)
-
-    const totalCoinsPurchased = transactions.reduce((sum, tx) => sum + tx.coinsPurchased, 0)
-
-    const totalCoinsReceived = transactions
-      .filter((tx) => tx.isReceived && tx.coinsPurchased > 0)
-      .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
-
-    const totalPendingTokens = transactions
-      .filter((tx) => tx.isSuccessful && !tx.isReceived)
-      .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
+    const transactions = this.transactionService.parseTransactions(user.transactions)
+    const stats = this.transactionService.calculateStats(transactions)
 
     return {
       id: user.id,
@@ -673,11 +609,7 @@ export class UserService {
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
       transactions,
-      totalSpentSOL,
-      totalSpentUSDT,
-      totalCoinsPurchased,
-      totalCoinsReceived,
-      totalPendingTokens,
+      ...stats,
     }
   }
 

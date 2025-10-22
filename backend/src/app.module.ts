@@ -23,6 +23,7 @@ import { CleanupModule } from './cleanup/cleanup.module';
 import { SolanaService } from './solana/solana.service';
 import { SolanaModule } from './solana/solana.module';
 import { WalletModule } from './wallet/wallet.module';
+import { TransactionService } from './transaction/transaction.service';
 
 @Module({
   imports: [
@@ -54,6 +55,6 @@ import { WalletModule } from './wallet/wallet.module';
     SolanaModule,
     WalletModule,
   ],
-  providers: [SolanaService],
+  providers: [SolanaService, TransactionService],
 })
 export class AppModule {}

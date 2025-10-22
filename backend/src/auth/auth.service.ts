@@ -1,5 +1,7 @@
 import { Injectable, Logger, UnauthorizedException, BadRequestException } from '@nestjs/common'
-import { UserService, Transaction } from '../user/user.service'
+import { UserService } from '../user/user.service'
+import { Transaction } from '../transaction/transaction.types'
+import { TransactionService } from '../transaction/transaction.service'
 import { JwtService } from '@nestjs/jwt'
 import { jwtConstants } from './constants/jwt.constant'
 import { SessionService } from 'src/session/session.service'
@@ -19,7 +21,8 @@ export class AuthService {
     private jwt: JwtService,
     private session: SessionService,
     private mail: MailService,
-    private authorizationRequest: AuthorizationRequestService
+    private authorizationRequest: AuthorizationRequestService,
+    private transactionService: TransactionService
   ) {}
 
   private readonly logger = new Logger(AuthService.name)

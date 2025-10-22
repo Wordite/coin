@@ -1,6 +1,7 @@
 import { Controller, Get, Put, Delete, Body, Param, Query, Req, UnauthorizedException, Post } from '@nestjs/common'
 import { UserService } from './user.service'
-import type { UsersListResponse, UserWithTransactions } from './user.service'
+import type { UsersListResponse } from './user.service'
+import type { UserWithTransactions } from '../transaction/transaction.types'
 import { Auth } from 'src/auth/decorators/auth.decorator'
 import { Roles, Role } from 'src/auth/constants/roles.constant'
 import type { Request } from 'express'
