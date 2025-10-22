@@ -110,9 +110,11 @@ export const useSettings = () => {
   const getWalletInfo = async () => {
     try {
       const response = await api.get('/vault/root-wallet')
+      // Ensure we only extract the fields we need
+      const data = response.data || {}
       setWalletInfo({
-        isInitialized: response.data.isInitialized,
-        updatedAt: response.data.updatedAt
+        isInitialized: Boolean(data.isInitialized),
+        updatedAt: data.updatedAt || undefined
       })
     } catch (error) {
       console.error('Failed to get wallet info:', error)
@@ -134,10 +136,11 @@ export const useSettings = () => {
       })
 
       // Проверяем, что ответ содержит корректные данные
-      if (response.data && response.data.isInitialized && response.data.updatedAt) {
+      const data = response.data || {}
+      if (data.isInitialized && data.updatedAt) {
         setWalletInfo({
           isInitialized: true,
-          updatedAt: response.data.updatedAt
+          updatedAt: data.updatedAt
         })
         setNewSecretKey('')
         setForceInitialize(false)

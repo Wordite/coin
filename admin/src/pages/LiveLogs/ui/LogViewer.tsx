@@ -20,8 +20,16 @@ interface ParsedLog {
 }
 
 const parseLogLine = (logLine: any): ParsedLog => {
-  // Ensure we have a string
-  const lineStr = typeof logLine === 'string' ? logLine : String(logLine)
+  // Ensure we have a string - handle objects properly
+  let lineStr: string
+  if (typeof logLine === 'string') {
+    lineStr = logLine
+  } else if (typeof logLine === 'object' && logLine !== null) {
+    // Convert object to JSON string
+    lineStr = JSON.stringify(logLine)
+  } else {
+    lineStr = String(logLine)
+  }
   
   try {
     // Try to parse as JSON first
