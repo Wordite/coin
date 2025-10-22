@@ -94,10 +94,13 @@ export class SolanaService {
       })
 
       // Initialize endpoint manager
+      this.logger.log(`[SOLANA INIT] Initializing endpoint manager with ${endpoints.length} endpoints`)
       this.endpointManager = new EndpointManager(endpoints)
 
       // Create connections for each endpoint
+      this.logger.log(`[SOLANA INIT] Creating connections for endpoints...`)
       for (const endpoint of endpoints) {
+        this.logger.log(`[SOLANA INIT] Creating connection for: ${endpoint.url}`)
         const connection = new Connection(endpoint.url)
         this.connections.set(endpoint.url, connection)
 
@@ -107,7 +110,11 @@ export class SolanaService {
           writeLimiter: this.writeLimiter,
         })
         this.proxyConnections.set(endpoint.url, proxyConnection)
+        this.logger.log(`[SOLANA INIT] Proxy connection created for: ${endpoint.url}`)
       }
+      
+      this.logger.log(`[SOLANA INIT] Total proxyConnections created: ${this.proxyConnections.size}`)
+      this.logger.log(`[SOLANA INIT] ProxyConnections keys:`, Array.from(this.proxyConnections.keys()))
 
       // Set the primary proxy connection
       const primaryEndpoint = this.endpointManager.getNextEndpoint()
@@ -142,13 +149,23 @@ export class SolanaService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       this.logger.log(`[EXECUTE WITH RETRY] Attempt ${attempt}/${maxRetries}`)
       try {
+        this.logger.log(`[EXECUTE WITH RETRY] Getting next endpoint...`)
         const endpoint = this.endpointManager.getNextEndpoint()
+        this.logger.log(`[EXECUTE WITH RETRY] Endpoint result:`, endpoint ? endpoint.url : 'null')
+        
         if (!endpoint) {
+          this.logger.error(`[EXECUTE WITH RETRY] No healthy endpoints available`)
           throw new Error('No healthy endpoints available')
         }
 
+        this.logger.log(`[EXECUTE WITH RETRY] Looking for connection in proxyConnections...`)
+        this.logger.log(`[EXECUTE WITH RETRY] Available connections:`, Array.from(this.proxyConnections.keys()))
+        
         const connection = this.proxyConnections.get(endpoint.url)
+        this.logger.log(`[EXECUTE WITH RETRY] Connection found:`, connection ? 'yes' : 'no')
+        
         if (!connection) {
+          this.logger.error(`[EXECUTE WITH RETRY] No connection found for endpoint: ${endpoint.url}`)
           throw new Error(`No connection found for endpoint: ${endpoint.url}`)
         }
 

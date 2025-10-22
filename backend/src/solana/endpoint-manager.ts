@@ -38,12 +38,22 @@ export class EndpointManager {
    * Get the next healthy endpoint using round-robin
    */
   getNextEndpoint(): RpcEndpoint | null {
+    this.logger.log(`[ENDPOINT MANAGER] Getting next endpoint, total endpoints: ${this.endpoints.length}`)
+    
     const healthyEndpoints = this.endpoints.filter(
       health => health.isHealthy && (!health.disabledUntil || health.disabledUntil < new Date())
     )
 
+    this.logger.log(`[ENDPOINT MANAGER] Healthy endpoints found: ${healthyEndpoints.length}`)
+    this.logger.log(`[ENDPOINT MANAGER] All endpoints status:`, this.endpoints.map(h => ({
+      url: h.endpoint.url,
+      isHealthy: h.isHealthy,
+      failureCount: h.failureCount,
+      disabledUntil: h.disabledUntil
+    })))
+
     if (healthyEndpoints.length === 0) {
-      this.logger.warn('No healthy endpoints available')
+      this.logger.warn('[ENDPOINT MANAGER] No healthy endpoints available')
       return null
     }
 
@@ -51,6 +61,7 @@ export class EndpointManager {
     const selected = healthyEndpoints[this.currentIndex % healthyEndpoints.length]
     this.currentIndex = (this.currentIndex + 1) % healthyEndpoints.length
 
+    this.logger.log(`[ENDPOINT MANAGER] Selected endpoint: ${selected.endpoint.url}`)
     return selected.endpoint
   }
 
