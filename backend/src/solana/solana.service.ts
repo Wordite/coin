@@ -56,11 +56,16 @@ export class SolanaService {
 
   private async initializeService(): Promise<void> {
     try {
+      this.logger.log(`[SOLANA INIT] Starting service initialization...`)
+      
       // Get rate limits and endpoints from database
       const [rateLimits, endpoints] = await Promise.all([
         this.coin.getRateLimits(),
         this.coin.getRpcEndpoints(),
       ])
+      
+      this.logger.log(`[SOLANA INIT] Rate limits:`, rateLimits)
+      this.logger.log(`[SOLANA INIT] Endpoints:`, endpoints)
 
       // Create Redis-backed limiters
       this.readLimiter = new Bottleneck({
@@ -130,9 +135,9 @@ export class SolanaService {
       }
 
       this._resolveInitialized()
-      this.logger.log(`SolanaService initialized with ${endpoints.length} endpoints and rate limits: ${rateLimits.readLimit} read/s, ${rateLimits.writeLimit} write/s`)
+      this.logger.log(`[SOLANA INIT] ✅ SolanaService initialized successfully with ${endpoints.length} endpoints and rate limits: ${rateLimits.readLimit} read/s, ${rateLimits.writeLimit} write/s`)
     } catch (error) {
-      this.logger.error('Failed to initialize SolanaService:', error)
+      this.logger.error('[SOLANA INIT] ❌ Failed to initialize SolanaService:', error)
       // Fallback to public RPC
       this.proxyConnection = this.fallbackConnection
       this._resolveInitialized()
@@ -144,6 +149,18 @@ export class SolanaService {
     maxRetries: number = 3
   ): Promise<T> {
     this.logger.log(`[EXECUTE WITH RETRY] Starting executeWithRetry with maxRetries: ${maxRetries}`)
+    
+    // Check if service is initialized
+    if (!this.endpointManager) {
+      this.logger.error(`[EXECUTE WITH RETRY] Service not initialized! endpointManager is null`)
+      throw new Error('SolanaService not initialized')
+    }
+    
+    if (!this.proxyConnections || this.proxyConnections.size === 0) {
+      this.logger.error(`[EXECUTE WITH RETRY] Service not initialized! proxyConnections is empty`)
+      throw new Error('SolanaService not initialized - no proxy connections')
+    }
+    
     let lastError: any
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {

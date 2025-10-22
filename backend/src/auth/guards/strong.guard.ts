@@ -19,12 +19,12 @@ export class StrongAuthGuard implements CanActivate {
     const refreshToken = request.cookies?.refreshToken
     const fingerprint = request.headers.fingerprint as string
 
-    this.logger.log(`StrongAuthGuard: Starting authentication check`)
-    this.logger.log(`StrongAuthGuard: IP: ${request.ip}`)
-    this.logger.log(`StrongAuthGuard: User-Agent: ${request.headers['user-agent']}`)
-    this.logger.log(`StrongAuthGuard: RefreshToken present: ${!!refreshToken}`)
-    this.logger.log(`StrongAuthGuard: Fingerprint present: ${!!fingerprint}`)
-    this.logger.log(`StrongAuthGuard: Fingerprint length: ${fingerprint?.length || 0}`)
+    // this.logger.log(`StrongAuthGuard: Starting authentication check`)
+    // this.logger.log(`StrongAuthGuard: IP: ${request.ip}`)
+    // this.logger.log(`StrongAuthGuard: User-Agent: ${request.headers['user-agent']}`)
+    // this.logger.log(`StrongAuthGuard: RefreshToken present: ${!!refreshToken}`)
+    // this.logger.log(`StrongAuthGuard: Fingerprint present: ${!!fingerprint}`)
+    // this.logger.log(`StrongAuthGuard: Fingerprint length: ${fingerprint?.length || 0}`)
 
     if (!refreshToken || !fingerprint) {
       this.logger.error(`StrongAuthGuard: Missing credentials - refreshToken: ${!!refreshToken}, fingerprint: ${!!fingerprint}`)
