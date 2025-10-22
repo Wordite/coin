@@ -61,6 +61,7 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
       
       const clientData = this.connectedClients.get(client.id);
       if (!clientData) {
+        this.logger.error(`[LIVE LOGS] Client data not found for ${client.id}`);
         client.emit('log-error', { message: 'Client not found' });
         return;
       }
@@ -69,23 +70,33 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
       
       if (data.filename) {
         targetFile = data.filename;
+        this.logger.log(`[LIVE LOGS] Using specified filename: ${targetFile}`);
       } else {
         // Default to all.log for 'all' type
+        this.logger.log(`[LIVE LOGS] Getting available log files...`);
         const logFiles = await this.liveLogsService.getLogFiles();
+        this.logger.log(`[LIVE LOGS] Available log files:`, logFiles);
+        
         targetFile = logFiles.find(file => file.includes('all.log')) || logFiles[0];
+        this.logger.log(`[LIVE LOGS] Selected target file: ${targetFile}`);
       }
 
       if (!targetFile) {
+        this.logger.error(`[LIVE LOGS] No target file found`);
         client.emit('log-error', { message: 'No log files found' });
         return;
       }
 
       // Send initial log history
+      this.logger.log(`[LIVE LOGS] Getting initial log history from ${targetFile}`);
       const history = await this.liveLogsService.getLastLines(targetFile, 1000);
+      this.logger.log(`[LIVE LOGS] Sending ${history.length} lines to client`);
       client.emit('log-history', history);
 
       // Set up file watching
+      this.logger.log(`[LIVE LOGS] Setting up file watcher for ${targetFile}`);
       this.liveLogsService.watchLogFile(targetFile, (newLines: string[]) => {
+        this.logger.log(`[LIVE LOGS] File changed, sending ${newLines.length} new lines to client`);
         client.emit('log-update', newLines);
       });
 

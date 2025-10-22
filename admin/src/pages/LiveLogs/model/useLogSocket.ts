@@ -9,6 +9,9 @@ export const useLogSocket = () => {
   useEffect(() => {
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
     
+    console.log('[LOG SOCKET] Initializing WebSocket connection to:', backendUrl)
+    console.log('[LOG SOCKET] Namespace: /live-logs')
+    
     const socket = io(backendUrl, {
       path: '/socket.io',
       transports: ['websocket'],
@@ -16,22 +19,28 @@ export const useLogSocket = () => {
     })
     
     socket.on('connect', () => {
-      console.log('[LOG SOCKET] Connected to server')
+      console.log('[LOG SOCKET] ✅ Connected to server')
       setIsConnected(true)
     })
     
-    socket.on('disconnect', () => {
-      console.log('[LOG SOCKET] Disconnected from server')
+    socket.on('disconnect', (reason) => {
+      console.log('[LOG SOCKET] ❌ Disconnected from server. Reason:', reason)
+      setIsConnected(false)
+    })
+    
+    socket.on('connect_error', (error) => {
+      console.error('[LOG SOCKET] ❌ Connection error:', error)
       setIsConnected(false)
     })
     
     socket.on('log-history', (history: string[]) => {
-      console.log('[LOG SOCKET] Received log history:', history.length, 'lines')
+      console.log('[LOG SOCKET] 📜 Received log history:', history.length, 'lines')
+      console.log('[LOG SOCKET] First few lines:', history.slice(0, 3))
       setLogs(history)
     })
     
     socket.on('log-update', (newLines: string[]) => {
-      console.log('[LOG SOCKET] Received new log lines:', newLines.length)
+      console.log('[LOG SOCKET] 🔄 Received new log lines:', newLines.length)
       setLogs(prev => {
         const updated = [...newLines, ...prev]
         // Keep only last 1000 lines for performance
@@ -40,24 +49,25 @@ export const useLogSocket = () => {
     })
     
     socket.on('log-subscribed', (data: { filename: string }) => {
-      console.log('[LOG SOCKET] Subscribed to logs:', data.filename)
+      console.log('[LOG SOCKET] ✅ Subscribed to logs:', data.filename)
     })
     
     socket.on('log-unsubscribed', (data: { filename: string }) => {
-      console.log('[LOG SOCKET] Unsubscribed from logs:', data.filename)
+      console.log('[LOG SOCKET] 📤 Unsubscribed from logs:', data.filename)
     })
     
     socket.on('log-error', (error: { message: string }) => {
-      console.error('[LOG SOCKET] Error:', error.message)
+      console.error('[LOG SOCKET] ❌ Error:', error.message)
     })
     
     // Subscribe to all logs initially
+    console.log('[LOG SOCKET] 📡 Emitting subscribe-logs event')
     socket.emit('subscribe-logs', { logType: 'all' })
     
     socketRef.current = socket
     
     return () => {
-      console.log('[LOG SOCKET] Cleaning up socket connection')
+      console.log('[LOG SOCKET] 🧹 Cleaning up socket connection')
       socket.disconnect()
     }
   }, [])

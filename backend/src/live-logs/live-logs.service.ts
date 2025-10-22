@@ -11,16 +11,22 @@ export class LiveLogsService {
 
   async getLogFiles(): Promise<string[]> {
     try {
+      this.logger.log(`[LIVE LOGS] Checking logs directory: ${this.logsDir}`);
+      
       if (!fs.existsSync(this.logsDir)) {
+        this.logger.error(`[LIVE LOGS] Logs directory does not exist: ${this.logsDir}`);
         return [];
       }
       
-      const files = fs.readdirSync(this.logsDir)
+      const allFiles = fs.readdirSync(this.logsDir);
+      this.logger.log(`[LIVE LOGS] All files in directory:`, allFiles);
+      
+      const logFiles = allFiles
         .filter(file => file.endsWith('.log'))
         .map(file => path.join(this.logsDir, file));
       
-      this.logger.log(`[LIVE LOGS] Found ${files.length} log files`);
-      return files;
+      this.logger.log(`[LIVE LOGS] Found ${logFiles.length} log files:`, logFiles);
+      return logFiles;
     } catch (error) {
       this.logger.error('[LIVE LOGS] Error reading log files:', error);
       return [];
@@ -29,14 +35,19 @@ export class LiveLogsService {
 
   async getLastLines(filename: string, lines: number = 1000): Promise<string[]> {
     try {
+      this.logger.log(`[LIVE LOGS] Getting last ${lines} lines from: ${filename}`);
+      
       const filePath = path.resolve(filename);
+      this.logger.log(`[LIVE LOGS] Resolved file path: ${filePath}`);
       
       // Security check - ensure file is in logs directory
       if (!filePath.startsWith(this.logsDir)) {
+        this.logger.error(`[LIVE LOGS] Access denied: File outside logs directory. File: ${filePath}, LogsDir: ${this.logsDir}`);
         throw new Error('Access denied: File outside logs directory');
       }
 
       if (!fs.existsSync(filePath)) {
+        this.logger.error(`[LIVE LOGS] File does not exist: ${filePath}`);
         return [];
       }
 
@@ -44,7 +55,7 @@ export class LiveLogsService {
       const allLines = content.split('\n').filter(line => line.trim());
       const lastLines = allLines.slice(-lines);
       
-      this.logger.log(`[LIVE LOGS] Retrieved ${lastLines.length} lines from ${filename}`);
+      this.logger.log(`[LIVE LOGS] Retrieved ${lastLines.length} lines from ${filename} (total lines in file: ${allLines.length})`);
       return lastLines;
     } catch (error) {
       this.logger.error(`[LIVE LOGS] Error reading file ${filename}:`, error);
