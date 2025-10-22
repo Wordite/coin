@@ -104,7 +104,7 @@ export class AuthService {
       const stats = this.users.getStatsByUser(newUser)
   
       return {
-        transactions: newUser.transactions as Transaction[] | [],
+        transactions: stats.transactions,
         totalCoinsPurchased: stats.totalCoinsPurchased,
         totalCoinsReceived: stats.totalCoinsReceived,
         totalSpentSOL: stats.totalSpentSOL,
@@ -115,13 +115,14 @@ export class AuthService {
     const stats = this.users.getStatsByUser(user)
 
     return {
-      transactions: user.transactions as Transaction[] | [],
+      transactions: stats.transactions,
       totalCoinsPurchased: stats.totalCoinsPurchased,
       totalCoinsReceived: stats.totalCoinsReceived,
       totalSpentSOL: stats.totalSpentSOL,
       totalSpentUSDT: stats.totalSpentUSDT,
     }
   }
+
 
   async getTokens(options: { userId: string; sessionId: string; role: Role | null }): Promise<{
     accessToken: string
