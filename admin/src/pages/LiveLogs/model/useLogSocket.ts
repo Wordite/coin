@@ -42,16 +42,24 @@ export const useLogSocket = () => {
       setIsConnected(false)
     })
     
-    liveLogsSocket.on('log-history', (history: string[]) => {
+    liveLogsSocket.on('log-history', (history: any[]) => {
       console.log('[LOG SOCKET] 📜 Received log history:', history.length, 'lines')
       console.log('[LOG SOCKET] First few lines:', history.slice(0, 3))
-      setLogs(history)
+      // Ensure all items are strings
+      const stringHistory = history.map(item => 
+        typeof item === 'string' ? item : JSON.stringify(item)
+      )
+      setLogs(stringHistory)
     })
     
-    liveLogsSocket.on('log-update', (newLines: string[]) => {
+    liveLogsSocket.on('log-update', (newLines: any[]) => {
       console.log('[LOG SOCKET] 🔄 Received new log lines:', newLines.length)
+      // Ensure all items are strings
+      const stringLines = newLines.map(item => 
+        typeof item === 'string' ? item : JSON.stringify(item)
+      )
       setLogs(prev => {
-        const updated = [...newLines, ...prev]
+        const updated = [...stringLines, ...prev]
         // Keep only last 1000 lines for performance
         return updated.slice(0, 1000)
       })

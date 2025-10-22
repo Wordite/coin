@@ -19,26 +19,29 @@ interface ParsedLog {
   raw: string
 }
 
-const parseLogLine = (logLine: string): ParsedLog => {
+const parseLogLine = (logLine: any): ParsedLog => {
+  // Ensure we have a string
+  const lineStr = typeof logLine === 'string' ? logLine : String(logLine)
+  
   try {
     // Try to parse as JSON first
-    const parsed = JSON.parse(logLine)
+    const parsed = JSON.parse(lineStr)
     return {
       timestamp: parsed.timestamp || parsed.time,
       level: parsed.level || 'info',
       context: parsed.context,
-      message: parsed.message || logLine,
-      raw: logLine
+      message: parsed.message || lineStr,
+      raw: lineStr
     }
   } catch {
     // If not JSON, try to extract level from text
-    const levelMatch = logLine.match(/\b(error|warn|info|debug)\b/i)
+    const levelMatch = lineStr.match(/\b(error|warn|info|debug)\b/i)
     const level = levelMatch ? levelMatch[1].toLowerCase() : 'info'
     
     return {
       level,
-      message: logLine,
-      raw: logLine
+      message: lineStr,
+      raw: lineStr
     }
   }
 }
@@ -62,16 +65,16 @@ const getLevelColor = (level: string) => {
 const getLevelIcon = (level: string) => {
   switch (level.toLowerCase()) {
     case 'error':
-      return <XCircleIcon className="w-4 h-4 text-red-400" />
+      return { icon: XCircleIcon, className: 'w-4 h-4 text-red-400' }
     case 'warn':
     case 'warning':
-      return <ExclamationTriangleIcon className="w-4 h-4 text-yellow-400" />
+      return { icon: ExclamationTriangleIcon, className: 'w-4 h-4 text-yellow-400' }
     case 'info':
-      return <InformationCircleIcon className="w-4 h-4 text-blue-400" />
+      return { icon: InformationCircleIcon, className: 'w-4 h-4 text-blue-400' }
     case 'debug':
-      return <BugAntIcon className="w-4 h-4 text-gray-400" />
+      return { icon: BugAntIcon, className: 'w-4 h-4 text-gray-400' }
     default:
-      return <DocumentTextIcon className="w-4 h-4 text-gray-300" />
+      return { icon: DocumentTextIcon, className: 'w-4 h-4 text-gray-300' }
   }
 }
 
@@ -104,7 +107,8 @@ export const LogViewer = forwardRef<HTMLDivElement, LogViewerProps>(
             logs.map((log, index) => {
               const parsed = parseLogLine(log)
               const levelColor = getLevelColor(parsed.level)
-              const levelIcon = getLevelIcon(parsed.level)
+              const levelIconData = getLevelIcon(parsed.level)
+              const IconComponent = levelIconData.icon
               
               return (
                 <div
@@ -119,7 +123,7 @@ export const LogViewer = forwardRef<HTMLDivElement, LogViewerProps>(
                     
                     {/* Level icon */}
                     <div className="flex-shrink-0">
-                      {levelIcon}
+                      <IconComponent className={levelIconData.className} />
                     </div>
                     
                     {/* Content */}
