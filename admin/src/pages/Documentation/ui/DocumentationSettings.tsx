@@ -35,7 +35,6 @@ export const DocumentationSettings: React.FC = () => {
   
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [rebuilding, setRebuilding] = useState(false)
 
   // Отслеживаем изменения mediaFiles и config для обновления выбранных изображений
   const [selectedNavbarLogo, setSelectedNavbarLogo] = useState<MediaFile | null>(null)
@@ -142,18 +141,6 @@ export const DocumentationSettings: React.FC = () => {
     }
   }
 
-  const handleRebuild = async () => {
-    try {
-      setRebuilding(true)
-      await docsConfigApi.rebuildDocs()
-      Notify.success('Documentation rebuilt successfully')
-    } catch (error) {
-      Notify.error('Failed to rebuild documentation')
-      console.error(error)
-    } finally {
-      setRebuilding(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -190,9 +177,7 @@ export const DocumentationSettings: React.FC = () => {
         
         <ActionsSection
           saving={saving}
-          rebuilding={rebuilding}
           onSave={handleSave}
-          onRebuild={handleRebuild}
         />
       </div>
     </div>

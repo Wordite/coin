@@ -33,7 +33,6 @@ export class StrongAuthGuard implements CanActivate {
 
     try {
       const sessionId = await this.authService.getSessionIdFromRefreshToken(refreshToken)
-      
       this.logger.log(`StrongAuthGuard: SessionId extracted: ${sessionId}`)
       
       if (!sessionId) {

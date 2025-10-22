@@ -7,9 +7,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   handleRequest(err: any, user: any, info: any, context: any) {
     const req = context.switchToHttp().getRequest();
-    this.logger.log(`JWT Auth attempt for ${req.url}`);
-    this.logger.log(`Authorization header: ${req.headers.authorization}`);
-    this.logger.log(`User: ${JSON.stringify(user)}`);
+    const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
+    
+    this.logger.log(`JWT Auth attempt for ${req.url} from IP ${ip}, User: ${JSON.stringify(user)}`);
     
     if (err || !user) {
       this.logger.error(`JWT Auth failed: ${err?.message || 'No user'}`);
