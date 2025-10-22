@@ -11,19 +11,20 @@ export const useLogSocket = () => {
     
     console.log('[LOG SOCKET] 🔍 Debug info:')
     console.log('[LOG SOCKET] Backend URL:', backendUrl)
+    console.log('[LOG SOCKET] Full WebSocket URL:', `${backendUrl}/live-logs`)
     console.log('[LOG SOCKET] Current location:', window.location.href)
     console.log('[LOG SOCKET] Protocol:', window.location.protocol)
     console.log('[LOG SOCKET] Namespace: /live-logs')
     
-    const socket = io(backendUrl, {
+    const socket = io(`${backendUrl}/live-logs`, {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       timeout: 20000,
       forceNew: true
     })
     
-    // Connect to the live-logs namespace
-    const liveLogsSocket = socket as any
+    // Use the socket directly since we're connecting to the namespace URL
+    const liveLogsSocket = socket
     
     liveLogsSocket.on('connect', () => {
       console.log('[LOG SOCKET] ✅ Connected to live-logs namespace')

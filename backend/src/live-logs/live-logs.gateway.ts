@@ -20,9 +20,12 @@ import { LiveLogsService } from './live-logs.service';
       'http://localhost:3000', 'http://localhost:3003', 'http://localhost:3001'
     ],
     credentials: true,
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['*'],
   },
   namespace: '/live-logs',
   transports: ['websocket', 'polling'],
+  allowEIO3: true,
 })
 export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -35,6 +38,8 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   async handleConnection(client: Socket) {
     this.logger.log(`[LIVE LOGS] Client connected: ${client.id}`);
+    this.logger.log(`[LIVE LOGS] Client origin: ${client.handshake.headers.origin}`);
+    this.logger.log(`[LIVE LOGS] Client user-agent: ${client.handshake.headers['user-agent']}`);
     this.connectedClients.set(client.id, { socket: client, subscriptions: new Set() });
   }
 
