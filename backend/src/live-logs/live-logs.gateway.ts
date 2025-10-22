@@ -10,6 +10,9 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { LiveLogsService } from './live-logs.service';
+import { SessionService } from '../session/session.service';
+import { AuthService } from '../auth/auth.service';
+import { UserService } from '../user/user.service';
 
 @WebSocketGateway({
   cors: {
@@ -34,14 +37,61 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
   private readonly logger = new Logger(LiveLogsGateway.name);
   private readonly connectedClients = new Map<string, { socket: Socket; subscriptions: Set<string> }>();
 
-  constructor(private readonly liveLogsService: LiveLogsService) {
+  constructor(
+    private readonly liveLogsService: LiveLogsService,
+    private readonly sessionService: SessionService,
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {
     this.logger.log('[LIVE LOGS] Gateway initialized with namespace: /live-logs');
   }
 
   async handleConnection(client: Socket) {
-    this.logger.log(`[LIVE LOGS] Client connected: ${client.id}`);
+    this.logger.log(`[LIVE LOGS] Client attempting to connect: ${client.id}`);
+    
+    // Extract cookies from handshake
+    const cookies = client.handshake.headers.cookie;
+    if (!cookies) {
+      this.logger.error(`[LIVE LOGS] No cookies found for client: ${client.id}`);
+      client.disconnect();
+      return;
+    }
+    
+    // Parse refresh token from cookies
+    const refreshToken = this.extractCookie(cookies, 'refreshToken');
+    if (!refreshToken) {
+      this.logger.error(`[LIVE LOGS] No refresh token found for client: ${client.id}`);
+      client.disconnect();
+      return;
+    }
+    
+    // Validate session using AuthService and SessionService
+    try {
+      const sessionId = await this.authService.getSessionIdFromRefreshToken(refreshToken);
+      const session = await this.sessionService.find(sessionId);
+      
+      if (!session || !session.userId) {
+        this.logger.error(`[LIVE LOGS] Unauthorized access attempt: ${client.id}`);
+        client.disconnect();
+        return;
+      }
+      
+      // Get user details to check roles
+      const user = await this.userService.findById(session.userId);
+      if (!user || user.role !== 'ADMIN') {
+        this.logger.error(`[LIVE LOGS] Unauthorized access attempt: ${client.id}`);
+        client.disconnect();
+        return;
+      }
+      
+      this.logger.log(`[LIVE LOGS] Client authenticated: ${client.id}, User: ${user.id}`);
+    } catch (error) {
+      this.logger.error(`[LIVE LOGS] Authentication failed: ${error.message}`);
+      client.disconnect();
+      return;
+    }
+    
     this.logger.log(`[LIVE LOGS] Client origin: ${client.handshake.headers.origin}`);
-    this.logger.log(`[LIVE LOGS] Client user-agent: ${client.handshake.headers['user-agent']}`);
     this.connectedClients.set(client.id, { socket: client, subscriptions: new Set() });
   }
 
@@ -149,5 +199,11 @@ export class LiveLogsGateway implements OnGatewayConnection, OnGatewayDisconnect
       this.logger.error(`[LIVE LOGS] Error getting log files:`, error);
       client.emit('log-error', { message: 'Failed to get log files' });
     }
+  }
+
+  private extractCookie(cookieHeader: string, cookieName: string): string | null {
+    const cookies = cookieHeader.split(';').map(c => c.trim());
+    const cookie = cookies.find(c => c.startsWith(`${cookieName}=`));
+    return cookie ? cookie.split('=')[1] : null;
   }
 }

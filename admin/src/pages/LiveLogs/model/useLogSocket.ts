@@ -7,7 +7,8 @@ export const useLogSocket = () => {
   const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
+    // Remove '/api' from backend URL for WebSocket connection
+    const backendUrl = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000').replace(/\/api\/?$/, '')
     
     console.log('[LOG SOCKET] 🔍 Debug info:')
     console.log('[LOG SOCKET] Backend URL:', backendUrl)
