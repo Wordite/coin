@@ -15,7 +15,7 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useHeaderStore } from '@/app/store/headerStore'
 import { useSectionData } from '@/hooks'
 import { useAppKit } from '@reown/appkit/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useToast } from '@/shared/Toast'
 import { useWalletStore } from '@/app/store/walletStore'
 import { useServerAccount } from './model/useServerAccount'
@@ -38,6 +38,12 @@ const Header = () => {
   const { showError} = useToast()
   useServerAccount()
   const isSafari = useIsSafari()
+
+  useEffect(() => {
+    if (!isMobile && isMobileMenuOpen) {
+      setIsMobileMenuOpen(false)
+    }
+  }, [isMobile, isMobileMenuOpen, setIsMobileMenuOpen])
 
   const handleConnectWallet = async () => {
     try {
