@@ -102,13 +102,8 @@ export class UserController {
 
   @Get('validate-token-balance')
   @Auth({ roles: [Roles.ADMIN], strong: true })
-  async validateBalance(@Req() req: Request) {
-    console.log('[CONTROLLER] validateBalance endpoint called')
-    console.log('[CONTROLLER] Request URL:', req.url)
-    console.log('[CONTROLLER] Request method:', req.method)
+  async validateBalance() {
     const result = await this.user.validateTokenBalance()
-    console.log('[CONTROLLER] validateBalance result:', result)
-    console.log('[CONTROLLER] Returning result:', JSON.stringify(result))
     return result
   }
 
