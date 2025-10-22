@@ -31,18 +31,6 @@ export const usePurchaseCoins = (): UsePurchaseCoinsReturn => {
   const { triggerConfetti } = useConfettiStore()
   const { openModal } = useModalStore()
 
-  useEffect(() => {
-    console.log('purchaseCoins modal')
-    new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true)
-      }, 2000)
-    }).then(() => {
-      openModal(Modals.SUCCESS_PURCHASE)
-    })
-  }, [])
-  
-
   const purchaseCoins = async ({ toPublicKey, amount, currency }: PurchaseCoinsParams): Promise<string | null> => {
     if (!isConnected || !address) {
       const errorMsg = 'Wallet not connected'
