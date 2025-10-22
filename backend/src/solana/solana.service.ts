@@ -69,15 +69,41 @@ export class SolanaService {
   private async initializeService(): Promise<void> {
     try {
       this.logger.log(`[SOLANA INIT] Starting service initialization...`)
-      
+
       // Get rate limits and endpoints from database
-      const [rateLimits, endpoints] = await Promise.all([
-        this.coin.getRateLimits(),
-        this.coin.getRpcEndpoints(),
-      ])
-      
+      const rateLimits = await this.coin.getRateLimits()
       this.logger.log(`[SOLANA INIT] Rate limits:`, rateLimits)
+
+      const endpoints = await this.coin.getRpcEndpoints()
       this.logger.log(`[SOLANA INIT] Endpoints:`, endpoints)
+      this.logger.log(`[SOLANA INIT] Endpoints length:`, endpoints?.length || 0)
+
+      // Check if we have valid data
+      if (!rateLimits || !endpoints || endpoints.length === 0) {
+        this.logger.error(`[SOLANA INIT] Invalid initialization data:`, {
+          rateLimits: !!rateLimits,
+          endpointsLength: endpoints?.length || 0,
+          endpoints
+        })
+
+        // Use fallback values
+        this.logger.warn(`[SOLANA INIT] Using fallback values for initialization`)
+        const fallbackRateLimits = { readLimit: 50, writeLimit: 3 }
+        const fallbackEndpoints = [
+          {
+            url: 'https://api.mainnet-beta.solana.com',
+            priority: 1,
+            name: 'Fallback RPC'
+          }
+        ]
+
+        Object.assign(rateLimits, fallbackRateLimits)
+        endpoints.length = 0
+        endpoints.push(...fallbackEndpoints)
+
+        this.logger.log(`[SOLANA INIT] Using fallback rate limits:`, fallbackRateLimits)
+        this.logger.log(`[SOLANA INIT] Using fallback endpoints:`, fallbackEndpoints)
+      }
 
       // Create Redis-backed limiters
       this.readLimiter = new Bottleneck({
@@ -150,6 +176,11 @@ export class SolanaService {
       this.logger.log(`[SOLANA INIT] ✅ SolanaService initialized successfully with ${endpoints.length} endpoints and rate limits: ${rateLimits.readLimit} read/s, ${rateLimits.writeLimit} write/s`)
     } catch (error) {
       this.logger.error('[SOLANA INIT] ❌ Failed to initialize SolanaService:', error)
+      this.logger.error('[SOLANA INIT] Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
+      })
       // Fallback to public RPC
       this.proxyConnection = this.fallbackConnection
       this._resolveInitialized?.()

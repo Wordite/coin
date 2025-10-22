@@ -1,4 +1,4 @@
-import { Injectable, Inject, forwardRef } from '@nestjs/common'
+import { Injectable, Inject, forwardRef, Logger } from '@nestjs/common'
 import { PrismaService } from '../prisma/prisma.service'
 import { CoinStatus } from '@prisma/client'
 import { RedisService } from '../redis/redis.service'
@@ -21,6 +21,8 @@ export interface CoinPresaleSettings {
 
 @Injectable()
 export class CoinService {
+  private logger = new Logger(CoinService.name)
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
@@ -215,14 +217,19 @@ export class CoinService {
     const cached = await this.redis.get(cacheKey)
 
     if (cached) {
+      this.logger.log(`[GET RATE LIMITS] Using cached data: ${cached}`)
       return JSON.parse(cached)
     }
 
+    this.logger.log(`[GET RATE LIMITS] Cache miss, fetching from database`)
     const coin = await this.prisma.coin.findFirst()
 
     if (!coin) {
+      this.logger.error(`[GET RATE LIMITS] Coin not found in database`)
       throw new Error('Coin not found')
     }
+
+    this.logger.log(`[GET RATE LIMITS] Found coin, readRateLimit: ${coin.readRateLimit}, writeRateLimit: ${coin.writeRateLimit}`)
 
     const rateLimits = {
       readLimit: coin.readRateLimit || 50,
@@ -230,6 +237,7 @@ export class CoinService {
     }
 
     await this.redis.setex(cacheKey, 120, JSON.stringify(rateLimits))
+    this.logger.log(`[GET RATE LIMITS] Returning rate limits:`, rateLimits)
     return rateLimits
   }
 
@@ -238,14 +246,19 @@ export class CoinService {
     const cached = await this.redis.get(cacheKey)
 
     if (cached) {
+      this.logger.log(`[GET RPC ENDPOINTS] Using cached data: ${cached}`)
       return JSON.parse(cached)
     }
 
+    this.logger.log(`[GET RPC ENDPOINTS] Cache miss, fetching from database`)
     const coin = await this.prisma.coin.findFirst()
 
     if (!coin) {
+      this.logger.error(`[GET RPC ENDPOINTS] Coin not found in database`)
       throw new Error('Coin not found')
     }
+
+    this.logger.log(`[GET RPC ENDPOINTS] Found coin, rpc: "${coin.rpc}", rpcEndpoints:`, coin.rpcEndpoints)
 
     // Build endpoints array: primary RPC + additional endpoints from JSON
     const endpoints: Array<{ url: string; priority: number; name: string }> = [
@@ -262,13 +275,15 @@ export class CoinService {
         const additionalEndpoints = coin.rpcEndpoints as Array<{ url: string; priority: number; name: string }>
         if (Array.isArray(additionalEndpoints)) {
           endpoints.push(...additionalEndpoints)
+          this.logger.log(`[GET RPC ENDPOINTS] Added ${additionalEndpoints.length} additional endpoints`)
         }
       } catch (err) {
         // If JSON parsing fails, just use the primary RPC
-        console.warn('Failed to parse rpcEndpoints JSON:', err)
+        this.logger.warn('[GET RPC ENDPOINTS] Failed to parse rpcEndpoints JSON:', err)
       }
     }
 
+    this.logger.log(`[GET RPC ENDPOINTS] Final endpoints array:`, endpoints)
     await this.redis.setex(cacheKey, 120, JSON.stringify(endpoints))
     return endpoints
   }
