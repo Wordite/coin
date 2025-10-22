@@ -35,10 +35,10 @@ const parseLogLine = (logLine: any): ParsedLog => {
     // Try to parse as JSON first
     const parsed = JSON.parse(lineStr)
     return {
-      timestamp: parsed.timestamp || parsed.time,
-      level: parsed.level || 'info',
-      context: parsed.context,
-      message: parsed.message || lineStr,
+      timestamp: typeof (parsed.timestamp || parsed.time) === 'string' ? (parsed.timestamp || parsed.time) : JSON.stringify(parsed.timestamp || parsed.time),
+      level: typeof parsed.level === 'string' ? parsed.level : 'info',
+      context: typeof parsed.context === 'string' ? parsed.context : (parsed.context ? JSON.stringify(parsed.context) : undefined),
+      message: typeof parsed.message === 'string' ? parsed.message : JSON.stringify(parsed.message || lineStr),
       raw: lineStr
     }
   } catch {
@@ -152,7 +152,7 @@ export const LogViewer = forwardRef<HTMLDivElement, LogViewerProps>(
                       
                       {/* Message */}
                       <span className="text-gray-200 break-words text-xs">
-                        {parsed.message}
+                        {typeof parsed.message === 'string' ? parsed.message : JSON.stringify(parsed.message)}
                       </span>
                     </div>
                   </div>
