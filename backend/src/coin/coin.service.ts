@@ -28,7 +28,9 @@ export class CoinService {
     private readonly redis: RedisService,
     @Inject(forwardRef(() => WalletService))
     private readonly wallet: WalletService
-  ) {}
+  ) {
+    this.logger.log(`[COIN SERVICE] Initialized`)
+  }
 
   async getRpcUrl(): Promise<string> {
     const cacheKey = 'rpc_url'
