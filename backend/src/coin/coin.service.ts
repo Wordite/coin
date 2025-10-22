@@ -73,8 +73,11 @@ export class CoinService {
     const cached = await this.redis.get(cacheKey)
 
     if (cached) {
+      console.log(`[GET PRESALE SETTINGS] Using cached data`)
       return JSON.parse(cached)
     }
+
+    console.log(`[GET PRESALE SETTINGS] Cache miss, fetching from database`)
 
     let coin = await this.prisma.coin.findFirst()
 
@@ -109,6 +112,7 @@ export class CoinService {
       rpcEndpoints: coin.rpcEndpoints as Array<{ url: string; priority: number; name: string }> || [],
     }
 
+    console.log(`[GET PRESALE SETTINGS] Setting cache with fresh data`)
     await this.redis.setex(cacheKey, 900, JSON.stringify(settings))
 
     return settings
@@ -125,8 +129,8 @@ export class CoinService {
       // Calculate new values
       const newTotalAmount = settings.totalAmount ?? existingCoin.totalAmount
       const newSoldAmount = settings.soldAmount ?? existingCoin.soldAmount
-      // Recalculate currentAmount when totalAmount changes
-      const newCurrentAmount = settings.currentAmount ?? (newTotalAmount - newSoldAmount)
+      // Always recalculate currentAmount when totalAmount or soldAmount changes
+      const newCurrentAmount = newTotalAmount - newSoldAmount
 
       // Update existing coin settings
       const updated = await this.prisma.coin.update({
@@ -194,7 +198,9 @@ export class CoinService {
 
     const cacheKey = 'presale_settings'
     // Invalidate cache so next read will fetch fresh data
+    console.log(`[CACHE INVALIDATION] Deleting cache key: ${cacheKey}`)
     await this.redis.del(cacheKey)
+    console.log(`[CACHE INVALIDATION] Cache deleted successfully`)
 
     return result
   }

@@ -458,7 +458,9 @@ export class SolanaService {
         `[GET TOKEN BALANCE] ERROR - Address: ${address}, Mint: ${mint.toBase58()}`,
         e
       )
-      this.logger.error(`[GET TOKEN BALANCE] Error details:`, JSON.stringify(e, null, 2))
+      this.logger.error(`[GET TOKEN BALANCE] Error details:`, e)
+      this.logger.error(`[GET TOKEN BALANCE] Error message:`, e?.message || 'No message')
+      this.logger.error(`[GET TOKEN BALANCE] Error stack:`, e?.stack || 'No stack')
       return 0
     }
   }
