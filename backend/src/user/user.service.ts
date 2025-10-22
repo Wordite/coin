@@ -741,4 +741,265 @@ export class UserService {
 
     return result
   }
+
+  /**
+   * Issue tokens to a specific user
+   */
+  async issueTokensToUser(userId: string): Promise<{success: boolean, amount: number, signature?: string}> {
+    this.logger.log(`[ISSUE TOKENS] Starting token issuance for user: ${userId}`)
+    
+    try {
+      // Get user
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, walletAddress: true, transactions: true }
+      })
+      
+      if (!user) {
+        this.logger.error(`[ISSUE TOKENS] User not found: ${userId}`)
+        throw new NotFoundException('User not found')
+      }
+      
+      this.logger.log(`[ISSUE TOKENS] User wallet: ${user.walletAddress}`)
+      
+      // Parse transactions
+      const transactions = this.transactionService.parseTransactions(user.transactions)
+      this.logger.log(`[ISSUE TOKENS] Total transactions: ${transactions.length}`)
+      
+      // Filter pending tokens
+      const pendingTransactions = transactions.filter(
+        tx => tx.isSuccessful && !tx.isReceived
+      )
+      
+      this.logger.log(`[ISSUE TOKENS] Pending transactions: ${pendingTransactions.length}`)
+      
+      // Calculate total pending
+      const totalPending = this.transactionService.calculateTotalCoins(pendingTransactions)
+      
+      this.logger.log(`[ISSUE TOKENS] Total pending tokens: ${totalPending}`)
+      
+      if (totalPending === 0) {
+        this.logger.warn(`[ISSUE TOKENS] No pending tokens for user: ${userId}`)
+        return { success: false, amount: 0 }
+      }
+      
+      // Check wallet balance
+      const walletBalance = await this.walletService.getMintTokenBalance()
+      this.logger.log(`[ISSUE TOKENS] Wallet balance: ${walletBalance}, Required: ${totalPending}`)
+      
+      if (walletBalance < totalPending) {
+        this.logger.error(`[ISSUE TOKENS] Insufficient balance. Have: ${walletBalance}, Need: ${totalPending}`)
+        throw new BadRequestException(`Insufficient wallet balance`)
+      }
+      
+      // Send tokens
+      this.logger.log(`[ISSUE TOKENS] Sending ${totalPending} tokens to ${user.walletAddress}`)
+      if (!user.walletAddress) {
+        this.logger.error(`[ISSUE TOKENS] User has no wallet address: ${userId}`)
+        throw new BadRequestException('User has no wallet address')
+      }
+      const signature = await this.walletService.sendCoin(user.walletAddress, totalPending, 'COIN')
+      
+      this.logger.log(`[ISSUE TOKENS] Tokens sent. Signature: ${signature}`)
+      
+      // Update transactions
+      const updatedTransactions = transactions.map(tx =>
+        tx.isSuccessful && !tx.isReceived
+          ? { ...tx, isReceived: true }
+          : tx
+      )
+      
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { transactions: updatedTransactions as any }
+      })
+      
+      this.logger.log(`[ISSUE TOKENS] Transaction records updated for user: ${userId}`)
+      this.logger.log(`[ISSUE TOKENS] ✅ Successfully issued ${totalPending} tokens to user: ${userId}`)
+      
+      return { success: true, amount: totalPending, signature }
+    } catch (error) {
+      this.logger.error(`[ISSUE TOKENS] ❌ Error issuing tokens to user ${userId}:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Issue tokens to all users with pending tokens
+   */
+  async issueTokensToAllUsers(): Promise<{
+    success: number
+    failed: number
+    totalProcessed: number
+    details: Array<{userId: string, status: string, amount?: number, error?: string}>
+  }> {
+    this.logger.log('[ISSUE ALL TOKENS] ========================================')
+    this.logger.log('[ISSUE ALL TOKENS] Starting bulk token issuance')
+    
+    try {
+      // Get all users with pending tokens
+      const users = await this.prisma.user.findMany({
+        select: { id: true, walletAddress: true, transactions: true }
+      })
+      
+      this.logger.log(`[ISSUE ALL TOKENS] Total users in database: ${users.length}`)
+      
+      // Filter users with pending tokens
+      const usersWithPending = users.filter(user => {
+        const transactions = this.transactionService.parseTransactions(user.transactions)
+        const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
+        return pending.length > 0
+      })
+      
+      this.logger.log(`[ISSUE ALL TOKENS] Users with pending tokens: ${usersWithPending.length}`)
+      
+      if (usersWithPending.length === 0) {
+        this.logger.log('[ISSUE ALL TOKENS] No users with pending tokens')
+        return { success: 0, failed: 0, totalProcessed: 0, details: [] }
+      }
+      
+      // Calculate total required
+      const totalRequired = usersWithPending.reduce((sum, user) => {
+        const transactions = this.transactionService.parseTransactions(user.transactions)
+        const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
+        return sum + this.transactionService.calculateTotalCoins(pending)
+      }, 0)
+      
+      this.logger.log(`[ISSUE ALL TOKENS] Total tokens required: ${totalRequired}`)
+      
+      // Check wallet balance
+      const walletBalance = await this.walletService.getMintTokenBalance()
+      this.logger.log(`[ISSUE ALL TOKENS] Current wallet balance: ${walletBalance}`)
+      
+      if (walletBalance < totalRequired) {
+        this.logger.error(`[ISSUE ALL TOKENS] Insufficient balance. Have: ${walletBalance}, Need: ${totalRequired}`)
+        throw new BadRequestException(`Insufficient wallet balance for all users`)
+      }
+      
+      // Process each user
+      let successCount = 0
+      let failedCount = 0
+      const details: Array<{userId: string, status: string, amount?: number, error?: string}> = []
+      
+      this.logger.log('[ISSUE ALL TOKENS] Starting individual user processing...')
+      
+      for (let i = 0; i < usersWithPending.length; i++) {
+        const user = usersWithPending[i]
+        const progress = `${i + 1}/${usersWithPending.length}`
+        
+        this.logger.log(`[ISSUE ALL TOKENS] [${progress}] Processing user: ${user.id}`)
+        
+        try {
+          const result = await this.issueTokensToUser(user.id)
+          
+          if (result.success) {
+            successCount++
+            details.push({
+              userId: user.id,
+              status: 'success',
+              amount: result.amount
+            })
+            this.logger.log(`[ISSUE ALL TOKENS] [${progress}] ✅ Success for user: ${user.id}`)
+          } else {
+            failedCount++
+            details.push({
+              userId: user.id,
+              status: 'failed',
+              error: 'No pending tokens'
+            })
+            this.logger.warn(`[ISSUE ALL TOKENS] [${progress}] ⚠️  No tokens to issue for user: ${user.id}`)
+          }
+        } catch (error) {
+          failedCount++
+          details.push({
+            userId: user.id,
+            status: 'failed',
+            error: error.message
+          })
+          this.logger.error(`[ISSUE ALL TOKENS] [${progress}] ❌ Failed for user ${user.id}:`, error.message)
+        }
+        
+        // Small delay between users to avoid rate limits
+        if (i < usersWithPending.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+      }
+      
+      this.logger.log('[ISSUE ALL TOKENS] ========================================')
+      this.logger.log(`[ISSUE ALL TOKENS] ✅ Bulk issuance completed`)
+      this.logger.log(`[ISSUE ALL TOKENS] Success: ${successCount}, Failed: ${failedCount}, Total: ${usersWithPending.length}`)
+      this.logger.log('[ISSUE ALL TOKENS] ========================================')
+      
+      return {
+        success: successCount,
+        failed: failedCount,
+        totalProcessed: usersWithPending.length,
+        details
+      }
+    } catch (error) {
+      this.logger.error('[ISSUE ALL TOKENS] ❌ Critical error in bulk issuance:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Get wallet token balance
+   */
+  async getWalletTokenBalance(): Promise<number> {
+    return await this.walletService.getMintTokenBalance()
+  }
+
+  /**
+   * Validate token balance for a user or all users
+   */
+  async validateTokenBalance(userId?: string): Promise<{
+    hasEnough: boolean
+    walletBalance: number
+    requiredAmount: number
+  }> {
+    this.logger.log(`[VALIDATE BALANCE] Checking balance for: ${userId || 'all users'}`)
+    
+    try {
+      const walletBalance = await this.walletService.getMintTokenBalance()
+      this.logger.log(`[VALIDATE BALANCE] Current wallet balance: ${walletBalance}`)
+      
+      let requiredAmount = 0
+      
+      if (userId) {
+        // Single user
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { transactions: true }
+        })
+        
+        if (user) {
+          const transactions = this.transactionService.parseTransactions(user.transactions)
+          const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
+          requiredAmount = this.transactionService.calculateTotalCoins(pending)
+          this.logger.log(`[VALIDATE BALANCE] User ${userId} requires: ${requiredAmount}`)
+        }
+      } else {
+        // All users
+        const users = await this.prisma.user.findMany({
+          select: { transactions: true }
+        })
+        
+        requiredAmount = users.reduce((sum, user) => {
+          const transactions = this.transactionService.parseTransactions(user.transactions)
+          const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
+          return sum + this.transactionService.calculateTotalCoins(pending)
+        }, 0)
+        
+        this.logger.log(`[VALIDATE BALANCE] All users require: ${requiredAmount}`)
+      }
+      
+      const hasEnough = walletBalance >= requiredAmount
+      this.logger.log(`[VALIDATE BALANCE] Has enough: ${hasEnough} (Balance: ${walletBalance}, Required: ${requiredAmount})`)
+      
+      return { hasEnough, walletBalance, requiredAmount }
+    } catch (error) {
+      this.logger.error('[VALIDATE BALANCE] Error:', error)
+      throw error
+    }
+  }
 }

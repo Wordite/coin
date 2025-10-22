@@ -89,4 +89,32 @@ export class UserController {
     await this.user.deleteUser(id)
     return { message: 'User deleted successfully' }
   }
+
+  @Get('wallet/token-balance')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async getTokenBalance() {
+    const balance = await this.user.getWalletTokenBalance()
+    return { balance }
+  }
+
+  @Post(':id/issue-tokens')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async issueTokens(@Param('id') id: string) {
+    const result = await this.user.issueTokensToUser(id)
+    return result
+  }
+
+  @Post('issue-all-tokens')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async issueAllTokens() {
+    const result = await this.user.issueTokensToAllUsers()
+    return result
+  }
+
+  @Get('validate-token-balance/:id?')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async validateBalance(@Param('id') id?: string) {
+    const result = await this.user.validateTokenBalance(id)
+    return result
+  }
 }

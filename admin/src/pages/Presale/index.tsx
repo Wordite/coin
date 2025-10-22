@@ -13,6 +13,7 @@ const Presale = () => {
     presaleSettings,
     users,
     usersStatistics,
+    walletBalance,
     initialLoading,
     usersLoading,
     issuingTokens,
@@ -89,6 +90,7 @@ const Presale = () => {
       <PresaleOverview
         presaleSettings={presaleSettings}
         presaleProgress={presaleProgress}
+        walletBalance={walletBalance}
       />
 
       {/* Token Distribution */}

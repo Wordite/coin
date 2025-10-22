@@ -13,6 +13,7 @@ export interface UsersStatistics {
 export interface PresaleOverviewProps {
   presaleSettings: CoinPresaleSettings
   presaleProgress: number
+  walletBalance?: number
 }
 
 export interface TokenDistributionProps {

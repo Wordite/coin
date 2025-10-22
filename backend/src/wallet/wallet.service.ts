@@ -282,4 +282,31 @@ export class WalletService implements OnModuleInit {
       return 0
     }
   }
+
+  /**
+   * Get mint token balance for the mint address
+   */
+  async getMintTokenBalance(): Promise<number> {
+    this.logger.log('[GET MINT TOKEN BALANCE] Starting to fetch mint token balance')
+    
+    try {
+      const keypair = await this.getKeypair()
+      const walletAddress = keypair.publicKey.toString()
+      this.logger.log(`[GET MINT TOKEN BALANCE] Wallet address: ${walletAddress}`)
+      
+      const mintAddress = await this.coin.getMintAddress()
+      this.logger.log(`[GET MINT TOKEN BALANCE] Mint address: ${mintAddress}`)
+      
+      const balance = await this.solana.getParsedTokenBalanceByMint(
+        walletAddress, 
+        new PublicKey(mintAddress)
+      )
+      
+      this.logger.log(`[GET MINT TOKEN BALANCE] Balance retrieved: ${balance} tokens`)
+      return balance
+    } catch (error) {
+      this.logger.error('[GET MINT TOKEN BALANCE] Error:', error)
+      throw error
+    }
+  }
 }

@@ -407,7 +407,7 @@ export class SolanaService {
     }
   }
 
-  private async getParsedTokenBalanceByMint(address: string, mint: PublicKey): Promise<number> {
+  async getParsedTokenBalanceByMint(address: string, mint: PublicKey): Promise<number> {
     try {
       const owner = new PublicKey(address)
 

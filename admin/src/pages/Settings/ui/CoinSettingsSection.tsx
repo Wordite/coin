@@ -117,7 +117,7 @@ export const CoinSettingsSection: React.FC<PresaleSettingsSectionProps> = ({
           />
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <Select
             label="Current Stage"
             placeholder="Select stage"
@@ -140,20 +140,6 @@ export const CoinSettingsSection: React.FC<PresaleSettingsSectionProps> = ({
               </SelectItem>
             ))}
           </Select>
-          
-          <Input
-            label="Current Amount"
-            placeholder="0"
-            type="number"
-            min="0"
-            value={presaleSettings.currentAmount.toString()}
-            onChange={(e) => handlePresaleInputChange('currentAmount', parseFloat(e.target.value) || 0)}
-            description="Current amount of tokens in this stage"
-            classNames={{
-              input: "text-foreground",
-              label: "text-foreground/70",
-            }}
-          />
         </div>
       </CardBody>
     </Card>

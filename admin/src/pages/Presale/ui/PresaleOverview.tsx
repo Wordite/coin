@@ -1,11 +1,12 @@
 import React from 'react'
 import { Card, CardBody, CardHeader, Progress, Divider } from '@heroui/react'
-import { ChartBarIcon } from '@heroicons/react/24/outline'
+import { ChartBarIcon, WalletIcon } from '@heroicons/react/24/outline'
 import type { PresaleOverviewProps } from '../model/types'
 
 export const PresaleOverview: React.FC<PresaleOverviewProps> = ({
   presaleSettings,
-  presaleProgress
+  presaleProgress,
+  walletBalance
 }) => {
   const formatAmount = (amount: number) => {
     if (isNaN(amount) || !amount) return '0'
@@ -30,7 +31,7 @@ export const PresaleOverview: React.FC<PresaleOverviewProps> = ({
         </div>
       </CardHeader>
       <CardBody className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-primary/5 rounded-lg">
             <div className="text-2xl font-bold text-primary">
               {formatAmount(presaleSettings.totalAmount)}
@@ -48,6 +49,15 @@ export const PresaleOverview: React.FC<PresaleOverviewProps> = ({
               {formatAmount(presaleSettings.currentAmount)}
             </div>
             <div className="text-sm text-foreground/60">Available Tokens</div>
+          </div>
+          <div className="text-center p-4 bg-warning/5 rounded-lg">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <WalletIcon className="w-5 h-5 text-warning" />
+            </div>
+            <div className="text-2xl font-bold text-warning">
+              {walletBalance !== undefined ? formatAmount(walletBalance) : 'Loading...'}
+            </div>
+            <div className="text-sm text-foreground/60">Wallet Balance</div>
           </div>
         </div>
         

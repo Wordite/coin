@@ -47,18 +47,23 @@ export class CoinService {
   }
 
   async getMintAddress(): Promise<string> {
+    console.log('[GET MINT ADDRESS] Fetching mint address from settings')
+    
     const coin = await this.prisma.coin.findFirst()
     const cacheKey = 'mint_address'
     const cached = await this.redis.get(cacheKey)
 
     if (cached) {
+      console.log(`[GET MINT ADDRESS] Mint address from cache: ${cached}`)
       return cached
     }
 
     if (!coin || !coin.mintAddress) {
-      throw new Error('Mint address not found')
+      console.error('[GET MINT ADDRESS] Mint address not configured in settings')
+      throw new Error('Mint address not configured')
     }
 
+    console.log(`[GET MINT ADDRESS] Mint address: ${coin.mintAddress}`)
     await this.redis.setex(cacheKey, 120, coin.mintAddress)
     return coin.mintAddress
   }

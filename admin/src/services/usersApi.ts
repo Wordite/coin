@@ -87,6 +87,33 @@ class UsersApiService {
     const response = await api.get('/user/statistics')
     return response.data
   }
+
+  async getWalletTokenBalance(): Promise<number> {
+    const response = await api.get('/user/wallet/token-balance')
+    return response.data.balance
+  }
+
+  async issueTokensToUser(userId: string): Promise<{success: boolean, amount: number, signature?: string}> {
+    const response = await api.post(`/user/${userId}/issue-tokens`)
+    return response.data
+  }
+
+  async issueAllTokens(): Promise<{success: number, failed: number, totalProcessed: number, details: Array<{userId: string, status: string, amount?: number, error?: string}>}> {
+    const response = await api.post('/user/issue-all-tokens')
+    return response.data
+  }
+
+  async validateTokenBalance(userId?: string): Promise<{
+    hasEnough: boolean
+    walletBalance: number
+    requiredAmount: number
+  }> {
+    const url = userId 
+      ? `/user/validate-token-balance/${userId}`
+      : '/user/validate-token-balance'
+    const response = await api.get(url)
+    return response.data
+  }
 }
 
 export const usersApi = new UsersApiService()

@@ -8,6 +8,7 @@ export const usePresale = () => {
   const [presaleSettings, setPresaleSettings] = useState<CoinPresaleSettings | null>(null)
   const [users, setUsers] = useState<UserWithTransactions[]>([])
   const [usersStatistics, setUsersStatistics] = useState<UsersStatistics | null>(null)
+  const [walletBalance, setWalletBalance] = useState<number | undefined>(undefined)
   const [initialLoading, setInitialLoading] = useState(true)
   const [usersLoading, setUsersLoading] = useState(false)
   const [issuingTokens, setIssuingTokens] = useState(false)
@@ -19,12 +20,14 @@ export const usePresale = () => {
   const loadInitialData = async () => {
     try {
       setInitialLoading(true)
-      const [settingsData, statisticsData] = await Promise.all([
+      const [settingsData, statisticsData, walletBalanceData] = await Promise.all([
         coinApi.getPresaleSettings(),
-        usersApi.getUsersStatistics()
+        usersApi.getUsersStatistics(),
+        usersApi.getWalletTokenBalance()
       ])
       setPresaleSettings(settingsData)
       setUsersStatistics(statisticsData)
+      setWalletBalance(walletBalanceData)
     } catch (err) {
       Notify.error('Failed to load presale data')
       console.error('Error loading presale data:', err)
@@ -50,10 +53,25 @@ export const usePresale = () => {
   const handleIssueAllTokens = async () => {
     try {
       setIssuingTokens(true)
-      // TODO: Implement real token issuance logic
-      console.log('Issuing tokens to all users...')
       
-      Notify.success('Tokens issued to all users successfully')
+      // Validate balance first
+      const validation = await usersApi.validateTokenBalance()
+      if (!validation.hasEnough) {
+        Notify.error(`Insufficient wallet balance. Required: ${validation.requiredAmount}, Available: ${validation.walletBalance}`)
+        return
+      }
+      
+      // Issue tokens to all users
+      const result = await usersApi.issueAllTokens()
+      
+      if (result.success > 0) {
+        Notify.success(`Successfully issued tokens to ${result.success} users. ${result.failed} failed.`)
+        // Reload data to reflect changes
+        await loadInitialData()
+        await loadUsersData()
+      } else {
+        Notify.warning('No tokens were issued. All users may already have their tokens.')
+      }
     } catch (err) {
       Notify.error('Failed to issue tokens')
       console.error(err)
@@ -64,10 +82,24 @@ export const usePresale = () => {
 
   const handleIssueUserTokens = async (userId: string) => {
     try {
-      // TODO: Implement real token issuance logic for specific user
-      console.log('Issuing tokens to user:', userId)
+      // Validate balance first
+      const validation = await usersApi.validateTokenBalance(userId)
+      if (!validation.hasEnough) {
+        Notify.error(`Insufficient wallet balance. Required: ${validation.requiredAmount}, Available: ${validation.walletBalance}`)
+        return
+      }
       
-      Notify.success('Tokens issued to user successfully')
+      // Issue tokens to specific user
+      const result = await usersApi.issueTokensToUser(userId)
+      
+      if (result.success) {
+        Notify.success(`Successfully issued ${result.amount} tokens to user`)
+        // Reload data to reflect changes
+        await loadInitialData()
+        await loadUsersData()
+      } else {
+        Notify.warning('No tokens to issue for this user')
+      }
     } catch (err) {
       Notify.error('Failed to issue tokens to user')
       console.error(err)
@@ -139,6 +171,7 @@ export const usePresale = () => {
     presaleSettings,
     users,
     usersStatistics,
+    walletBalance,
     initialLoading,
     usersLoading,
     issuingTokens,
