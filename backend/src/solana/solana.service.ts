@@ -75,12 +75,15 @@ export class SolanaService {
       this.logger.log(`[SOLANA INIT] Rate limits:`, rateLimits)
 
       const endpoints = await this.coin.getRpcEndpoints()
-      this.logger.log(`[SOLANA INIT] Endpoints:`, endpoints)
+      this.logger.log(`[SOLANA INIT] Endpoints:`, JSON.stringify(endpoints, null, 2))
       this.logger.log(`[SOLANA INIT] Endpoints length:`, endpoints?.length || 0)
+      this.logger.log(`[SOLANA INIT] Endpoints type:`, Array.isArray(endpoints) ? 'array' : typeof endpoints)
 
       // Validate each endpoint
+      this.logger.log(`[SOLANA INIT] Validating ${endpoints.length} endpoints...`)
       for (let i = 0; i < endpoints.length; i++) {
         const endpoint = endpoints[i]
+        this.logger.log(`[SOLANA INIT] Validating endpoint ${i}:`, JSON.stringify(endpoint, null, 2))
         if (!endpoint.url || typeof endpoint.url !== 'string') {
           this.logger.error(`[SOLANA INIT] Invalid endpoint at index ${i}:`, endpoint)
           throw new Error(`Invalid endpoint at index ${i}: missing or invalid URL`)
@@ -90,6 +93,7 @@ export class SolanaService {
           throw new Error(`Invalid endpoint at index ${i}: missing or invalid name`)
         }
       }
+      this.logger.log(`[SOLANA INIT] All endpoints validated successfully`)
 
       // Check if we have valid data
       if (!rateLimits || !endpoints || endpoints.length === 0) {
@@ -127,6 +131,17 @@ export class SolanaService {
       })
 
       try {
+        this.logger.log(`[SOLANA INIT] Creating read limiter with config:`, {
+          id: 'solana-read-limiter',
+          datastore: 'ioredis',
+          reservoir: rateLimits.readLimit,
+          maxConcurrent: Math.min(rateLimits.readLimit, 10),
+          minTime: Math.floor(1000 / rateLimits.readLimit),
+          redisHost: process.env.REDIS_HOST || 'localhost',
+          redisPort: parseInt(process.env.REDIS_PORT || '6379'),
+          hasPassword: !!process.env.REDIS_PASSWORD
+        })
+
         this.readLimiter = new Bottleneck({
           id: 'solana-read-limiter',
           datastore: 'ioredis',
@@ -134,6 +149,9 @@ export class SolanaService {
             host: process.env.REDIS_HOST || 'localhost',
             port: parseInt(process.env.REDIS_PORT || '6379'),
             password: process.env.REDIS_PASSWORD,
+            retryDelayOnFailover: 100,
+            maxRetriesPerRequest: 3,
+            lazyConnect: true,
           },
           reservoir: rateLimits.readLimit,
           reservoirRefreshAmount: rateLimits.readLimit,
@@ -144,10 +162,35 @@ export class SolanaService {
         this.logger.log(`[SOLANA INIT] Read limiter created successfully`)
       } catch (error) {
         this.logger.error(`[SOLANA INIT] Failed to create read limiter:`, error)
-        throw error
+        this.logger.error(`[SOLANA INIT] Error type:`, error?.constructor?.name)
+        this.logger.error(`[SOLANA INIT] Error message:`, error?.message)
+        this.logger.error(`[SOLANA INIT] Error stack:`, error?.stack)
+
+        // Fallback to local limiter without Redis
+        this.logger.warn(`[SOLANA INIT] Creating local read limiter as fallback`)
+        this.readLimiter = new Bottleneck({
+          id: 'solana-read-limiter-local',
+          reservoir: rateLimits.readLimit,
+          reservoirRefreshAmount: rateLimits.readLimit,
+          reservoirRefreshInterval: 1000,
+          maxConcurrent: Math.min(rateLimits.readLimit, 10),
+          minTime: Math.floor(1000 / rateLimits.readLimit),
+        })
+        this.logger.log(`[SOLANA INIT] Local read limiter created as fallback`)
       }
 
       try {
+        this.logger.log(`[SOLANA INIT] Creating write limiter with config:`, {
+          id: 'solana-write-limiter',
+          datastore: 'ioredis',
+          reservoir: rateLimits.writeLimit,
+          maxConcurrent: Math.min(rateLimits.writeLimit, 3),
+          minTime: Math.floor(1000 / rateLimits.writeLimit),
+          redisHost: process.env.REDIS_HOST || 'localhost',
+          redisPort: parseInt(process.env.REDIS_PORT || '6379'),
+          hasPassword: !!process.env.REDIS_PASSWORD
+        })
+
         this.writeLimiter = new Bottleneck({
           id: 'solana-write-limiter',
           datastore: 'ioredis',
@@ -155,6 +198,9 @@ export class SolanaService {
             host: process.env.REDIS_HOST || 'localhost',
             port: parseInt(process.env.REDIS_PORT || '6379'),
             password: process.env.REDIS_PASSWORD,
+            retryDelayOnFailover: 100,
+            maxRetriesPerRequest: 3,
+            lazyConnect: true,
           },
           reservoir: rateLimits.writeLimit,
           reservoirRefreshAmount: rateLimits.writeLimit,
@@ -165,7 +211,21 @@ export class SolanaService {
         this.logger.log(`[SOLANA INIT] Write limiter created successfully`)
       } catch (error) {
         this.logger.error(`[SOLANA INIT] Failed to create write limiter:`, error)
-        throw error
+        this.logger.error(`[SOLANA INIT] Error type:`, error?.constructor?.name)
+        this.logger.error(`[SOLANA INIT] Error message:`, error?.message)
+        this.logger.error(`[SOLANA INIT] Error stack:`, error?.stack)
+
+        // Fallback to local limiter without Redis
+        this.logger.warn(`[SOLANA INIT] Creating local write limiter as fallback`)
+        this.writeLimiter = new Bottleneck({
+          id: 'solana-write-limiter-local',
+          reservoir: rateLimits.writeLimit,
+          reservoirRefreshAmount: rateLimits.writeLimit,
+          reservoirRefreshInterval: 1000,
+          maxConcurrent: Math.min(rateLimits.writeLimit, 3),
+          minTime: Math.floor(1000 / rateLimits.writeLimit),
+        })
+        this.logger.log(`[SOLANA INIT] Local write limiter created as fallback`)
       }
 
       // Initialize endpoint manager
