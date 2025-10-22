@@ -7,6 +7,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, PropsWith
   to?: To
   target?: HTMLAnchorElement['target']
   isLoading?: boolean
+  loadingText?: string
 }
 
 type ButtonStyles = Record<ButtonProps['color'], string>
@@ -19,7 +20,7 @@ const styles: ButtonStyles = {
 
 const baseStyles = 'flex justify-center items-center gap-[.75rem] py-[1rem] px-[2.2rem] max-md:text-[1.5rem] font-semibold cursor-pointer rounded-md hover:brightness-120 transition-200'
 
-const Button = ({ color, isLink = false, children, className, to, target, isLoading = false, ...props }: ButtonProps) => {
+const Button = ({ color, isLink = false, children, className, to, target, isLoading = false, loadingText = 'Loading...', ...props }: ButtonProps) => {
   const LoadingSpinner = () => (
     <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -28,8 +29,9 @@ const Button = ({ color, isLink = false, children, className, to, target, isLoad
   )
 
   if (isLink && to) {
+    const { disabled, form, formAction, formEncType, formMethod, formNoValidate, formTarget, name, type, value, ...linkProps } = props
     return (
-      <Link to={to} target={target} className={`${baseStyles} ${styles[color]} ${className} clickable`}>
+      <Link to={to} target={target} className={`${baseStyles} ${styles[color]} ${className} clickable`} {...linkProps}>
         {children}
       </Link>
     )
@@ -44,7 +46,7 @@ const Button = ({ color, isLink = false, children, className, to, target, isLoad
       {isLoading ? (
         <div className="flex items-center gap-2">
           <LoadingSpinner />
-          <span>Connecting...</span>
+          <span>{loadingText}</span>
         </div>
       ) : (
         children

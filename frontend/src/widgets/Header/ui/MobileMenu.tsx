@@ -144,6 +144,7 @@ const MobileMenu = () => {
               className='w-full mt-auto max-md:h-[4.6rem]' 
               onClick={handleConnectWallet}
               isLoading={isConnecting}
+              loadingText='Connecting...'
             >
               Connect Wallet
             </Button>

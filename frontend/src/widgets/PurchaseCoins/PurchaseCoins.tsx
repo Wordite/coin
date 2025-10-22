@@ -128,11 +128,12 @@ const PurchaseCoins = () => {
 
           <Button
             type='submit'
-            disabled={isSubmitting || isPurchasing}
             color='green'
+            isLoading={isSubmitting || isPurchasing}
+            loadingText='Purchasing...'
             className='clickable w-full h-[3.64rem] max-md:h-[4.62rem] mt-auto disabled:opacity-50 disabled:cursor-not-allowed'
           >
-            {isSubmitting || isPurchasing ? 'Processing...' : 'Purchase'}
+            Purchase
           </Button>
         </form>
       </FormProvider>

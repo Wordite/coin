@@ -1,5 +1,6 @@
 const Modals = {
   FAILED_WALLET_CONNECT: 'FAILED_WALLET_CONNECT',
+  SUCCESS_PURCHASE: 'SUCCESS_PURCHASE',
 } as const
 
 export { Modals }

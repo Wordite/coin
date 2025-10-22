@@ -4,12 +4,13 @@ import { useAnimations } from '@/hooks/useAnimations'
 import { Header } from '@/widgets/Header/Header'
 import { Footer } from '@/widgets/Footer/Footer'
 import { destroyLocomotiveScroll } from '@/app/animations/locomotive'
-import { SelectWalletModal } from '@/widgets/SelectWalletModal/SelectWalletModal'
 import { clickAnimation } from './animations/click'
 import { CookieBanner } from '@/widgets/CookieBanner/CookieBanner'
 import { useSettings } from '@/hooks'
 import { Section } from '@/services/section.service'
 import { FailedWalletConnectModal } from '@/features/FailedWalletConnectModal/FailedWalletConnectModal'
+import { ConfettiAnimation } from '@/shared/ConfettiAnimation'
+import { SuccessPurchaseModal } from '@/features/SuccessPurchaseModal/SuccessPurchaseModal'
 
 const Container = () => {
   const { init } = useAnimations()
@@ -48,11 +49,13 @@ const Container = () => {
     <>
       <main className='layout container' data-scroll-container>
         <Header />
-        {/* <SelectWalletModal /> */}
-        <FailedWalletConnectModal />
         <Outlet />
         <Footer />
+  
         <CookieBanner />
+        <ConfettiAnimation />
+        <FailedWalletConnectModal />
+        <SuccessPurchaseModal />
       </main>
     </>
   )

@@ -83,6 +83,7 @@ const Header = () => {
                 color='purple'
                 className='w-[12.313rem] h-[2.938rem]'
                 onClick={handleConnectWallet}
+                loadingText='Connecting...'
                 isLoading={isConnecting}
               >
                 Connect Wallet

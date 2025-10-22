@@ -3,7 +3,11 @@ import { useAppKitAccount, useAppKitProvider } from '@reown/appkit/react'
 import { useAppKitConnection } from '@reown/appkit-adapter-solana/react'
 import { Wallets } from '@/services/wallets.service'
 import { useToastContext } from '@/shared/Toast'
+import { useConfettiStore } from '@/app/store/confettiStore'
 import type { Provider } from '@reown/appkit-adapter-solana/react'
+import { useEffect } from 'react'
+import { Modals } from '@/constants/modals'
+import { useModalStore } from '@/app/store/modalStore'
 
 interface PurchaseCoinsParams {
   toPublicKey: string
@@ -24,6 +28,20 @@ export const usePurchaseCoins = (): UsePurchaseCoinsReturn => {
   const { walletProvider } = useAppKitProvider<Provider>('solana')
   const { connection } = useAppKitConnection()
   const { showSuccess, showError } = useToastContext()
+  const { triggerConfetti } = useConfettiStore()
+  const { openModal } = useModalStore()
+
+  useEffect(() => {
+    console.log('purchaseCoins modal')
+    new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(true)
+      }, 2000)
+    }).then(() => {
+      openModal(Modals.SUCCESS_PURCHASE)
+    })
+  }, [])
+  
 
   const purchaseCoins = async ({ toPublicKey, amount, currency }: PurchaseCoinsParams): Promise<string | null> => {
     if (!isConnected || !address) {
@@ -68,7 +86,12 @@ export const usePurchaseCoins = (): UsePurchaseCoinsReturn => {
         connection
       )
 
-      showSuccess(`Payment sent successfully! Transaction: ${signature.slice(0, 8)}...`)
+
+      // success
+      triggerConfetti()
+      // showSuccess(`Payment sent successfully! Transaction: ${signature.slice(0, 8)}...`)
+      openModal(Modals.SUCCESS_PURCHASE)
+      
       return signature
 
     } catch (err: any) {

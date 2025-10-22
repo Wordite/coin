@@ -73,6 +73,7 @@ const Profile = () => {
                 }
               }}
               isLoading={isConnecting}
+              loadingText='Connecting...'
             >
               Connect Wallet
             </Button>
