@@ -127,7 +127,7 @@ export class WalletService implements OnModuleInit {
    */
   private async sendSol(to: string, amount: number): Promise<string> {
     const keypair = await this.getKeypair()
-    const connection = this.solana.getConnection()
+    const connection = await this.solana.getConnection()
     
     const transaction = new Transaction()
     const lamports = Math.floor(amount * LAMPORTS_PER_SOL)
@@ -170,7 +170,7 @@ export class WalletService implements OnModuleInit {
       this.logger.log(`[TX CHECK ATTEMPT ${attempt}/${maxAttempts}] Checking across all RPCs`)
       
       // Get all available RPC endpoints
-      const rpcEndpoints = this.solana.getAllRpcEndpoints()
+      const rpcEndpoints = await this.solana.getAllRpcEndpoints()
       this.logger.log(`[TX CHECK] Found ${rpcEndpoints.length} RPC endpoints to check`)
       
       // Try each RPC endpoint
@@ -183,7 +183,7 @@ export class WalletService implements OnModuleInit {
             this.logger.log(`[TX CHECK] Transaction found on RPC: ${rpcUrl}`)
             
             // Check signature status
-            const connection = this.solana.getConnection()
+            const connection = await this.solana.getConnection()
             const status = await connection.getSignatureStatuses([signature], { searchTransactionHistory: true })
             const statusInfo = status?.value?.[0]
             
@@ -231,7 +231,7 @@ export class WalletService implements OnModuleInit {
     this.logger.log(`[CHECK ATA] Wallet: ${walletAddress}, Mint: ${mint.toBase58()}`)
     
     try {
-      const connection = this.solana.getConnection()
+      const connection = await this.solana.getConnection()
       const { getAssociatedTokenAddress } = await import('@solana/spl-token')
       
       const ataAddress = await getAssociatedTokenAddress(mint, new PublicKey(walletAddress))
