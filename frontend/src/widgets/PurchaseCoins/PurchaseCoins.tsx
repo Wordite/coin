@@ -98,7 +98,7 @@ const PurchaseCoins = () => {
 
   return (
     <div className='relative w-[30.188rem] h-[44rem] max-md:h-[64rem] max-md:mt-[3.5rem] max-md:w-full flex flex-col bg-[var(--color-gray-transparent-10)] backdrop-blur-3xl rounded-xl p-[1.625rem]'>
-      <SoldOut />
+      {/* <SoldOut /> */}
 
       <div className='flex items-center justify-between'>
         <p className='font-semibold text-[1.375rem] max-md:text-[1.76rem]'>{data.widgetTitle}</p>
