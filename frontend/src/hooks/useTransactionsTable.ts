@@ -25,7 +25,11 @@ export const useTransactionsTable = ({ orders, pageSize = 10 }: UseTransactionsT
   }, [orders.length, pageSize])
 
   const currentItems = useMemo(() => {
-    return orders.slice((page - 1) * pageSize, page * pageSize)
+    // Sort by timestamp descending (newest first), then reverse to show newest at top
+    const sortedOrders = [...orders].sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )
+    return sortedOrders.slice((page - 1) * pageSize, page * pageSize)
   }, [orders, page, pageSize])
 
   return {
