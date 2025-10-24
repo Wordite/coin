@@ -91,14 +91,14 @@ const Profile = () => {
     )
 
   return (
-    <section className='container pt-[10rem] min-h-screen'>
+    <section className='pt-[10rem] min-h-screen'>
       <div className='flex items-center justify-between'>
         <div>
           <h1 className='text-[2rem] font-bold max-md:text-[3.75rem]'>Profile</h1>
           <div className='mt-[.5rem] text-white-transparent-75 text-[.875rem] max-md:text-[1.375rem] flex items-center gap-[.5rem]'>
             <span>Wallet: <span className='text-white'>{publicKey.slice(0, 6)}...{publicKey.slice(-4)}</span></span>
             <button
-              className='h-[1.75rem] cursor-pointer px-[.6rem] text-[.75rem] max-md:text-[1.375rem] bg-gray-transparent-70 border-1 border-stroke-dark rounded-sm hover:brightness-120 transition-200'
+              className='h-[1.75rem] cursor-pointer px-[.6rem] text-[.75rem] max-md:h-[2.1875rem] max-md:px-[.75rem] max-md:text-[1.1rem] bg-gray-transparent-70 border-1 border-stroke-dark rounded-sm hover:brightness-120 transition-200'
               onClick={async () => {
                 try { await navigator.clipboard.writeText(publicKey); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch {}
               }}

@@ -117,7 +117,7 @@ const TransactionDetailsModal = ({
           <div className='flex justify-end mt-6'>
             <Button
               color='green'
-              className='clickable h-10 px-6 text-[1rem] max-md:mt-[5rem] max-md:w-full max-md:h-[4.62rem] max-md:text-[1.6rem]'
+              className='clickable h-10 px-6 text-[1rem] max-md:mt-[3rem] max-md:w-full max-md:h-[4.62rem] max-md:text-[1.6rem]'
               isLink
               target='_blank'
               to={`https://solscan.io/tx/${transaction.txHash}`}
