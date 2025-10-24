@@ -19,7 +19,9 @@ const useCalculatedReceive = () => {
     const payAmount = Number(pay) || 0
     const decimals = presaleSettings.decimals || 6
     const maxBuyAmount = presaleSettings.maxBuyAmount
-
+    const totalAmount = presaleSettings.total
+    const soldAmount = presaleSettings.sold
+    const currentAmount = totalAmount - soldAmount
     let calculatedReceive = 0
 
     if (payCoin === PayCoin.SOL) {
@@ -28,7 +30,7 @@ const useCalculatedReceive = () => {
       calculatedReceive = calculateReceive(payAmount, settings.usdtToCoinRate, decimals)
     }
 
-    return Math.min(calculatedReceive, maxBuyAmount)
+    return Math.min(calculatedReceive, maxBuyAmount, currentAmount)
   }, [payCoin, pay, settings, presaleSettings])
 
   const receive = useMemo(() => getReceive(), [getReceive])

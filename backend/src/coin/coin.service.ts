@@ -336,6 +336,19 @@ export class CoinService {
     await this.redis.del('presale_settings')
   }
 
+  async isSoldOut(): Promise<boolean> {
+    const coin = await this.prisma.coin.findFirst()
+    
+    if (!coin) {
+      throw new Error('Coin not found')
+    }
+    
+    const isSoldOut = coin.soldAmount >= coin.totalAmount
+    this.logger.log(`[IS SOLD OUT] soldAmount: ${coin.soldAmount}, totalAmount: ${coin.totalAmount}, isSoldOut: ${isSoldOut}`)
+    
+    return isSoldOut
+  }
+
   async updateSoldAmount(deltaAmount: number): Promise<void> {
     this.logger.log(`[UPDATE SOLD AMOUNT] Updating soldAmount by ${deltaAmount}`)
     

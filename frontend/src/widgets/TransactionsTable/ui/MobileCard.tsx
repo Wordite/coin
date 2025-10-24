@@ -12,24 +12,24 @@ const MobileCard = ({ transaction, onDetailsClick }: MobileCardProps) => {
   return (
     <div className='bg-gradient-to-br from-gray-transparent-20 to-gray-transparent-10 border-1 border-stroke-light rounded-xxl p-5 mb-4 shadow-lg hover:shadow-xl transition-all duration-300 hover:border-stroke-light/50'>
       <div className='flex justify-between items-center mb-4'>
-        <div className='text-white text-base font-semibold'>{new Date(transaction.timestamp).toLocaleDateString()}</div>
-        <div className='text-white text-sm bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-400/30 px-3 py-1.5 rounded-full backdrop-blur-sm'>
+        <div className='text-white text-base font-semibold max-md:text-[1.25rem]'>{new Date(transaction.timestamp).toLocaleDateString()}</div>
+        <div className='text-white text-sm max-md:text-[1.125rem] bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-400/30 px-3 py-1.5 rounded-full backdrop-blur-sm'>
           {transaction.isSuccessful ? 'Completed' : 'Failed'}
         </div>
       </div>
 
       <div className='space-y-3 mb-5'>
         <div className='flex justify-between items-center py-2 px-3 bg-gray-transparent-20 rounded-lg'>
-          <span className='text-white-transparent-75 text-[1.35rem] font-medium'>Paid</span>
-          <span className='text-white text-base font-semibold text-[1.2rem]'>
+          <span className='text-white-transparent-75 text-[1.35rem] font-medium max-md:text-[1.6875rem]'>Paid</span>
+          <span className='text-white text-base font-semibold text-[1.2rem] max-md:text-[1.5rem]'>
             {transaction.amount} {transaction.type}
           </span>
         </div>
 
         <div className='flex justify-between items-center py-2 px-3 bg-gray-transparent-20 rounded-lg'>
-          <span className='text-white-transparent-75 text-[1.35rem] font-medium'>Receive</span>
+          <span className='text-white-transparent-75 text-[1.35rem] font-medium max-md:text-[1.6875rem]'>Receive</span>
           <div className='flex items-center gap-2'>
-            <span className='text-white text-base text-[1.2rem] leading-[1em] font-semibold'>
+            <span className='text-white text-base text-[1.2rem] leading-[1em] font-semibold max-md:text-[1.5rem]'>
               {transaction.coinsPurchased}
             </span>
             <div className='flex items-center gap-1 -translate-y-[0.125rem]'>
@@ -62,8 +62,8 @@ const MobileCard = ({ transaction, onDetailsClick }: MobileCardProps) => {
         </div>
 
         <div className='flex justify-between items-center py-2 px-3 bg-gray-transparent-20 rounded-lg'>
-          <span className='text-white-transparent-75 text-[1.35rem] font-medium'>Rate</span>
-          <span className='text-white text-base  text-[1.2rem] font-semibold'>
+          <span className='text-white-transparent-75 text-[1.35rem] font-medium max-md:text-[1.6875rem]'>Rate</span>
+          <span className='text-white text-base  text-[1.2rem] font-semibold max-md:text-[1.5rem]'>
             {transaction.rate}
           </span>
         </div>
@@ -72,7 +72,7 @@ const MobileCard = ({ transaction, onDetailsClick }: MobileCardProps) => {
       <div className='flex justify-end'>
         <Button 
           color='dark' 
-          className='clickable w-full h-[3.6rem] text-[0.2rem] font-medium'
+          className='clickable w-full h-[3.6rem] text-[0.2rem] font-medium max-md:h-[4rem] max-md:text-[0.25rem]'
           onClick={() => onDetailsClick(transaction)}
         >
           Details

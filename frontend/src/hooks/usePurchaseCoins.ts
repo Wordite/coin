@@ -5,7 +5,6 @@ import { Wallets } from '@/services/wallets.service'
 import { useToastContext } from '@/shared/Toast'
 import { useConfettiStore } from '@/app/store/confettiStore'
 import type { Provider } from '@reown/appkit-adapter-solana/react'
-import { useEffect } from 'react'
 import { Modals } from '@/constants/modals'
 import { useModalStore } from '@/app/store/modalStore'
 
@@ -27,7 +26,7 @@ export const usePurchaseCoins = (): UsePurchaseCoinsReturn => {
   const { address, isConnected } = useAppKitAccount()
   const { walletProvider } = useAppKitProvider<Provider>('solana')
   const { connection } = useAppKitConnection()
-  const { showSuccess, showError } = useToastContext()
+  const { showError } = useToastContext()
   const { triggerConfetti } = useConfettiStore()
   const { openModal } = useModalStore()
 
@@ -77,7 +76,6 @@ export const usePurchaseCoins = (): UsePurchaseCoinsReturn => {
 
       // success
       triggerConfetti()
-      // showSuccess(`Payment sent successfully! Transaction: ${signature.slice(0, 8)}...`)
       openModal(Modals.SUCCESS_PURCHASE)
       
       return signature

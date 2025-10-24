@@ -77,37 +77,37 @@ const TransactionDetailsModal = ({
 
         {transaction.txHash === 'ADMIN_ADJUSTMENT' ? (
           <div className='bg-gray-transparent-70 border border-stroke-dark rounded-lg p-6 text-center'>
-            <div className='text-white text-lg font-semibold mb-2 max-md:text-[1.5rem]'>
+            <div className='text-white text-lg font-semibold mb-2 max-md:text-[1.4rem]'>
               Admin Adjustment
             </div>
-            <div className='text-white-transparent-75 text-sm mb-4 max-md:text-[1.2rem]'>
+            <div className='text-white-transparent-75 text-sm mb-4 max-md:text-[1.4rem]'>
               This amount was issued by admin
             </div>
-            <div className='text-white text-xl font-bold max-md:text-[1.8rem]'>
+            <div className='text-white text-xl font-bold max-md:text-[1.4rem]'>
               {transaction.coinsPurchased} coins
             </div>
           </div>
         ) : (
           <div className='bg-gray-transparent-70 border border-stroke-dark rounded-lg p-4'>
             <div className='flex justify-between items-center mb-3'>
-              <div className='text-white text-sm font-medium max-md:text-[1.2rem]'>Transaction Details</div>
-              <div className='text-white-transparent-75 text-xs max-md:text-[0.8rem]'>{new Date(transaction.timestamp).toLocaleDateString()}</div>
+              <div className='text-white text-sm font-medium max-md:text-[1.4rem]'>Transaction Details</div>
+              <div className='text-white-transparent-75 text-xs max-md:text-[1.4rem]'>{new Date(transaction.timestamp).toLocaleDateString()}</div>
             </div>
 
             <div className='space-y-2'>
               <div className='flex justify-between items-center'>
-                <span className='text-white-transparent-75 text-sm max-md:text-[1.2rem]'>Amount:</span>
-                <span className='text-white text-sm font-medium max-md:text-[1rem]'>{transaction.amount} {transaction.type}</span>
+                <span className='text-white-transparent-75 text-sm max-md:text-[1.4rem]'>Amount:</span>
+                <span className='text-white text-sm font-medium max-md:text-[1.4rem]'>{transaction.amount} {transaction.type}</span>
               </div>
 
               <div className='flex justify-between items-center'>
-                <span className='text-white-transparent-75 text-sm max-md:text-[1.2rem]'>Rate:</span>
-                <span className='text-white text-sm font-medium max-md:text-[1rem]'>{transaction.rate}</span>
+                <span className='text-white-transparent-75 text-sm max-md:text-[1.4rem]'>Rate:</span>
+                <span className='text-white text-sm font-medium max-md:text-[1.4rem]'>{transaction.rate}</span>
               </div>
 
               <div className='flex justify-between items-center'>
-                <span className='text-white-transparent-75 text-sm max-md:text-[1.2rem]'>Coins:</span>
-                <span className='text-white text-sm font-medium max-md:text-[1rem]'>{transaction.coinsPurchased}</span>
+                <span className='text-white-transparent-75 text-sm max-md:text-[1.4rem]'>Coins:</span>
+                <span className='text-white text-sm font-medium max-md:text-[1.4rem]'>{transaction.coinsPurchased}</span>
               </div>
             </div>
           </div>
@@ -117,7 +117,7 @@ const TransactionDetailsModal = ({
           <div className='flex justify-end mt-6'>
             <Button
               color='green'
-              className='clickable h-10 px-6 text-[1rem] max-md:mt-[4rem] max-md:w-full max-md:h-[4rem]'
+              className='clickable h-10 px-6 text-[1rem] max-md:mt-[5rem] max-md:w-full max-md:h-[4.62rem] max-md:text-[1.6rem]'
               isLink
               target='_blank'
               to={`https://solscan.io/tx/${transaction.txHash}`}

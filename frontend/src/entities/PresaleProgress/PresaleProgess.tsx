@@ -20,7 +20,7 @@ const PresaleProgess = () => {
       </div>
 
       <div className='h-[1.063rem] max-md:h-[1.43rem] bg-gray-200 rounded-md'>
-        <div className='h-full bg-[image:var(--color-gradient-purple-blue-5)] rounded-md' style={{ width: `${(presaleSettings!.sold / presaleSettings!.total) * 100}%` }} />
+        <div className='h-full bg-[image:var(--color-gradient-purple-blue-5)] rounded-md' style={{ width: `${Math.min((presaleSettings!.sold / presaleSettings!.total) * 100, 100)}%` }} />
       </div>
 
       <div className='mt-[1.25rem] max-md:mt-[1.65rem] flex justify-between gap-[1rem] max-md:gap-[1.375rem]'>

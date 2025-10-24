@@ -171,6 +171,12 @@ export class UserService {
   async purchaseCoins(address: string, transaction: any, req: Request): Promise<void> {
     this.logger.log(`[PURCHASE START] Address: ${address}, Signature: ${transaction.signature}`)
     
+    const isSoldOut = await this.coinService.isSoldOut()
+    if (isSoldOut) {
+      this.logger.log(`[PURCHASE ERROR] All coins are sold out, rejecting purchase`)
+      throw new BadRequestException('All coins are sold out')
+    }
+    
     try {
       const txCheck = await this.walletService.checkIsReceived(transaction.signature)
       this.logger.log(`[TX CHECK] Exists: ${txCheck.exists}, Success: ${txCheck.isSuccessful}, Finalized: ${txCheck.isFinalized}`)

@@ -35,11 +35,11 @@ services:
     container_name: vault_dev
     ports:
       - "8200:8200"
-    env_file:
-      - ./vault/.env.dev
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=dev-root-token
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     volumes:
       - vault_data:/vault/data
-      - ./vault/config:/vault/config
     cap_add:
       - IPC_LOCK
     restart: unless-stopped

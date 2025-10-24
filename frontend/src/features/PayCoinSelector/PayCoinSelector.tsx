@@ -1,10 +1,11 @@
 import { useWatch, type UseFormRegister, type Control, type Path } from 'react-hook-form'
-
 import { PayCoin } from '@/constants/payCoin'
-import SolanaIcon from '@/assets/icons/solana.svg'
-import USDTIcon from '@/assets/icons/usdt.svg'
 
 import { InputRadio } from '@/shared/Input'
+import { useIsSoldOut } from '@/hooks'
+
+import SolanaIcon from '@/assets/icons/solana.svg'
+import USDTIcon from '@/assets/icons/usdt.svg'
 
 interface PayCoinSelectorProps<T extends Record<string, any>> {
   register: UseFormRegister<T>
@@ -15,6 +16,7 @@ const PayCoinSelector = <T extends Record<string, any>>({
   register,
   control,
 }: PayCoinSelectorProps<T>) => {
+  const isSoldOut = useIsSoldOut()
   const payCoin = useWatch({ control, name: 'payCoin' as Path<T> })
 
   return (
@@ -26,6 +28,7 @@ const PayCoinSelector = <T extends Record<string, any>>({
       />
 
       <InputRadio
+        disabled={isSoldOut}
         className='w-1/2 rounded-r-none border-r-0 h-full max-md:h-[3.96rem]'
         register={register}
         checked={payCoin === PayCoin.SOL}
@@ -39,6 +42,7 @@ const PayCoinSelector = <T extends Record<string, any>>({
       </InputRadio>
 
       <InputRadio
+        disabled={isSoldOut}
         className='w-1/2 rounded-l-none border-l-0 h-full max-md:h-[3.96rem]'
         register={register}
         checked={payCoin === PayCoin.USDT}
