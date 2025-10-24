@@ -373,18 +373,9 @@ export class UserService {
 
       this.logger.log(`[NEW TRANSACTION] ${JSON.stringify(newTransaction)}`)
 
-      // 11. Save transaction to user
-      // TODO: handle error if user.transactions is not a string
-      let currentTransactions = []
-      if (user.transactions) {
-        try {
-          currentTransactions = JSON.parse(user.transactions as string) || []
-        } catch (error) {
-          this.logger.warn(`[JSON PARSE ERROR] Failed to parse user transactions, using empty array: ${error.message}`)
-          currentTransactions = []
-        }
-      }
-      const updatedTransactions = [...currentTransactions, newTransaction]
+      // 11. Save transaction to user using TransactionService
+      const currentTransactions = this.transactionService.parseTransactions(user.transactions)
+      const updatedTransactions = this.transactionService.addTransaction(user.transactions, newTransaction)
       
       await this.prisma.user.update({
         where: { id: user.id },

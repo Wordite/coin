@@ -7,6 +7,8 @@ import { useConfettiStore } from '@/app/store/confettiStore'
 import type { Provider } from '@reown/appkit-adapter-solana/react'
 import { Modals } from '@/constants/modals'
 import { useModalStore } from '@/app/store/modalStore'
+import { useServerAccount } from '@/widgets/Header/model/useServerAccount'
+import { usePresaleSettings } from './usePresaleSettings'
 
 interface PurchaseCoinsParams {
   toPublicKey: string
@@ -29,6 +31,9 @@ export const usePurchaseCoins = (): UsePurchaseCoinsReturn => {
   const { showError } = useToastContext()
   const { triggerConfetti } = useConfettiStore()
   const { openModal } = useModalStore()
+
+  const { refetchAccount } = useServerAccount()
+  const { refetchPresaleSettings } = usePresaleSettings()
 
   const purchaseCoins = async ({ toPublicKey, amount, currency }: PurchaseCoinsParams): Promise<string | null> => {
     if (!isConnected || !address) {
@@ -78,6 +83,10 @@ export const usePurchaseCoins = (): UsePurchaseCoinsReturn => {
       triggerConfetti()
       openModal(Modals.SUCCESS_PURCHASE)
       
+      // refetch account and presale settings
+      refetchAccount()
+      refetchPresaleSettings()
+
       return signature
 
     } catch (err: any) {

@@ -26,8 +26,6 @@ const useAccount = () => {
     mutationFn: (data: ConnectWalletParams): Promise<ConnectWalletResponse> => api.post('/auth/wallet', data),
   })
 
-  console.log(data)
-
   const { showError } = useToast()
 
   useEffect(() => {

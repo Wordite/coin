@@ -1,16 +1,15 @@
 import { useState, useMemo } from 'react'
 
 export interface TransactionItem {
-  time: string
-  amount: string
-  receive: string
-  price: string
-  stage: string
-  isPresale?: boolean
-  isClaimed?: boolean
+  id: string
+  type: 'SOL' | 'USDT'
+  amount: number
+  rate: number
+  coinsPurchased: number
+  timestamp: string
   txHash?: string
-  blockTime?: string
-  status?: 'completed' | 'pending' | 'failed'
+  isReceived: boolean
+  isSuccessful: boolean
 }
 
 interface UseTransactionsTableProps {

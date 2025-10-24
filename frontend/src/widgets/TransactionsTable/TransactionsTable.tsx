@@ -8,18 +8,17 @@ import { TransactionDetailsModal } from '@/widgets/TransactionDetailsModal'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { useDetailsModal } from './model/useDetailsModal'
 import { useWalletStore } from '@/app/store/walletStore'
+import { useTransactionsTable } from '@/hooks/useTransactionsTable'
 
-
-interface TransactionsTableProps {
-  totalPages: number
-  page: number
-  setPage: (page: number) => void
-}
-
-const TransactionsTable = ({ totalPages, page, setPage }: TransactionsTableProps) => {
+const TransactionsTable = () => {
   const isMobile = useIsMobile()
   const { handleDetailsClick, handleCloseModal, isModalOpen, selectedTransaction } = useDetailsModal()
   const { data } = useWalletStore()
+  
+  const { page, setPage, totalPages, currentItems } = useTransactionsTable({ 
+    orders: data.transactions, 
+    pageSize: 10 
+  })
 
   if (data.transactions.length === 0) return <Emty />
 
@@ -28,7 +27,7 @@ const TransactionsTable = ({ totalPages, page, setPage }: TransactionsTableProps
       <>
         <div className='mt-[2rem]'>
           <div className='space-y-4'>
-            {data.transactions.map((transaction, i) => (
+            {currentItems.map((transaction, i) => (
               <MobileCard key={i} transaction={transaction} onDetailsClick={handleDetailsClick} />
             ))}
           </div>
@@ -56,7 +55,7 @@ const TransactionsTable = ({ totalPages, page, setPage }: TransactionsTableProps
           <span>Stage</span>
           <span className='text-right pr-[.5rem]'>Action</span>
         </div>
-        {data.transactions.map((o, i) => (
+        {currentItems.map((o, i) => (
           <div
             key={i}
             className={`grid grid-cols-6 items-center px-[1rem] py-[.875rem] border-b-1 border-stroke-dark last:border-b-0 ${

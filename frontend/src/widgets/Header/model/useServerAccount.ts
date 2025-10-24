@@ -8,6 +8,12 @@ const useServerAccount = () => {
   const { connectWallet, data } = useAccount()
   const { isConnected, setData } = useWalletStore()
 
+  const refetchAccount = () => {
+    if (isConnected && address) {
+      connectWallet({ address: address })
+    }
+  }
+
   useEffect(() => {
     if (isConnected && address) {
       connectWallet({ address: address })
@@ -19,6 +25,8 @@ const useServerAccount = () => {
       setData(data)
     }
   }, [data])
+
+  return { refetchAccount }
 }
 
 export { useServerAccount }

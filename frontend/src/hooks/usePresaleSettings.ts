@@ -13,7 +13,7 @@ interface PresaleSettings {
 
 
 const usePresaleSettings = () => {
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['presale-settings'],
     queryFn: () => api.get<PresaleSettings>('/coin/public/presale-settings'),
     select: (data) => data.data as PresaleSettings,
@@ -23,6 +23,7 @@ const usePresaleSettings = () => {
     presaleSettings: data,
     isLoading,
     error,
+    refetchPresaleSettings: refetch,
   }
 }
 
