@@ -35,8 +35,8 @@ const MobileCard = ({ transaction, onDetailsClick }: MobileCardProps) => {
             <div className='flex items-center gap-1 -translate-y-[0.125rem]'>
               {transaction.txHash === 'ADMIN_ADJUSTMENT' && (
                 <div className='relative group'>
-                  <div className='w-[1.5rem] h-[1.5rem] rounded border-1 border-stroke-dark bg-gray-transparent-70 flex items-center justify-center'>
-                    <ServerIcon className='w-[1rem] h-[1rem] [&>path]:fill-white' />
+                  <div className='w-[1.5rem] h-[1.5rem] max-md:w-[1.875rem] max-md:h-[1.875rem] rounded border-1 border-stroke-dark bg-gray-transparent-70 flex items-center justify-center'>
+                    <ServerIcon className='w-[1rem] h-[1rem] max-md:w-[1.32rem] max-md:h-[1.32rem] [&>path]:fill-white' />
                   </div>
                   {/* Tooltip - сверху, центрирован */}
                   <div className='absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-3 py-2 bg-dark-200 border border-stroke-dark rounded-lg text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-10'>
@@ -47,8 +47,8 @@ const MobileCard = ({ transaction, onDetailsClick }: MobileCardProps) => {
               )}
               {!transaction.isReceived && (
                 <div className='relative group'>
-                  <div className='w-[1.5rem] h-[1.5rem] rounded border-1 border-stroke-dark bg-gray-transparent-70 flex items-center justify-center'>
-                    <ClockIcon className='w-[1rem] h-[1rem]' />
+                  <div className='w-[1.5rem] h-[1.5rem] max-md:w-[1.875rem] max-md:h-[1.875rem] rounded border-1 border-stroke-dark bg-gray-transparent-70 flex items-center justify-center'>
+                    <ClockIcon className='w-[1rem] h-[1rem] max-md:w-[1.32rem] max-md:h-[1.32rem]' />
                   </div>
                   {/* Tooltip - снизу, центрирован */}
                   <div className='absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-dark-200 border border-stroke-dark rounded-lg text-white text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-300 ease-out pointer-events-none z-10'>
