@@ -3,6 +3,7 @@ import { usersApi, type UserWithTransactions } from '@/services/usersApi'
 import { coinApi, type CoinPresaleSettings } from '@/services/coinApi'
 import { Notify } from '@/services/notify'
 import type { UsersStatistics } from './types'
+import { api } from '@/app/api'
 
 export const usePresale = () => {
   const [presaleSettings, setPresaleSettings] = useState<CoinPresaleSettings | null>(null)
@@ -17,6 +18,8 @@ export const usePresale = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [filterType, setFilterType] = useState<'all' | 'pending' | 'issued'>('all')
+  const [activeProcessId, setActiveProcessId] = useState<string | null>(null)
+  const [showIssueModal, setShowIssueModal] = useState(false)
 
   const loadInitialData = async () => {
     try {
@@ -51,6 +54,21 @@ export const usePresale = () => {
     }
   }
 
+  const checkActiveProcess = async () => {
+    try {
+      const response = await api.get('/user/issue-all-tokens/active')
+      if (response.data.active) {
+        setActiveProcessId(response.data.processId)
+        setShowIssueModal(true)
+        return true
+      }
+      return false
+    } catch (error) {
+      console.error('Failed to check active process:', error)
+      return false
+    }
+  }
+
   const handleIssueAllTokens = async () => {
     try {
       setIssuingTokens(true)
@@ -62,28 +80,28 @@ export const usePresale = () => {
         return
       }
       
-      // Issue tokens to all users
-      const result = await usersApi.issueAllTokens()
+      // Start background process
+      const response = await api.post('/user/issue-all-tokens')
+      const { processId } = response.data
       
-      if (result.success > 0) {
-        const message = result.failed > 0 
-          ? `✅ Successfully issued tokens to ${result.success} users. ⚠️ ${result.failed} failed.`
-          : `✅ Successfully issued tokens to ${result.success} users.`
-        Notify.success(message)
-        // Reload data to reflect changes
-        await loadInitialData()
-        await loadUsersData()
-      } else if (result.failed > 0) {
-        Notify.error(`❌ Failed to issue tokens to ${result.failed} users.`)
-      } else {
-        Notify.warn('ℹ️ No tokens were issued. All users may already have their tokens.')
-      }
+      setActiveProcessId(processId)
+      setShowIssueModal(true)
+      Notify.success('Token issuance process started. Monitor progress in the modal.')
+      
     } catch (err) {
-      Notify.error('Failed to issue tokens')
+      Notify.error('Failed to start token issuance process')
       console.error(err)
     } finally {
       setIssuingTokens(false)
     }
+  }
+
+  const handleCloseIssueModal = () => {
+    setShowIssueModal(false)
+    setActiveProcessId(null)
+    // Reload data to reflect changes
+    loadInitialData()
+    loadUsersData()
   }
 
   const handleIssueUserTokens = async (userId: string) => {
@@ -169,6 +187,8 @@ export const usePresale = () => {
 
   useEffect(() => {
     loadInitialData()
+    // Check for active process on page load
+    checkActiveProcess()
   }, [])
 
   useEffect(() => {
@@ -204,6 +224,8 @@ export const usePresale = () => {
     currentPage,
     totalPages,
     filterType,
+    activeProcessId,
+    showIssueModal,
     
     // Actions
     loadInitialData,
@@ -213,6 +235,7 @@ export const usePresale = () => {
     handleViewUser,
     handlePageChange,
     handleFilterChange,
+    handleCloseIssueModal,
     openSolscan,
     
     // Utils

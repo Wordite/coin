@@ -96,8 +96,20 @@ export class UserController {
   @Post('issue-all-tokens')
   @Auth({ roles: [Roles.ADMIN], strong: true })
   async issueAllTokens() {
-    const result = await this.user.issueTokensToAllUsers()
-    return result
+    const processId = await this.user.startIssueAllTokens()
+    return { processId, status: 'started' }
+  }
+
+  @Get('issue-all-tokens/:processId/status')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async getIssueStatus(@Param('processId') processId: string) {
+    return await this.user.getIssueProcessStatus(processId)
+  }
+
+  @Get('issue-all-tokens/active')
+  @Auth({ roles: [Roles.ADMIN], strong: true })
+  async getActiveProcess() {
+    return await this.user.getActiveIssueProcess()
   }
 
   @Get('validate-token-balance')

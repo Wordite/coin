@@ -155,22 +155,22 @@ export class SolanaService {
             connectTimeout: 5000,
             commandTimeout: 3000,
           },
-          reservoir: rateLimits.readLimit,
-          reservoirRefreshAmount: rateLimits.readLimit,
+          reservoir: 10,
+          reservoirRefreshAmount: 10,
           reservoirRefreshInterval: 1000,
-          maxConcurrent: Math.min(rateLimits.readLimit, 10),
-          minTime: Math.floor(1000 / rateLimits.readLimit),
+          maxConcurrent: 5,
+          minTime: 100,
         })
         this.logger.log(`[SOLANA INIT] Redis-backed read limiter created successfully`)
       } catch (redisError) {
         this.logger.warn(`[SOLANA INIT] Redis not available, using local read limiter:`, redisError.message)
         this.readLimiter = new Bottleneck({
           id: 'solana-read-limiter-local',
-          reservoir: rateLimits.readLimit,
-          reservoirRefreshAmount: rateLimits.readLimit,
+          reservoir: 10,
+          reservoirRefreshAmount: 10,
           reservoirRefreshInterval: 1000,
-          maxConcurrent: Math.min(rateLimits.readLimit, 10),
-          minTime: Math.floor(1000 / rateLimits.readLimit),
+          maxConcurrent: 5,
+          minTime: 100,
         })
         this.logger.log(`[SOLANA INIT] Local read limiter created as fallback`)
       }
@@ -200,22 +200,22 @@ export class SolanaService {
             connectTimeout: 5000,
             commandTimeout: 3000,
           },
-          reservoir: rateLimits.writeLimit,
-          reservoirRefreshAmount: rateLimits.writeLimit,
+          reservoir: 3,
+          reservoirRefreshAmount: 3,
           reservoirRefreshInterval: 1000,
-          maxConcurrent: Math.min(rateLimits.writeLimit, 3),
-          minTime: Math.floor(1000 / rateLimits.writeLimit),
+          maxConcurrent: 2,
+          minTime: 333,
         })
         this.logger.log(`[SOLANA INIT] Redis-backed write limiter created successfully`)
       } catch (redisError) {
         this.logger.warn(`[SOLANA INIT] Redis not available, using local write limiter:`, redisError.message)
         this.writeLimiter = new Bottleneck({
           id: 'solana-write-limiter-local',
-          reservoir: rateLimits.writeLimit,
-          reservoirRefreshAmount: rateLimits.writeLimit,
+          reservoir: 3,
+          reservoirRefreshAmount: 3,
           reservoirRefreshInterval: 1000,
-          maxConcurrent: Math.min(rateLimits.writeLimit, 3),
-          minTime: Math.floor(1000 / rateLimits.writeLimit),
+          maxConcurrent: 2,
+          minTime: 333,
         })
         this.logger.log(`[SOLANA INIT] Local write limiter created as fallback`)
       }
@@ -553,9 +553,14 @@ export class SolanaService {
   ): Promise<RpcResponseAndContext<SignatureResult> | null> {
     await this.ensureInitialized()
     try {
-      const confirmation = await this.executeWithRetry(conn => 
-        conn.confirmTransaction(signature, 'confirmed')
-      )
+      const confirmation = await Promise.race([
+        this.executeWithRetry(conn => 
+          conn.confirmTransaction(signature, 'confirmed')
+        ),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Confirmation timeout after 30 seconds')), 30000)
+        )
+      ])
       return confirmation
     } catch (e) {
       this.logger.warn(

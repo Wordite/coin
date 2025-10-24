@@ -7,6 +7,7 @@ import {
   UserDetailsModal,
   PresalePagination
 } from './ui'
+import { IssueTokensModal } from './components/IssueTokensModal'
 
 const Presale = () => {
   const {
@@ -27,6 +28,9 @@ const Presale = () => {
     handleViewUser,
     handlePageChange,
     handleFilterChange,
+    handleCloseIssueModal,
+    activeProcessId,
+    showIssueModal,
     openSolscan
   } = usePresale()
 
@@ -100,6 +104,8 @@ const Presale = () => {
         usersWithPendingTokens={usersWithPendingTokens}
         issuingTokens={issuingTokens}
         onIssueAllTokens={handleIssueAllTokens}
+        activeProcessId={activeProcessId}
+        onViewProgress={() => setShowIssueModal(true)}
       />
 
       {/* Users Table */}
@@ -128,6 +134,14 @@ const Presale = () => {
         selectedUser={selectedUser}
         onOpenSolscan={openSolscan}
       />
+
+      {/* Issue Tokens Modal */}
+      {showIssueModal && activeProcessId && (
+        <IssueTokensModal
+          processId={activeProcessId}
+          onClose={handleCloseIssueModal}
+        />
+      )}
     </div>
   )
 }

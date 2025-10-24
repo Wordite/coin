@@ -35,7 +35,7 @@ export class EndpointManager {
   }
 
   /**
-   * Get the next healthy endpoint using round-robin
+   * Get the next healthy endpoint with priority for primary RPC
    */
   getNextEndpoint(): RpcEndpoint | null {
     this.logger.log(`[ENDPOINT MANAGER] Getting next endpoint, total endpoints: ${this.endpoints.length}`)
@@ -57,12 +57,17 @@ export class EndpointManager {
       return null
     }
 
-    // Round-robin selection
-    const selected = healthyEndpoints[this.currentIndex % healthyEndpoints.length]
-    this.currentIndex = (this.currentIndex + 1) % healthyEndpoints.length
+    // Find primary endpoint (priority 0)
+    const primary = healthyEndpoints.find(h => h.endpoint.priority === 0)
+    if (primary) {
+      this.logger.log(`[ENDPOINT MANAGER] Selected primary endpoint: ${primary.endpoint.url}`)
+      return primary.endpoint
+    }
 
-    this.logger.log(`[ENDPOINT MANAGER] Selected endpoint: ${selected.endpoint.url}`)
-    return selected.endpoint
+    // If primary unavailable, use fallback with lowest priority
+    const fallback = healthyEndpoints.sort((a, b) => a.endpoint.priority - b.endpoint.priority)[0]
+    this.logger.log(`[ENDPOINT MANAGER] Selected fallback endpoint: ${fallback.endpoint.url}`)
+    return fallback.endpoint
   }
 
   /**

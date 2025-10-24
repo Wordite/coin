@@ -9,6 +9,7 @@ import { AntiSpamService } from 'src/anti-spam/anti-spam.service'
 import { SettingsService } from 'src/settings/settings.service'
 import { CoinService } from 'src/coin/coin.service'
 import { TransactionService } from 'src/transaction/transaction.service'
+import { RedisService } from 'src/redis/redis.service'
 import { Request } from 'express'
 
 // ===== INTERFACES FOR USERS MANAGEMENT =====
@@ -33,7 +34,8 @@ export class UserService {
     private antiSpamService: AntiSpamService,
     private settingsService: SettingsService,
     private coinService: CoinService,
-    private transactionService: TransactionService
+    private transactionService: TransactionService,
+    private redis: RedisService
   ) {}
 
   private readonly logger = new Logger(UserService.name)
@@ -755,84 +757,312 @@ export class UserService {
   async issueTokensToUser(userId: string): Promise<{success: boolean, amount: number, signature?: string}> {
     this.logger.log(`[ISSUE TOKENS] Starting token issuance for user: ${userId}`)
     
+    const MAX_RETRIES = 3
+    let lastError: Error | undefined
+    
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        this.logger.log(`[ISSUE TOKENS] Attempt ${attempt}/${MAX_RETRIES} for user: ${userId}`)
+        
+        // Get user
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, walletAddress: true, transactions: true }
+        })
+        
+        if (!user) {
+          this.logger.error(`[ISSUE TOKENS] User not found: ${userId}`)
+          throw new NotFoundException('User not found')
+        }
+        
+        this.logger.log(`[ISSUE TOKENS] User wallet: ${user.walletAddress}`)
+        
+        // Parse transactions
+        const transactions = this.transactionService.parseTransactions(user.transactions)
+        this.logger.log(`[ISSUE TOKENS] Total transactions: ${transactions.length}`)
+        
+        // Filter pending tokens
+        const pendingTransactions = transactions.filter(
+          tx => tx.isSuccessful && !tx.isReceived
+        )
+        
+        this.logger.log(`[ISSUE TOKENS] Pending transactions: ${pendingTransactions.length}`)
+        
+        // Calculate total pending
+        const totalPending = this.transactionService.calculateTotalCoins(pendingTransactions)
+        
+        this.logger.log(`[ISSUE TOKENS] Total pending tokens: ${totalPending}`)
+        
+        if (totalPending === 0) {
+          this.logger.warn(`[ISSUE TOKENS] No pending tokens for user: ${userId}`)
+          return { success: false, amount: 0 }
+        }
+        
+        // Check wallet balance
+        const walletBalance = await this.walletService.getMintTokenBalance()
+        this.logger.log(`[ISSUE TOKENS] Wallet balance: ${walletBalance}, Required: ${totalPending}`)
+        
+        if (walletBalance < totalPending) {
+          this.logger.error(`[ISSUE TOKENS] Insufficient balance. Have: ${walletBalance}, Need: ${totalPending}`)
+          throw new BadRequestException(`Insufficient wallet balance`)
+        }
+        
+        // Send tokens
+        this.logger.log(`[ISSUE TOKENS] Sending ${totalPending} tokens to ${user.walletAddress}`)
+        if (!user.walletAddress) {
+          this.logger.error(`[ISSUE TOKENS] User has no wallet address: ${userId}`)
+          throw new BadRequestException('User has no wallet address')
+        }
+        const signature = await this.walletService.sendCoin(user.walletAddress, totalPending, 'COIN')
+        
+        this.logger.log(`[ISSUE TOKENS] Tokens sent. Signature: ${signature}`)
+        
+        // Update transactions using TransactionService - CRITICAL: Save immediately after successful send
+        const updatedTransactions = this.transactionService.markTransactionsAsReceived(transactions)
+        
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { transactions: updatedTransactions }
+        })
+        
+        this.logger.log(`[ISSUE TOKENS] Transaction records updated for user: ${userId}`)
+        this.logger.log(`[ISSUE TOKENS] ✅ Successfully issued ${totalPending} tokens to user: ${userId}`)
+        
+        return { success: true, amount: totalPending, signature }
+      } catch (error) {
+        lastError = error
+        this.logger.warn(`[ISSUE TOKENS] Attempt ${attempt}/${MAX_RETRIES} failed for user ${userId}:`, error.message)
+        
+        if (attempt < MAX_RETRIES) {
+          const delay = 2000 * attempt // Exponential backoff: 2s, 4s, 6s
+          this.logger.log(`[ISSUE TOKENS] Retrying in ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+      }
+    }
+    
+    this.logger.error(`[ISSUE TOKENS] ❌ All ${MAX_RETRIES} attempts failed for user ${userId}:`, lastError)
+    throw lastError || new Error('All retry attempts failed')
+  }
+
+  /**
+   * Start issue all tokens process in background
+   */
+  async startIssueAllTokens(): Promise<string> {
+    const processId = `issue-tokens-${Date.now()}`
+    
+    // Get users with pending tokens
+    const users = await this.prisma.user.findMany({
+      select: { id: true, walletAddress: true, transactions: true }
+    })
+    
+    const usersWithPending = users.filter(user => {
+      const transactions = this.transactionService.parseTransactions(user.transactions)
+      const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
+      return pending.length > 0
+    })
+    
+    // Save initial state in Redis (TTL: 1 hour)
+    await this.redis.set(`issue-process:${processId}`, JSON.stringify({
+      status: 'running',
+      startTime: new Date().toISOString(),
+      processed: 0,
+      total: usersWithPending.length,
+      users: []
+    }), 'EX', 3600)
+    
+    // Start background process
+    this.issueTokensToAllUsersBackground(processId).catch(err => {
+      this.logger.error('Background issue failed:', err)
+    })
+    
+    return processId
+  }
+
+  /**
+   * Get issue process status
+   */
+  async getIssueProcessStatus(processId: string): Promise<any> {
+    const data = await this.redis.get(`issue-process:${processId}`)
+    if (!data) {
+      throw new NotFoundException('Process not found')
+    }
+    return JSON.parse(data)
+  }
+
+  /**
+   * Get active issue process
+   */
+  async getActiveIssueProcess(): Promise<any> {
+    const keys = await this.redis.keys('issue-process:*')
+    for (const key of keys) {
+      const data = await this.redis.get(key)
+      if (data) {
+        const process = JSON.parse(data)
+        if (process.status === 'running') {
+          return { active: true, processId: key.replace('issue-process:', '') }
+        }
+      }
+    }
+    return { active: false }
+  }
+
+  /**
+   * Issue tokens to all users with pending tokens (background)
+   */
+  async issueTokensToAllUsersBackground(processId: string): Promise<void> {
+    this.logger.log('[ISSUE ALL TOKENS] ========================================')
+    this.logger.log('[ISSUE ALL TOKENS] Starting background bulk token issuance')
+    
     try {
-      // Get user
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
+      // Get all users with pending tokens
+      const users = await this.prisma.user.findMany({
         select: { id: true, walletAddress: true, transactions: true }
       })
       
-      if (!user) {
-        this.logger.error(`[ISSUE TOKENS] User not found: ${userId}`)
-        throw new NotFoundException('User not found')
+      this.logger.log(`[ISSUE ALL TOKENS] Total users in database: ${users.length}`)
+      
+      // Filter users with pending tokens
+      const usersWithPending = users.filter(user => {
+        const transactions = this.transactionService.parseTransactions(user.transactions)
+        const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
+        return pending.length > 0
+      })
+      
+      this.logger.log(`[ISSUE ALL TOKENS] Users with pending tokens: ${usersWithPending.length}`)
+      
+      if (usersWithPending.length === 0) {
+        await this.redis.set(`issue-process:${processId}`, JSON.stringify({
+          status: 'completed',
+          startTime: new Date().toISOString(),
+          processed: 0,
+          total: 0,
+          users: []
+        }), 'EX', 3600)
+        return
       }
       
-      this.logger.log(`[ISSUE TOKENS] User wallet: ${user.walletAddress}`)
+      // Calculate total required
+      const totalRequired = usersWithPending.reduce((sum, user) => {
+        const transactions = this.transactionService.parseTransactions(user.transactions)
+        const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
+        return sum + this.transactionService.calculateTotalCoins(pending)
+      }, 0)
       
-      // Parse transactions
-      const transactions = this.transactionService.parseTransactions(user.transactions)
-      this.logger.log(`[ISSUE TOKENS] Total transactions: ${transactions.length}`)
-      
-      // Filter pending tokens
-      const pendingTransactions = transactions.filter(
-        tx => tx.isSuccessful && !tx.isReceived
-      )
-      
-      this.logger.log(`[ISSUE TOKENS] Pending transactions: ${pendingTransactions.length}`)
-      
-      // Calculate total pending
-      const totalPending = this.transactionService.calculateTotalCoins(pendingTransactions)
-      
-      this.logger.log(`[ISSUE TOKENS] Total pending tokens: ${totalPending}`)
-      
-      if (totalPending === 0) {
-        this.logger.warn(`[ISSUE TOKENS] No pending tokens for user: ${userId}`)
-        return { success: false, amount: 0 }
-      }
+      this.logger.log(`[ISSUE ALL TOKENS] Total tokens required: ${totalRequired}`)
       
       // Check wallet balance
       const walletBalance = await this.walletService.getMintTokenBalance()
-      this.logger.log(`[ISSUE TOKENS] Wallet balance: ${walletBalance}, Required: ${totalPending}`)
+      this.logger.log(`[ISSUE ALL TOKENS] Current wallet balance: ${walletBalance}`)
       
-      if (walletBalance < totalPending) {
-        this.logger.error(`[ISSUE TOKENS] Insufficient balance. Have: ${walletBalance}, Need: ${totalPending}`)
-        throw new BadRequestException(`Insufficient wallet balance`)
+      if (walletBalance < totalRequired) {
+        await this.redis.set(`issue-process:${processId}`, JSON.stringify({
+          status: 'failed',
+          startTime: new Date().toISOString(),
+          processed: 0,
+          total: usersWithPending.length,
+          users: [],
+          error: `Insufficient wallet balance. Have: ${walletBalance}, Need: ${totalRequired}`
+        }), 'EX', 3600)
+        return
       }
       
-      // Send tokens
-      this.logger.log(`[ISSUE TOKENS] Sending ${totalPending} tokens to ${user.walletAddress}`)
-      if (!user.walletAddress) {
-        this.logger.error(`[ISSUE TOKENS] User has no wallet address: ${userId}`)
-        throw new BadRequestException('User has no wallet address')
+      // Process each user
+      let successCount = 0
+      let failedCount = 0
+      const processedUsers: any[] = []
+      
+      this.logger.log('[ISSUE ALL TOKENS] Starting individual user processing...')
+      
+      for (let i = 0; i < usersWithPending.length; i++) {
+        const user = usersWithPending[i]
+        const progress = `${i + 1}/${usersWithPending.length}`
+        
+        this.logger.log(`[ISSUE ALL TOKENS] [${progress}] Processing user: ${user.id}`)
+        
+        try {
+          const result = await this.issueTokensToUser(user.id)
+          
+          if (result.success) {
+            successCount++
+            processedUsers.push({
+              userId: user.id,
+              wallet: user.walletAddress,
+              amount: result.amount,
+              status: 'success',
+              timestamp: new Date().toISOString(),
+              signature: result.signature
+            })
+            this.logger.log(`[ISSUE ALL TOKENS] [${progress}] ✅ Success for user: ${user.id}`)
+          } else {
+            failedCount++
+            processedUsers.push({
+              userId: user.id,
+              wallet: user.walletAddress,
+              amount: 0,
+              status: 'failed',
+              timestamp: new Date().toISOString(),
+              error: 'No pending tokens'
+            })
+            this.logger.warn(`[ISSUE ALL TOKENS] [${progress}] ⚠️  No tokens to issue for user: ${user.id}`)
+          }
+        } catch (error) {
+          failedCount++
+          processedUsers.push({
+            userId: user.id,
+            wallet: user.walletAddress,
+            amount: 0,
+            status: 'failed',
+            timestamp: new Date().toISOString(),
+            error: error.message
+          })
+          this.logger.error(`[ISSUE ALL TOKENS] [${progress}] ❌ Failed for user ${user.id}:`, error.message)
+        }
+        
+        // Update Redis with progress
+        await this.redis.set(`issue-process:${processId}`, JSON.stringify({
+          status: 'running',
+          startTime: new Date().toISOString(),
+          processed: i + 1,
+          total: usersWithPending.length,
+          users: processedUsers
+        }), 'EX', 3600)
+        
+        // Small delay between users to avoid rate limits
+        if (i < usersWithPending.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
       }
-      const signature = await this.walletService.sendCoin(user.walletAddress, totalPending, 'COIN')
       
-      this.logger.log(`[ISSUE TOKENS] Tokens sent. Signature: ${signature}`)
+      // Mark as completed
+      await this.redis.set(`issue-process:${processId}`, JSON.stringify({
+        status: 'completed',
+        startTime: new Date().toISOString(),
+        processed: usersWithPending.length,
+        total: usersWithPending.length,
+        users: processedUsers
+      }), 'EX', 3600)
       
-      // Update transactions
-      const updatedTransactions = transactions.map(tx =>
-        tx.isSuccessful && !tx.isReceived
-          ? { ...tx, isReceived: true }
-          : tx
-      )
+      this.logger.log('[ISSUE ALL TOKENS] ========================================')
+      this.logger.log(`[ISSUE ALL TOKENS] ✅ Background issuance completed`)
+      this.logger.log(`[ISSUE ALL TOKENS] Success: ${successCount}, Failed: ${failedCount}, Total: ${usersWithPending.length}`)
+      this.logger.log('[ISSUE ALL TOKENS] ========================================')
       
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { transactions: updatedTransactions as any }
-      })
-      
-      this.logger.log(`[ISSUE TOKENS] Transaction records updated for user: ${userId}`)
-      this.logger.log(`[ISSUE TOKENS] ✅ Successfully issued ${totalPending} tokens to user: ${userId}`)
-      
-      return { success: true, amount: totalPending, signature }
     } catch (error) {
-      this.logger.error(`[ISSUE TOKENS] ❌ Error issuing tokens to user ${userId}:`, error)
-      throw error
+      this.logger.error('[ISSUE ALL TOKENS] Background process failed:', error)
+      await this.redis.set(`issue-process:${processId}`, JSON.stringify({
+        status: 'failed',
+        startTime: new Date().toISOString(),
+        processed: 0,
+        total: 0,
+        users: [],
+        error: error.message
+      }), 'EX', 3600)
     }
   }
 
   /**
-   * Issue tokens to all users with pending tokens
+   * Issue tokens to all users with pending tokens (legacy method)
    */
   async issueTokensToAllUsers(): Promise<{
     success: number

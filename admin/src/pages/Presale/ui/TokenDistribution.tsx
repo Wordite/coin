@@ -7,7 +7,9 @@ export const TokenDistribution: React.FC<TokenDistributionProps> = ({
   totalPendingTokens,
   usersWithPendingTokens,
   issuingTokens,
-  onIssueAllTokens
+  onIssueAllTokens,
+  activeProcessId,
+  onViewProgress
 }) => {
   const formatAmount = (amount: number) => {
     if (isNaN(amount) || !amount) return '0'
@@ -38,16 +40,27 @@ export const TokenDistribution: React.FC<TokenDistributionProps> = ({
                 {formatAmount(totalPendingTokens)}
               </div>
             </div>
-            <Button
-              color="success"
-              size="lg"
-              onPress={onIssueAllTokens}
-              isLoading={issuingTokens}
-              isDisabled={usersWithPendingTokens === 0}
-              startContent={!issuingTokens && <CheckCircleIcon className="w-4 h-4" />}
-            >
-              {issuingTokens ? 'Processing...' : 'Issue All Tokens'}
-            </Button>
+            {activeProcessId ? (
+              <Button
+                color="primary"
+                size="lg"
+                onPress={onViewProgress}
+                startContent={<CheckCircleIcon className="w-4 h-4" />}
+              >
+                View Progress
+              </Button>
+            ) : (
+              <Button
+                color="success"
+                size="lg"
+                onPress={onIssueAllTokens}
+                isLoading={issuingTokens}
+                isDisabled={usersWithPendingTokens === 0}
+                startContent={!issuingTokens && <CheckCircleIcon className="w-4 h-4" />}
+              >
+                {issuingTokens ? 'Processing...' : 'Issue All Tokens'}
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

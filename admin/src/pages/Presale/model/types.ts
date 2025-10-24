@@ -21,6 +21,8 @@ export interface TokenDistributionProps {
   usersWithPendingTokens: number
   issuingTokens: boolean
   onIssueAllTokens: () => void
+  activeProcessId?: string | null
+  onViewProgress?: () => void
 }
 
 export interface UsersTableProps {

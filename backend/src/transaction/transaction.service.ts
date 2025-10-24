@@ -101,4 +101,16 @@ export class TransactionService {
       isSuccessful: true,
     }
   }
+
+  /**
+   * Mark pending transactions as received
+   */
+  markTransactionsAsReceived(transactions: Transaction[]): string {
+    const updated = transactions.map(tx =>
+      tx.isSuccessful && !tx.isReceived
+        ? { ...tx, isReceived: true }
+        : tx
+    )
+    return JSON.stringify(updated)
+  }
 }
