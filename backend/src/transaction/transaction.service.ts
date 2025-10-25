@@ -65,9 +65,27 @@ export class TransactionService {
    * Calculate total pending tokens (successful but not received)
    */
   calculatePendingTokens(transactions: Transaction[]): number {
-    return transactions
+    // Base pending = sum of successful transactions that are not yet received
+    // Additionally, take into account admin adjustments that decrease coins
+    // (txHash === 'ADMIN_ADJUSTMENT' and coinsPurchased < 0). Those should
+    // immediately reduce the pending amount even if they are marked as received.
+    const pendingBase = transactions
       .filter((tx) => tx.isSuccessful && !tx.isReceived)
       .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
+
+    const negativeAdjustments = transactions
+      .filter(
+        (tx) =>
+          tx.isSuccessful &&
+          tx.isReceived &&
+          tx.txHash === 'ADMIN_ADJUSTMENT' &&
+          tx.coinsPurchased < 0
+      )
+      .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
+
+    // pendingBase is >= 0; negativeAdjustments is <= 0.
+    // Ensure pending amount is never negative.
+    return Math.max(0, pendingBase + negativeAdjustments)
   }
 
   /**
