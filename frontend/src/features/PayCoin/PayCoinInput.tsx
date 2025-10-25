@@ -1,6 +1,7 @@
 import type { HTMLAttributes } from 'react'
 import { type UseFormRegister, type FieldError, type Path } from 'react-hook-form'
 import { PayCoinInputUI } from './ui'
+import { usePayValidation } from './model/usePayValidation'
 
 interface PayCoinInputProps<T extends Record<string, any>>
   extends Omit<HTMLAttributes<HTMLInputElement>, 'name'> {
@@ -21,6 +22,8 @@ const PayCoinInput = <T extends Record<string, any>>({
   error,
   ...props
 }: PayCoinInputProps<T>) => {
+  // Initialize validation hook
+  usePayValidation()
 
   return (
     <PayCoinInputUI

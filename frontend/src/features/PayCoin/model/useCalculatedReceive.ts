@@ -19,6 +19,7 @@ const useCalculatedReceive = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [maxPayAmount, setMaxPayAmount] = useState<number>(0)
+  const [lastRequest, setLastRequest] = useState<{amount: number, coin: string} | null>(null)
 
   // Calculate maximum pay amount based on available balance
   const calculateMaxPayAmount = useCallback(() => {
@@ -37,12 +38,25 @@ const useCalculatedReceive = () => {
 
   // Debounced function to call API
   const fetchReceiveFromServer = useCallback(async (amount: number, coin: string) => {
-    if (!amount || amount <= 0) {
+    if (!amount || amount <= 0 || isNaN(amount) || !isFinite(amount)) {
       setServerReceive(0)
       setValue('receive', 0)
       return
     }
 
+    // Don't make requests for extremely large numbers
+    if (amount > 1e15) {
+      setServerReceive(0)
+      setValue('receive', 0)
+      return
+    }
+
+    // Check if we already made this exact request
+    if (lastRequest && lastRequest.amount === amount && lastRequest.coin === coin) {
+      return
+    }
+
+    setLastRequest({ amount, coin })
     setIsLoading(true)
     setError(null)
     
@@ -91,16 +105,28 @@ const useCalculatedReceive = () => {
     calculateMaxPayAmount()
   }, [calculateMaxPayAmount])
 
+  // Clear request cache when coin changes
+  useEffect(() => {
+    setLastRequest(null)
+  }, [payCoin])
+
   // Debounced effect to call API when pay amount changes
   useEffect(() => {
+    // Don't make requests for very small amounts or invalid values
+    if (!pay || pay <= 0 || isNaN(Number(pay))) {
+      setServerReceive(0)
+      setValue('receive', 0)
+      return
+    }
+
     const timeoutId = setTimeout(() => {
-      if (pay && payCoin) {
+      if (pay && payCoin && Number(pay) > 0) {
         fetchReceiveFromServer(Number(pay), payCoin)
       } else {
         setServerReceive(0)
         setValue('receive', 0)
       }
-    }, 500) // 500ms debounce
+    }, 1000) // Increased to 1000ms debounce
 
     return () => clearTimeout(timeoutId)
   }, [pay, payCoin, fetchReceiveFromServer, setValue])
