@@ -418,7 +418,7 @@ export class SolanaService {
 
   async getTransactionData(signature: string): Promise<ParsedTransactionWithMeta | null> {
     await this.ensureInitialized()
-    return this.executeWithRetry(conn =>
+    return this.executeReadWithoutLimiter(conn =>
       conn.getParsedTransaction(signature, {
         commitment: 'confirmed',
         maxSupportedTransactionVersion: 0,
@@ -460,7 +460,9 @@ export class SolanaService {
     const conn = this.connections.get(rpcUrl) || this.proxyConnections.get(rpcUrl) || new Connection(rpcUrl)
     
     try {
-      return await conn.getParsedTransaction(signature, {
+      // Use direct connection without rate limiting
+      const directConn = this.directConnections.get(rpcUrl) || new Connection(rpcUrl)
+      return await directConn.getParsedTransaction(signature, {
         commitment: 'confirmed',
         maxSupportedTransactionVersion: 0,
       })
@@ -493,7 +495,7 @@ export class SolanaService {
       // --- fetch decimals
       let decimals = 0
       try {
-        const supply = await this.executeWithRetry(conn => conn.getTokenSupply(mint))
+        const supply = await this.executeReadWithoutLimiter(conn => conn.getTokenSupply(mint))
         decimals = supply?.value?.decimals ?? 0
       } catch (err) {
         this.logger.warn('Failed to fetch token supply/decimals, defaulting to 0', err)
@@ -522,7 +524,7 @@ export class SolanaService {
       // --- check sender token account / balance
       let senderBalanceRaw = 0n
       try {
-        const balanceResp = await this.executeWithRetry(conn => conn.getTokenAccountBalance(senderTokenAccount))
+        const balanceResp = await this.executeReadWithoutLimiter(conn => conn.getTokenAccountBalance(senderTokenAccount))
         senderBalanceRaw = BigInt(balanceResp?.value?.amount ?? '0')
       } catch (err) {
         // if account doesn't exist or failed, treat as zero
@@ -535,7 +537,7 @@ export class SolanaService {
 
       // --- build instructions: create receiver ATA if missing
       const instructions: any[] = []
-      const receiverInfo = await this.executeWithRetry(conn => conn.getAccountInfo(receiverTokenAccount))
+      const receiverInfo = await this.executeReadWithoutLimiter(conn => conn.getAccountInfo(receiverTokenAccount))
       if (!receiverInfo) {
         instructions.push(
           createAssociatedTokenAccountInstruction(
@@ -614,7 +616,7 @@ export class SolanaService {
     delay: number = 1000
   ): Promise<{ blockhash: string; lastValidBlockHeight: number }> {
     await this.ensureInitialized()
-    return this.executeWithRetry(conn => 
+    return this.executeReadWithoutLimiter(conn => 
       conn.getLatestBlockhash('finalized')
     )
   }
@@ -636,7 +638,7 @@ export class SolanaService {
     await this.ensureInitialized()
     try {
       const pub = new PublicKey(address)
-      const lamports = await this.executeWithRetry(conn => 
+      const lamports = await this.executeReadWithoutLimiter(conn => 
         conn.getBalance(pub, 'confirmed')
       )
 
@@ -658,8 +660,8 @@ export class SolanaService {
       this.logger.log(`[GET TOKEN BALANCE] Owner PublicKey: ${owner.toBase58()}`)
       this.logger.log(`[GET TOKEN BALANCE] Mint PublicKey: ${mint.toBase58()}`)
       
-      const resp = await this.executeWithRetry(conn => {
-        this.logger.log(`[GET TOKEN BALANCE] Inside executeWithRetry, calling getParsedTokenAccountsByOwner...`)
+      const resp = await this.executeReadWithoutLimiter(conn => {
+        this.logger.log(`[GET TOKEN BALANCE] Inside executeReadWithoutLimiter, calling getParsedTokenAccountsByOwner...`)
         return conn.getParsedTokenAccountsByOwner(owner, { mint })
       })
 
@@ -884,6 +886,27 @@ export class SolanaService {
       operation(connection),
       new Promise<never>((_, reject) => 
         setTimeout(() => reject(new Error('Write operation timeout after 30 seconds')), 30000)
+      )
+    ])
+  }
+
+  /**
+   * Execute read operation without rate limiting (emergency bypass)
+   */
+  private async executeReadWithoutLimiter<T>(
+    operation: (conn: Connection) => Promise<T>
+  ): Promise<T> {
+    await this.ensureInitialized()
+    this.logger.log(`[READ BYPASS] Executing read operation without rate limiting`)
+    
+    // Use direct connection to bypass all rate limiting
+    const connection = this.directConnection ?? this.fallbackConnection
+    
+    // Add timeout mechanism
+    return await Promise.race([
+      operation(connection),
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Read operation timeout after 30 seconds')), 30000)
       )
     ])
   }
