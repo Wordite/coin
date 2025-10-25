@@ -14,6 +14,8 @@ export interface CoinPresaleSettings {
   decimals: number
   minBuyAmount: number
   maxBuyAmount: number
+  solToCoinRate: number
+  usdtToCoinRate: number
   mintAddress?: string
   rpc?: string
   rpcEndpoints?: Array<{ url: string; priority: number; name: string }>
@@ -101,7 +103,12 @@ export class CoinService {
       })
     }
 
-    const settings = {
+    // Get rates from Settings table
+    const settings = await this.prisma.settings.findFirst()
+    const solToCoinRate = settings?.solToCoinRate || 0.0001
+    const usdtToCoinRate = settings?.usdtToCoinRate || 0.001
+
+    const presaleSettings = {
       totalAmount: coin.totalAmount,
       stage: coin.stage,
       soldAmount: coin.soldAmount,
@@ -111,15 +118,17 @@ export class CoinService {
       decimals: coin.decimals,
       minBuyAmount: coin.minBuyAmount,
       maxBuyAmount: coin.maxBuyAmount,
+      solToCoinRate: solToCoinRate,
+      usdtToCoinRate: usdtToCoinRate,
       mintAddress: coin.mintAddress || undefined,
       rpc: coin.rpc,
       rpcEndpoints: coin.rpcEndpoints as Array<{ url: string; priority: number; name: string }> || [],
     }
 
     console.log(`[GET PRESALE SETTINGS] Setting cache with fresh data`)
-    await this.redis.setex(cacheKey, 900, JSON.stringify(settings))
+    await this.redis.setex(cacheKey, 900, JSON.stringify(presaleSettings))
 
-    return settings
+    return presaleSettings
   }
 
   async updatePresaleSettings(
@@ -155,6 +164,32 @@ export class CoinService {
         },
       })
 
+      // Update rates in Settings table if provided
+      if (settings.solToCoinRate !== undefined || settings.usdtToCoinRate !== undefined) {
+        const existingSettings = await this.prisma.settings.findFirst()
+        if (existingSettings) {
+          await this.prisma.settings.update({
+            where: { id: existingSettings.id },
+            data: {
+              solToCoinRate: settings.solToCoinRate ?? existingSettings.solToCoinRate,
+              usdtToCoinRate: settings.usdtToCoinRate ?? existingSettings.usdtToCoinRate,
+            },
+          })
+        } else {
+          await this.prisma.settings.create({
+            data: {
+              solToCoinRate: settings.solToCoinRate ?? 0.0001,
+              usdtToCoinRate: settings.usdtToCoinRate ?? 0.001,
+            },
+          })
+        }
+      }
+
+      // Get updated rates from Settings table
+      const updatedSettings = await this.prisma.settings.findFirst()
+      const solToCoinRate = updatedSettings?.solToCoinRate || 0.0001
+      const usdtToCoinRate = updatedSettings?.usdtToCoinRate || 0.001
+
       result = {
         totalAmount: newTotalAmount,
         stage: updated.stage,
@@ -165,6 +200,8 @@ export class CoinService {
         decimals: updated.decimals,
         minBuyAmount: updated.minBuyAmount,
         maxBuyAmount: updated.maxBuyAmount,
+        solToCoinRate: solToCoinRate,
+        usdtToCoinRate: usdtToCoinRate,
         mintAddress: updated.mintAddress || undefined,
         rpc: updated.rpc,
         rpcEndpoints: updated.rpcEndpoints as Array<{ url: string; priority: number; name: string }> || [],
@@ -186,6 +223,11 @@ export class CoinService {
         },
       })
 
+      // Get rates from Settings table
+      const settingsData = await this.prisma.settings.findFirst()
+      const solToCoinRate = settingsData?.solToCoinRate || 0.0001
+      const usdtToCoinRate = settingsData?.usdtToCoinRate || 0.001
+
       result = {
         totalAmount: created.totalAmount,
         stage: created.stage,
@@ -196,6 +238,8 @@ export class CoinService {
         decimals: created.decimals,
         minBuyAmount: created.minBuyAmount,
         maxBuyAmount: created.maxBuyAmount,
+        solToCoinRate: solToCoinRate,
+        usdtToCoinRate: usdtToCoinRate,
         mintAddress: created.mintAddress || undefined,
       }
     }
@@ -377,6 +421,66 @@ export class CoinService {
     await this.redis.del(cacheKey)
     console.log(`[UPDATE SOLD AMOUNT] Cache deleted successfully`)
     
+    // Update current amount cache
+    await this.updateCurrentAmountCache()
+    
     this.logger.log(`[UPDATE SOLD AMOUNT] Successfully updated soldAmount and currentAmount`)
+  }
+
+  /**
+   * Calculate receive amount based on payment amount and coin type
+   */
+  async calculateReceive(amount: number, coin: string): Promise<number> {
+    this.logger.log(`[CALCULATE RECEIVE] Amount: ${amount}, Coin: ${coin}`)
+    
+    const settings = await this.getPresaleSettings()
+    const currentAmount = await this.getCurrentAmountCached()
+    
+    let rate = 0
+    if (coin === 'SOL') {
+      rate = settings.solToCoinRate || 0.0001
+    } else if (coin === 'USDT') {
+      rate = settings.usdtToCoinRate || 0.001
+    } else {
+      throw new Error(`Unsupported coin type: ${coin}`)
+    }
+    
+    const calculatedReceive = amount * rate
+    const finalReceive = Math.min(calculatedReceive, currentAmount)
+    
+    this.logger.log(`[CALCULATE RECEIVE] Rate: ${rate}, Calculated: ${calculatedReceive}, Current available: ${currentAmount}, Final: ${finalReceive}`)
+    
+    return finalReceive
+  }
+
+  /**
+   * Get current available amount with Redis caching
+   */
+  async getCurrentAmountCached(): Promise<number> {
+    const cacheKey = 'current_amount'
+    const cached = await this.redis.get(cacheKey)
+    
+    if (cached) {
+      this.logger.log(`[CURRENT AMOUNT] From cache: ${cached}`)
+      return parseFloat(cached)
+    }
+    
+    const currentAmount = await this.getCurrentAvailableAmount()
+    await this.redis.setex(cacheKey, 60, currentAmount.toString()) // Cache for 1 minute
+    
+    this.logger.log(`[CURRENT AMOUNT] From DB: ${currentAmount}`)
+    return currentAmount
+  }
+
+  /**
+   * Update current amount cache when it changes
+   */
+  async updateCurrentAmountCache(): Promise<void> {
+    const currentAmount = await this.getCurrentAvailableAmount()
+    const cacheKey = 'current_amount'
+    
+    await this.redis.setex(cacheKey, 60, currentAmount.toString())
+    
+    this.logger.log(`[UPDATE CURRENT AMOUNT CACHE] New amount: ${currentAmount}`)
   }
 }
