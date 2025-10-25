@@ -145,35 +145,26 @@ export class SolanaService {
           hasPassword: !!process.env.REDIS_PASSWORD
         })
 
+        // Completely disable rate limiting for read operations
         this.readLimiter = new Bottleneck({
-          id: 'solana-read-limiter',
-          datastore: 'ioredis',
-          clientOptions: {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379'),
-            password: process.env.REDIS_PASSWORD,
-            retryDelayOnFailover: 100,
-            maxRetriesPerRequest: 3,
-            lazyConnect: true,
-            connectTimeout: 5000,
-            commandTimeout: 10000,
-          },
-          reservoir: 50,
-          reservoirRefreshAmount: 50,
-          reservoirRefreshInterval: 1000,
-          maxConcurrent: 20,
-          minTime: 50,
+          id: 'solana-read-limiter-disabled',
+          reservoir: 10000,
+          reservoirRefreshAmount: 10000,
+          reservoirRefreshInterval: 1,
+          maxConcurrent: 1000,
+          minTime: 0,
         })
         this.logger.log(`[SOLANA INIT] Redis-backed read limiter created successfully`)
       } catch (redisError) {
         this.logger.warn(`[SOLANA INIT] Redis not available, using local read limiter:`, redisError.message)
+        // Completely disable rate limiting for read operations
         this.readLimiter = new Bottleneck({
-          id: 'solana-read-limiter-local',
-          reservoir: 50,
-          reservoirRefreshAmount: 50,
-          reservoirRefreshInterval: 1000,
-          maxConcurrent: 20,
-          minTime: 50,
+          id: 'solana-read-limiter-disabled',
+          reservoir: 10000,
+          reservoirRefreshAmount: 10000,
+          reservoirRefreshInterval: 1,
+          maxConcurrent: 1000,
+          minTime: 0,
         })
         this.logger.log(`[SOLANA INIT] Local read limiter created as fallback`)
       }
@@ -190,35 +181,26 @@ export class SolanaService {
           hasPassword: !!process.env.REDIS_PASSWORD
         })
 
+        // Completely disable rate limiting for write operations
         this.writeLimiter = new Bottleneck({
-          id: 'solana-write-limiter',
-          datastore: 'ioredis',
-          clientOptions: {
-            host: process.env.REDIS_HOST || 'localhost',
-            port: parseInt(process.env.REDIS_PORT || '6379'),
-            password: process.env.REDIS_PASSWORD,
-            retryDelayOnFailover: 100,
-            maxRetriesPerRequest: 3,
-            lazyConnect: true,
-            connectTimeout: 5000,
-            commandTimeout: 3000,
-          },
-          reservoir: 10,
-          reservoirRefreshAmount: 10,
-          reservoirRefreshInterval: 1000,
-          maxConcurrent: 5,
-          minTime: 100,
+          id: 'solana-write-limiter-disabled',
+          reservoir: 10000,
+          reservoirRefreshAmount: 10000,
+          reservoirRefreshInterval: 1,
+          maxConcurrent: 1000,
+          minTime: 0,
         })
         this.logger.log(`[SOLANA INIT] Redis-backed write limiter created successfully`)
       } catch (redisError) {
         this.logger.warn(`[SOLANA INIT] Redis not available, using local write limiter:`, redisError.message)
+        // Completely disable rate limiting for write operations
         this.writeLimiter = new Bottleneck({
-          id: 'solana-write-limiter-local',
-          reservoir: 10,
-          reservoirRefreshAmount: 10,
-          reservoirRefreshInterval: 1000,
-          maxConcurrent: 5,
-          minTime: 100,
+          id: 'solana-write-limiter-disabled',
+          reservoir: 10000,
+          reservoirRefreshAmount: 10000,
+          reservoirRefreshInterval: 1,
+          maxConcurrent: 1000,
+          minTime: 0,
         })
         this.logger.log(`[SOLANA INIT] Local write limiter created as fallback`)
       }
@@ -587,14 +569,14 @@ export class SolanaService {
       // --- signer: local keypair
       tx.sign(keypair) // signs with keypair; if need multiple signers, add here
 
-      // --- send raw tx
+      // --- send raw tx (bypass rate limiting for write operations)
       const signedRaw = tx.serialize()
-      const signature = await this.executeWithRetry(conn => conn.sendRawTransaction(signedRaw))
+      const signature = await this.executeWriteWithoutLimiter(conn => conn.sendRawTransaction(signedRaw))
 
       this.logger.log('Transaction signature:', signature)
 
-      // --- confirm (finalized)
-      await this.executeWithRetry(conn => conn.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'finalized'))
+      // --- confirm (finalized) (bypass rate limiting for write operations)
+      await this.executeWriteWithoutLimiter(conn => conn.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'finalized'))
 
       this.logger.log('Transaction confirmed', signature)
       return signature
@@ -610,7 +592,7 @@ export class SolanaService {
     await this.ensureInitialized()
     try {
       const confirmation = await Promise.race([
-        this.executeWithRetry(conn => 
+        this.executeWriteWithoutLimiter(conn => 
           conn.confirmTransaction(signature, 'confirmed')
         ),
         new Promise<never>((_, reject) => 
@@ -883,6 +865,27 @@ export class SolanaService {
   async getDirectConnection(): Promise<Connection> {
     await this.ensureInitialized()
     return this.directConnection ?? this.fallbackConnection
+  }
+
+  /**
+   * Execute write operation without rate limiting (emergency bypass)
+   */
+  private async executeWriteWithoutLimiter<T>(
+    operation: (conn: Connection) => Promise<T>
+  ): Promise<T> {
+    await this.ensureInitialized()
+    this.logger.log(`[WRITE BYPASS] Executing write operation without rate limiting`)
+    
+    // Use direct connection to bypass all rate limiting
+    const connection = this.directConnection ?? this.fallbackConnection
+    
+    // Add timeout mechanism
+    return await Promise.race([
+      operation(connection),
+      new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Write operation timeout after 30 seconds')), 30000)
+      )
+    ])
   }
 
   /**
