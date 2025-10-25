@@ -256,12 +256,12 @@ export class WalletService implements OnModuleInit {
   }
 
   /**
-   * Get current SOL balance of root wallet
+   * Get current SOL balance of root wallet (using direct connection for admin UI)
    */
   async getSolBalance(): Promise<number> {
     try {
       const keypair = await this.getKeypair()
-      const balance = await this.solana.getBalance(keypair.publicKey.toBase58())
+      const balance = await this.solana.getBalanceDirect(keypair.publicKey.toBase58())
       return balance.sol
     } catch (error) {
       this.logger.error(`[GET SOL BALANCE ERROR] ${error.message}`)
@@ -270,12 +270,12 @@ export class WalletService implements OnModuleInit {
   }
 
   /**
-   * Get current COIN balance of root wallet
+   * Get current COIN balance of root wallet (using direct connection for admin UI)
    */
   async getCoinBalance(): Promise<number> {
     try {
       const keypair = await this.getKeypair()
-      const balance = await this.solana.getBalance(keypair.publicKey.toBase58())
+      const balance = await this.solana.getBalanceDirect(keypair.publicKey.toBase58())
       return balance.coin
     } catch (error) {
       this.logger.error(`[GET COIN BALANCE ERROR] ${error.message}`)
@@ -284,7 +284,7 @@ export class WalletService implements OnModuleInit {
   }
 
   /**
-   * Get mint token balance for the mint address
+   * Get mint token balance for the mint address (using direct connection for admin UI)
    */
   async getMintTokenBalance(): Promise<number> {
     this.logger.log('[GET MINT TOKEN BALANCE] Starting to fetch mint token balance')
@@ -297,7 +297,7 @@ export class WalletService implements OnModuleInit {
       const mintAddress = await this.coin.getMintAddress()
       this.logger.log(`[GET MINT TOKEN BALANCE] Mint address: ${mintAddress}`)
       
-      const balance = await this.solana.getParsedTokenBalanceByMint(
+      const balance = await this.solana.getParsedTokenBalanceByMintDirect(
         walletAddress, 
         new PublicKey(mintAddress)
       )

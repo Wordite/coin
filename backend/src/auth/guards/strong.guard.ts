@@ -33,19 +33,19 @@ export class StrongAuthGuard implements CanActivate {
 
     try {
       const sessionId = await this.authService.getSessionIdFromRefreshToken(refreshToken)
-      this.logger.log(`StrongAuthGuard: SessionId extracted: ${sessionId}`)
+      // this.logger.log(`StrongAuthGuard: SessionId extracted: ${sessionId}`)
       
       if (!sessionId) {
-        this.logger.error(`StrongAuthGuard: Invalid refresh token - no sessionId`)
+        // this.logger.error(`StrongAuthGuard: Invalid refresh token - no sessionId`)
         throw new UnauthorizedException('Invalid refresh token')
       }
 
       const session = await this.sessionService.find(sessionId)
       
-      this.logger.log(`StrongAuthGuard: Session found: ${!!session}`)
+      // this.logger.log(`StrongAuthGuard: Session found: ${!!session}`)
       
       if (!session) {
-        this.logger.error(`StrongAuthGuard: Session not found for sessionId: ${sessionId}`)
+        // this.logger.error(`StrongAuthGuard: Session not found for sessionId: ${sessionId}`)
         throw new UnauthorizedException('Session not found')
       }
 
@@ -57,9 +57,9 @@ export class StrongAuthGuard implements CanActivate {
       // this.logger.log(`StrongAuthGuard: Fingerprint match result: ${fingerprintMatch}`)
       
       if (!fingerprintMatch) {
-        this.logger.error(`StrongAuthGuard: Fingerprint mismatch`)
-        this.logger.error(`StrongAuthGuard: Client fingerprint: ${fingerprint}`)
-        this.logger.error(`StrongAuthGuard: Session fingerprint: ${session.fingerprint}`)
+        // this.logger.error(`StrongAuthGuard: Fingerprint mismatch`)
+        // this.logger.error(`StrongAuthGuard: Client fingerprint: ${fingerprint}`)
+        // this.logger.error(`StrongAuthGuard: Session fingerprint: ${session.fingerprint}`)
         throw new UnauthorizedException('Fingerprint mismatch')
       }
 
@@ -67,7 +67,7 @@ export class StrongAuthGuard implements CanActivate {
       return true
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        this.logger.error(`StrongAuthGuard: UnauthorizedException: ${error.message}`)
+        // this.logger.error(`StrongAuthGuard: UnauthorizedException: ${error.message}`)
         throw error
       }
       this.logger.error(`StrongAuthGuard: Unexpected error: ${error.message}`)

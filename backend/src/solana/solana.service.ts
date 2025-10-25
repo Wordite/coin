@@ -28,6 +28,7 @@ import { EndpointManager, RpcEndpoint } from './endpoint-manager'
 @Injectable()
 export class SolanaService {
   private proxyConnection: Connection
+  private directConnection: Connection // Non-rate-limited connection for admin UI
   private readonly fallbackConnection: Connection = new Connection(clusterApiUrl('mainnet-beta'))
   private logger = new Logger(SolanaService.name)
 
@@ -36,9 +37,11 @@ export class SolanaService {
   private endpointManager: EndpointManager
   private connections: Map<string, Connection> = new Map()
   private proxyConnections: Map<string, Connection> = new Map()
+  private directConnections: Map<string, Connection> = new Map() // Non-rate-limited connections
 
   private isInitialized: Promise<void> | null = null
   private _resolveInitialized: (() => void) | null = null
+  private queueMonitorInterval: NodeJS.Timeout | null = null
 
   constructor(
     private readonly prisma: PrismaService,
@@ -242,6 +245,10 @@ export class SolanaService {
           this.connections.set(endpoint.url, connection)
           this.logger.log(`[SOLANA INIT] Basic connection created for: ${endpoint.url}`)
 
+          // Create direct (non-rate-limited) connection for admin UI
+          this.directConnections.set(endpoint.url, connection)
+          this.logger.log(`[SOLANA INIT] Direct connection created for: ${endpoint.url}`)
+
           // Create proxy connection with rate limiting
           try {
             const proxyConnection = makeProxyConnection(connection, {
@@ -267,6 +274,7 @@ export class SolanaService {
       const primaryEndpoint = this.endpointManager.getNextEndpoint()
       if (primaryEndpoint) {
         this.proxyConnection = this.proxyConnections.get(primaryEndpoint.url)!
+        this.directConnection = this.directConnections.get(primaryEndpoint.url)!
       } else {
         // Fallback to public RPC with rate limiting
         const fallbackProxy = makeProxyConnection(this.fallbackConnection, {
@@ -274,7 +282,11 @@ export class SolanaService {
           writeLimiter: this.writeLimiter,
         })
         this.proxyConnection = fallbackProxy
+        this.directConnection = this.fallbackConnection
       }
+
+      // Start queue monitoring
+      this.startQueueMonitoring()
 
       this._resolveInitialized?.()
       this.logger.log(`[SOLANA INIT] ✅ SolanaService initialized successfully with ${endpoints.length} endpoints and rate limits: ${rateLimits.readLimit} read/s, ${rateLimits.writeLimit} write/s`)
@@ -297,6 +309,7 @@ export class SolanaService {
     maxRetries: number = 3
   ): Promise<T> {
     this.logger.log(`[EXECUTE WITH RETRY] Starting executeWithRetry with maxRetries: ${maxRetries}`)
+    await this.logQueueStatus('executeWithRetry')
     
     // Ensure service is initialized
     await this.ensureInitialized()
@@ -338,7 +351,14 @@ export class SolanaService {
         }
 
         this.logger.log(`[EXECUTE WITH RETRY] Using endpoint: ${endpoint.url}`)
-        const result = await operation(connection)
+        
+        // Add timeout mechanism
+        const result = await Promise.race([
+          operation(connection),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Operation timeout after 30 seconds')), 30000)
+          )
+        ])
         
         this.logger.log(`[EXECUTE WITH RETRY] Operation successful on attempt ${attempt}`)
         // Mark success
@@ -359,8 +379,9 @@ export class SolanaService {
           break
         }
 
-        // Exponential backoff
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+        // Fixed 1-second delay (max 5 seconds total)
+        const delay = 1000
+        this.logger.log(`[EXECUTE WITH RETRY] Waiting ${delay}ms before retry...`)
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
@@ -735,6 +756,196 @@ export class SolanaService {
         queued: this.writeLimiter.queued(),
         running: this.writeLimiter.running(),
       },
+    }
+  }
+
+  /**
+   * Start periodic queue monitoring
+   */
+  private startQueueMonitoring(): void {
+    this.queueMonitorInterval = setInterval(async () => {
+      if (!this.readLimiter || !this.writeLimiter) {
+        return
+      }
+      
+      try {
+        const readQueued = await this.readLimiter.queued()
+        const readRunning = await this.readLimiter.running()
+        const writeQueued = await this.writeLimiter.queued()
+        const writeRunning = await this.writeLimiter.running()
+        
+        if (readQueued > 0 || writeQueued > 0 || readRunning > 0 || writeRunning > 0) {
+          this.logger.log(`[QUEUE STATUS] Read: ${readQueued} queued, ${readRunning} running | Write: ${writeQueued} queued, ${writeRunning} running`)
+        }
+      } catch (error) {
+        this.logger.warn(`[QUEUE STATUS] Error getting queue status:`, error)
+      }
+    }, 30000) // Every 30 seconds
+  }
+
+  /**
+   * Stop queue monitoring
+   */
+  private stopQueueMonitoring(): void {
+    if (this.queueMonitorInterval) {
+      clearInterval(this.queueMonitorInterval)
+      this.queueMonitorInterval = null
+    }
+  }
+
+  /**
+   * Get direct (non-rate-limited) connection for admin UI
+   */
+  async getDirectConnection(): Promise<Connection> {
+    await this.ensureInitialized()
+    return this.directConnection ?? this.fallbackConnection
+  }
+
+  /**
+   * Get balance using direct connection (for admin UI)
+   */
+  async getBalanceDirect(address?: string): Promise<{ sol: number; usdt: number; coin: number }> {
+    if (!address) return { sol: 0, usdt: 0, coin: 0 }
+    await this.ensureInitialized()
+    await this.logQueueStatus('getBalanceDirect')
+
+    const [solBalance, usdtBalance, coinBalance] = await Promise.all([
+      this.getSolBalanceDirect(address),
+      this.getUsdtBalanceDirect(address),
+      this.getCoinBalanceDirect(address),
+    ])
+
+    return { sol: solBalance, usdt: usdtBalance, coin: coinBalance }
+  }
+
+  /**
+   * Get SOL balance using direct connection
+   */
+  private async getSolBalanceDirect(address: string): Promise<number> {
+    await this.ensureInitialized()
+    try {
+      const pub = new PublicKey(address)
+      const lamports = await this.directConnection.getBalance(pub, 'confirmed')
+      return lamports / LAMPORTS_PER_SOL
+    } catch (e) {
+      this.logger.error(`getSolBalanceDirect failed for ${address}`, e as any)
+      return 0
+    }
+  }
+
+  /**
+   * Get USDT balance using direct connection
+   */
+  private async getUsdtBalanceDirect(address: string): Promise<number> {
+    await this.ensureInitialized()
+    try {
+      const usdtMintStr =
+        this.config.get<string>('USDT_MINT') || 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'
+      const usdtMint = new PublicKey(usdtMintStr)
+      return await this.getParsedTokenBalanceByMintDirect(address, usdtMint)
+    } catch (e) {
+      this.logger.error(`getUsdtBalanceDirect failed for ${address}`, e as any)
+      return 0
+    }
+  }
+
+  /**
+   * Get COIN balance using direct connection
+   */
+  private async getCoinBalanceDirect(address: string): Promise<number> {
+    await this.ensureInitialized()
+    try {
+      const mintAddress = await this.coin.getMintAddress()
+      const mint = typeof mintAddress === 'string' ? new PublicKey(mintAddress) : mintAddress
+      return await this.getParsedTokenBalanceByMintDirect(address, mint)
+    } catch (e) {
+      this.logger.error(`getCoinBalanceDirect failed for ${address}`, e as any)
+      return 0
+    }
+  }
+
+  /**
+   * Get parsed token balance by mint using direct connection (for admin UI)
+   */
+  async getParsedTokenBalanceByMintDirect(address: string, mint: PublicKey): Promise<number> {
+    await this.ensureInitialized()
+    this.logger.log(`[GET TOKEN BALANCE DIRECT] Fetching balance for address: ${address}, mint: ${mint.toBase58()}`)
+    await this.logQueueStatus('getParsedTokenBalanceByMintDirect')
+    
+    try {
+      const owner = new PublicKey(address)
+      
+      this.logger.log(`[GET TOKEN BALANCE DIRECT] Querying token accounts...`)
+      this.logger.log(`[GET TOKEN BALANCE DIRECT] Owner PublicKey: ${owner.toBase58()}`)
+      this.logger.log(`[GET TOKEN BALANCE DIRECT] Mint PublicKey: ${mint.toBase58()}`)
+      
+      const resp = await this.directConnection.getParsedTokenAccountsByOwner(owner, { mint })
+
+      this.logger.log(`[GET TOKEN BALANCE DIRECT] Response received, accounts found: ${resp?.value?.length || 0}`)
+
+      if (!resp || !resp.value || resp.value.length === 0) {
+        this.logger.warn(`[GET TOKEN BALANCE DIRECT] No token accounts found for this mint`)
+        return 0
+      }
+
+      let total = 0
+      for (const item of resp.value) {
+        try {
+          const parsed = (item.account.data as any).parsed
+          const tokenInfo = parsed?.info?.tokenAmount
+          
+          this.logger.log(`[GET TOKEN BALANCE DIRECT] Parsing token account, tokenInfo:`, JSON.stringify(tokenInfo))
+          
+          if (!tokenInfo) continue
+
+          if (typeof tokenInfo.uiAmount === 'number' && tokenInfo.uiAmount !== null) {
+            total += tokenInfo.uiAmount
+          } else {
+            const amountRaw = Number(tokenInfo.amount || 0)
+            const decimals = Number(tokenInfo.decimals || 0)
+            if (decimals >= 0) {
+              total += amountRaw / Math.pow(10, decimals)
+            } else {
+              total += amountRaw
+            }
+          }
+        } catch (inner) {
+          this.logger.warn('[GET TOKEN BALANCE DIRECT] Failed to parse token account:', inner)
+        }
+      }
+
+      this.logger.log(`[GET TOKEN BALANCE DIRECT] Total balance calculated: ${total}`)
+      return total
+    } catch (e) {
+      this.logger.error(
+        `[GET TOKEN BALANCE DIRECT] ERROR - Address: ${address}, Mint: ${mint.toBase58()}`,
+        e
+      )
+      this.logger.error(`[GET TOKEN BALANCE DIRECT] Error details:`, e)
+      this.logger.error(`[GET TOKEN BALANCE DIRECT] Error message:`, e?.message || 'No message')
+      this.logger.error(`[GET TOKEN BALANCE DIRECT] Error stack:`, e?.stack || 'No stack')
+      return 0
+    }
+  }
+
+  /**
+   * Log current queue status
+   */
+  private async logQueueStatus(operation: string): Promise<void> {
+    if (!this.readLimiter || !this.writeLimiter) {
+      this.logger.log(`[QUEUE STATUS] ${operation} - Limiters not initialized yet`)
+      return
+    }
+    
+    try {
+      const readQueued = await this.readLimiter.queued()
+      const readRunning = await this.readLimiter.running()
+      const writeQueued = await this.writeLimiter.queued()
+      const writeRunning = await this.writeLimiter.running()
+      
+      this.logger.log(`[QUEUE STATUS] ${operation} - Read: ${readQueued} queued, ${readRunning} running | Write: ${writeQueued} queued, ${writeRunning} running`)
+    } catch (error) {
+      this.logger.warn(`[QUEUE STATUS] ${operation} - Error getting queue status:`, error)
     }
   }
 

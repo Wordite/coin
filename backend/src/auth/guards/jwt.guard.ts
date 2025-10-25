@@ -9,10 +9,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const req = context.switchToHttp().getRequest();
     const ip = req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
     
-    this.logger.log(`JWT Auth attempt for ${req.url} from IP ${ip}, User: ${JSON.stringify(user)}`);
+    // this.logger.log(`JWT Auth attempt for ${req.url} from IP ${ip}, User: ${JSON.stringify(user)}`);
     
     if (err || !user) {
-      this.logger.error(`JWT Auth failed: ${err?.message || 'No user'}`);
+      // this.logger.error(`zJWT Auth failed: ${err?.message || 'No user'}`);
     }
     
     return super.handleRequest(err, user, info, context);
