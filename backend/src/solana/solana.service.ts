@@ -156,24 +156,24 @@ export class SolanaService {
             maxRetriesPerRequest: 3,
             lazyConnect: true,
             connectTimeout: 5000,
-            commandTimeout: 3000,
+            commandTimeout: 10000,
           },
-          reservoir: 10,
-          reservoirRefreshAmount: 10,
+          reservoir: 50,
+          reservoirRefreshAmount: 50,
           reservoirRefreshInterval: 1000,
-          maxConcurrent: 5,
-          minTime: 100,
+          maxConcurrent: 20,
+          minTime: 50,
         })
         this.logger.log(`[SOLANA INIT] Redis-backed read limiter created successfully`)
       } catch (redisError) {
         this.logger.warn(`[SOLANA INIT] Redis not available, using local read limiter:`, redisError.message)
         this.readLimiter = new Bottleneck({
           id: 'solana-read-limiter-local',
-          reservoir: 10,
-          reservoirRefreshAmount: 10,
+          reservoir: 50,
+          reservoirRefreshAmount: 50,
           reservoirRefreshInterval: 1000,
-          maxConcurrent: 5,
-          minTime: 100,
+          maxConcurrent: 20,
+          minTime: 50,
         })
         this.logger.log(`[SOLANA INIT] Local read limiter created as fallback`)
       }
@@ -344,8 +344,19 @@ export class SolanaService {
           currentEndpoint = this.endpointManager.getNextEndpoint()
           
           if (!currentEndpoint) {
-            this.logger.error(`[EXECUTE WITH RETRY] No endpoints available even after reset`)
-            throw new Error('No healthy endpoints available')
+            this.logger.error(`[EXECUTE WITH RETRY] No endpoints available even after reset, trying emergency reset...`)
+            try {
+              await this.resetAll()
+              currentEndpoint = this.endpointManager.getNextEndpoint()
+              
+              if (!currentEndpoint) {
+                this.logger.error(`[EXECUTE WITH RETRY] Emergency reset failed, no endpoints available`)
+                throw new Error('No healthy endpoints available')
+              }
+            } catch (resetError) {
+              this.logger.error(`[EXECUTE WITH RETRY] Emergency reset failed:`, resetError)
+              throw new Error('No healthy endpoints available')
+            }
           }
         }
         
@@ -400,12 +411,23 @@ export class SolanaService {
     }
 
     // If all endpoints failed, try fallback
+    this.logger.warn('[EXECUTE WITH RETRY] All configured endpoints failed, trying fallback connection...')
     try {
       const fallbackProxy = makeProxyConnection(this.fallbackConnection, {
         readLimiter: this.readLimiter,
         writeLimiter: this.writeLimiter,
       })
-      return await operation(fallbackProxy)
+      
+      // Add timeout to fallback as well
+      const result = await Promise.race([
+        operation(fallbackProxy),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Fallback operation timeout after 30 seconds')), 30000)
+        )
+      ])
+      
+      this.logger.log('[EXECUTE WITH RETRY] Fallback operation successful')
+      return result
     } catch (fallbackError) {
       this.logger.error('All endpoints and fallback failed:', fallbackError)
       throw lastError || fallbackError
@@ -762,13 +784,53 @@ export class SolanaService {
   async getLimiterStatus() {
     return {
       read: {
-        queued: this.readLimiter.queued(),
-        running: this.readLimiter.running(),
+        queued: await this.readLimiter.queued(),
+        running: await this.readLimiter.running(),
       },
       write: {
-        queued: this.writeLimiter.queued(),
-        running: this.writeLimiter.running(),
+        queued: await this.writeLimiter.queued(),
+        running: await this.writeLimiter.running(),
       },
+    }
+  }
+
+  /**
+   * Force clear all queues (emergency reset)
+   */
+  async clearAllQueues(): Promise<void> {
+    this.logger.warn('[QUEUE RESET] Force resetting all queues...')
+    try {
+      // Reset endpoints first
+      this.endpointManager.resetAll()
+      
+      // Log current queue status
+      const readQueued = await this.readLimiter.queued()
+      const writeQueued = await this.writeLimiter.queued()
+      this.logger.log(`[QUEUE RESET] Current status - Read: ${readQueued} queued, Write: ${writeQueued} queued`)
+      
+      this.logger.log('[QUEUE RESET] Queues will be cleared by endpoint reset')
+    } catch (error) {
+      this.logger.error('[QUEUE RESET] Failed to reset queues:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Reset all endpoints and clear queues
+   */
+  async resetAll(): Promise<void> {
+    this.logger.warn('[SYSTEM RESET] Resetting all endpoints and clearing queues...')
+    try {
+      // Reset endpoints
+      this.endpointManager.resetAll()
+      
+      // Clear queues
+      await this.clearAllQueues()
+      
+      this.logger.log('[SYSTEM RESET] System reset completed successfully')
+    } catch (error) {
+      this.logger.error('[SYSTEM RESET] Failed to reset system:', error)
+      throw error
     }
   }
 
@@ -789,6 +851,15 @@ export class SolanaService {
         
         if (readQueued > 0 || writeQueued > 0 || readRunning > 0 || writeRunning > 0) {
           this.logger.log(`[QUEUE STATUS] Read: ${readQueued} queued, ${readRunning} running | Write: ${writeQueued} queued, ${writeRunning} running`)
+          
+          // If queue is stuck for too long, log warning
+          if (readQueued > 10 && readRunning === 0) {
+            this.logger.warn(`[QUEUE STATUS] Read queue appears stuck (${readQueued} queued, 0 running) - this may indicate RPC issues`)
+          }
+          
+          if (writeQueued > 10 && writeRunning === 0) {
+            this.logger.warn(`[QUEUE STATUS] Write queue appears stuck (${writeQueued} queued, 0 running) - this may indicate RPC issues`)
+          }
         }
       } catch (error) {
         this.logger.warn(`[QUEUE STATUS] Error getting queue status:`, error)
