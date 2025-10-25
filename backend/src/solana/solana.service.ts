@@ -203,22 +203,22 @@ export class SolanaService {
             connectTimeout: 5000,
             commandTimeout: 3000,
           },
-          reservoir: 3,
-          reservoirRefreshAmount: 3,
+          reservoir: 10,
+          reservoirRefreshAmount: 10,
           reservoirRefreshInterval: 1000,
-          maxConcurrent: 2,
-          minTime: 333,
+          maxConcurrent: 5,
+          minTime: 100,
         })
         this.logger.log(`[SOLANA INIT] Redis-backed write limiter created successfully`)
       } catch (redisError) {
         this.logger.warn(`[SOLANA INIT] Redis not available, using local write limiter:`, redisError.message)
         this.writeLimiter = new Bottleneck({
           id: 'solana-write-limiter-local',
-          reservoir: 3,
-          reservoirRefreshAmount: 3,
+          reservoir: 10,
+          reservoirRefreshAmount: 10,
           reservoirRefreshInterval: 1000,
-          maxConcurrent: 2,
-          minTime: 333,
+          maxConcurrent: 5,
+          minTime: 100,
         })
         this.logger.log(`[SOLANA INIT] Local write limiter created as fallback`)
       }
@@ -306,7 +306,7 @@ export class SolanaService {
 
   private async executeWithRetry<T>(
     operation: (conn: Connection) => Promise<T>,
-    maxRetries: number = 3
+    maxRetries: number = 4
   ): Promise<T> {
     this.logger.log(`[EXECUTE WITH RETRY] Starting executeWithRetry with maxRetries: ${maxRetries}`)
     await this.logQueueStatus('executeWithRetry')
@@ -326,31 +326,47 @@ export class SolanaService {
     }
     
     let lastError: any
+    let currentEndpoint: RpcEndpoint | null = null
+    let attemptsOnCurrentEndpoint = 0
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       this.logger.log(`[EXECUTE WITH RETRY] Attempt ${attempt}/${maxRetries}`)
-      try {
+      
+      // Get endpoint only if we don't have one or if we've exhausted attempts on current endpoint
+      if (!currentEndpoint || attemptsOnCurrentEndpoint >= 4) {
         this.logger.log(`[EXECUTE WITH RETRY] Getting next endpoint...`)
-        const endpoint = this.endpointManager.getNextEndpoint()
-        this.logger.log(`[EXECUTE WITH RETRY] Endpoint result:`, endpoint ? endpoint.url : 'null')
+        currentEndpoint = this.endpointManager.getNextEndpoint()
+        attemptsOnCurrentEndpoint = 0
         
-        if (!endpoint) {
-          this.logger.error(`[EXECUTE WITH RETRY] No healthy endpoints available`)
-          throw new Error('No healthy endpoints available')
+        if (!currentEndpoint) {
+          this.logger.warn(`[EXECUTE WITH RETRY] No healthy endpoints available, resetting all endpoints...`)
+          this.endpointManager.resetAll()
+          currentEndpoint = this.endpointManager.getNextEndpoint()
+          
+          if (!currentEndpoint) {
+            this.logger.error(`[EXECUTE WITH RETRY] No endpoints available even after reset`)
+            throw new Error('No healthy endpoints available')
+          }
         }
-
+        
+        this.logger.log(`[EXECUTE WITH RETRY] Selected endpoint: ${currentEndpoint.url}`)
+      }
+      
+      attemptsOnCurrentEndpoint++
+      
+      try {
         this.logger.log(`[EXECUTE WITH RETRY] Looking for connection in proxyConnections...`)
         this.logger.log(`[EXECUTE WITH RETRY] Available connections:`, Array.from(this.proxyConnections.keys()))
         
-        const connection = this.proxyConnections.get(endpoint.url)
+        const connection = this.proxyConnections.get(currentEndpoint.url)
         this.logger.log(`[EXECUTE WITH RETRY] Connection found:`, connection ? 'yes' : 'no')
         
         if (!connection) {
-          this.logger.error(`[EXECUTE WITH RETRY] No connection found for endpoint: ${endpoint.url}`)
-          throw new Error(`No connection found for endpoint: ${endpoint.url}`)
+          this.logger.error(`[EXECUTE WITH RETRY] No connection found for endpoint: ${currentEndpoint.url}`)
+          throw new Error(`No connection found for endpoint: ${currentEndpoint.url}`)
         }
 
-        this.logger.log(`[EXECUTE WITH RETRY] Using endpoint: ${endpoint.url}`)
+        this.logger.log(`[EXECUTE WITH RETRY] Using endpoint: ${currentEndpoint.url} (attempt ${attemptsOnCurrentEndpoint}/4 on this endpoint)`)
         
         // Add timeout mechanism
         const result = await Promise.race([
@@ -362,18 +378,15 @@ export class SolanaService {
         
         this.logger.log(`[EXECUTE WITH RETRY] Operation successful on attempt ${attempt}`)
         // Mark success
-        this.endpointManager.markSuccess(endpoint)
+        this.endpointManager.markSuccess(currentEndpoint)
         return result
       } catch (error) {
         lastError = error
         
-        // Mark failure if we have endpoint info
-        const endpoint = this.endpointManager.getNextEndpoint()
-        if (endpoint) {
-          this.endpointManager.markFailure(endpoint, error)
-        }
-
-        this.logger.warn(`Attempt ${attempt}/${maxRetries} failed:`, error.message)
+        // Mark failure for current endpoint
+        this.endpointManager.markFailure(currentEndpoint, error)
+        
+        this.logger.warn(`Attempt ${attempt}/${maxRetries} failed on ${currentEndpoint.url} (${attemptsOnCurrentEndpoint}/4):`, error.message)
 
         if (attempt === maxRetries) {
           break

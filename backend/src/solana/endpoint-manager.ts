@@ -20,7 +20,7 @@ export class EndpointManager {
   private readonly logger = new Logger(EndpointManager.name)
   private endpoints: EndpointHealth[] = []
   private currentIndex = 0
-  private readonly maxFailures = 3
+  private readonly maxFailures = 4
   private readonly cooldownMs = 30000 // 30 seconds
 
   constructor(endpoints: RpcEndpoint[]) {
