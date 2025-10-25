@@ -786,15 +786,9 @@ export class UserService {
         const transactions = this.transactionService.parseTransactions(user.transactions)
         this.logger.log(`[ISSUE TOKENS] Total transactions: ${transactions.length}`)
         
-        // Filter pending tokens
-        const pendingTransactions = transactions.filter(
-          tx => tx.isSuccessful && !tx.isReceived
-        )
-        
-        this.logger.log(`[ISSUE TOKENS] Pending transactions: ${pendingTransactions.length}`)
-        
-        // Calculate total pending
-        const totalPending = this.transactionService.calculateTotalCoins(pendingTransactions)
+        // Calculate total pending using TransactionService (handles admin adjustments)
+        const totalPending = this.transactionService.calculatePendingTokens(transactions)
+        this.logger.log(`[ISSUE TOKENS] Total pending tokens (calc): ${totalPending}`)
         
         this.logger.log(`[ISSUE TOKENS] Total pending tokens: ${totalPending}`)
         
@@ -863,8 +857,8 @@ export class UserService {
     
     const usersWithPending = users.filter(user => {
       const transactions = this.transactionService.parseTransactions(user.transactions)
-      const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
-      return pending.length > 0
+      const pendingAmount = this.transactionService.calculatePendingTokens(transactions)
+      return pendingAmount > 0
     })
     
     // Save initial state in Redis (TTL: 1 hour)
@@ -928,11 +922,11 @@ export class UserService {
       this.logger.log(`[ISSUE ALL TOKENS] Total users in database: ${users.length}`)
       
       // Filter users with pending tokens
-      const usersWithPending = users.filter(user => {
-        const transactions = this.transactionService.parseTransactions(user.transactions)
-        const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
-        return pending.length > 0
-      })
+    const usersWithPending = users.filter(user => {
+      const transactions = this.transactionService.parseTransactions(user.transactions)
+      const pendingAmount = this.transactionService.calculatePendingTokens(transactions)
+      return pendingAmount > 0
+    })
       
       this.logger.log(`[ISSUE ALL TOKENS] Users with pending tokens: ${usersWithPending.length}`)
       
@@ -950,8 +944,8 @@ export class UserService {
       // Calculate total required
       const totalRequired = usersWithPending.reduce((sum, user) => {
         const transactions = this.transactionService.parseTransactions(user.transactions)
-        const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
-        return sum + this.transactionService.calculateTotalCoins(pending)
+        const pendingAmount = this.transactionService.calculatePendingTokens(transactions)
+        return sum + pendingAmount
       }, 0)
       
       this.logger.log(`[ISSUE ALL TOKENS] Total tokens required: ${totalRequired}`)
@@ -1103,8 +1097,8 @@ export class UserService {
       // Calculate total required
       const totalRequired = usersWithPending.reduce((sum, user) => {
         const transactions = this.transactionService.parseTransactions(user.transactions)
-        const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
-        return sum + this.transactionService.calculateTotalCoins(pending)
+        const pendingAmount = this.transactionService.calculatePendingTokens(transactions)
+        return sum + pendingAmount
       }, 0)
       
       this.logger.log(`[ISSUE ALL TOKENS] Total tokens required: ${totalRequired}`)
