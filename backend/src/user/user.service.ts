@@ -333,12 +333,17 @@ export class UserService {
       }
       this.logger.log(`[CALC] Amount: ${purchaseAmount}, Coins: ${actualCoinsToPurchase}`)
 
-      // 8. Check available amount
-      // TODO: uncomment when wallet balance checking is needed
-      // const availableAmount = await this.coinService.getCurrentAvailableAmount()
-      // if (actualCoinsToPurchase > availableAmount) {
-      //   throw new BadRequestException(`Not enough coins available. Available: ${availableAmount}, Requested: ${actualCoinsToPurchase}`)
-      // }
+      // 8. Check available amount and cap to avoid overselling
+      const availableAmount = await this.coinService.getCurrentAvailableAmount()
+      this.logger.log(`[AVAILABLE CHECK] Available: ${availableAmount}, Requested: ${actualCoinsToPurchase}`)
+      if (availableAmount <= 0) {
+        this.logger.warn('[AVAILABLE CHECK] No coins available to purchase')
+        throw new BadRequestException('Not enough coins available')
+      }
+      if (actualCoinsToPurchase > availableAmount) {
+        this.logger.warn(`[AMOUNT CAP - AVAILABLE] Requested ${actualCoinsToPurchase} exceeds available ${availableAmount}. Capping to available.`)
+        actualCoinsToPurchase = availableAmount
+      }
 
       // 9. Find user
       const user = await this.prisma.user.findFirst({

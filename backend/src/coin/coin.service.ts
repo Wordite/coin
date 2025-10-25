@@ -132,9 +132,11 @@ export class CoinService {
     if (existingCoin) {
       // Calculate new values
       const newTotalAmount = settings.totalAmount ?? existingCoin.totalAmount
-      const newSoldAmount = settings.soldAmount ?? existingCoin.soldAmount
-      // Always recalculate currentAmount when totalAmount or soldAmount changes
-      const newCurrentAmount = newTotalAmount - newSoldAmount
+      // Clamp soldAmount to [0, newTotalAmount]
+      const proposedSoldAmount = settings.soldAmount ?? existingCoin.soldAmount
+      const newSoldAmount = Math.min(Math.max(0, proposedSoldAmount), newTotalAmount)
+      // Always recalculate currentAmount when totalAmount or soldAmount changes and clamp to >= 0
+      const newCurrentAmount = Math.max(0, newTotalAmount - newSoldAmount)
 
       // Update existing coin settings
       const updated = await this.prisma.coin.update({
@@ -357,8 +359,8 @@ export class CoinService {
       throw new NotFoundException('Coin settings not found')
     }
     
-    const newSoldAmount = Math.max(0, coin.soldAmount + deltaAmount)
-    const newCurrentAmount = coin.totalAmount - newSoldAmount
+    const newSoldAmount = Math.min(Math.max(0, coin.soldAmount + deltaAmount), coin.totalAmount)
+    const newCurrentAmount = Math.max(0, coin.totalAmount - newSoldAmount)
     
     this.logger.log(`[UPDATE SOLD AMOUNT] Old soldAmount: ${coin.soldAmount}, New soldAmount: ${newSoldAmount}`)
     this.logger.log(`[UPDATE SOLD AMOUNT] Old currentAmount: ${coin.currentAmount}, New currentAmount: ${newCurrentAmount}`)
