@@ -1210,8 +1210,7 @@ export class UserService {
         
         if (user) {
           const transactions = this.transactionService.parseTransactions(user.transactions)
-          const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
-          requiredAmount = this.transactionService.calculateTotalCoins(pending)
+          requiredAmount = this.transactionService.calculatePendingTokens(transactions)
           this.logger.log(`[VALIDATE BALANCE] User ${userId} requires: ${requiredAmount}`)
         }
       } else {
@@ -1222,8 +1221,8 @@ export class UserService {
         
         requiredAmount = users.reduce((sum, user) => {
           const transactions = this.transactionService.parseTransactions(user.transactions)
-          const pending = transactions.filter(tx => tx.isSuccessful && !tx.isReceived)
-          return sum + this.transactionService.calculateTotalCoins(pending)
+          const pendingAmount = this.transactionService.calculatePendingTokens(transactions)
+          return sum + pendingAmount
         }, 0)
         
         this.logger.log(`[VALIDATE BALANCE] All users require: ${requiredAmount}`)
