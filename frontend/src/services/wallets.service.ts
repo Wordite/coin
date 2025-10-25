@@ -17,9 +17,8 @@ import { api } from '@/app/api'
 
 class Wallets {
   static isConnected: boolean = false
-  // static connection: Connection = new Connection(clusterApiUrl('mainnet-beta'))
-  static connection: Connection = new Connection('https://multi-skilled-sunset.solana-mainnet.quiknode.pro/b5bc302f27310a2f77845915b4b3bf3ff90d42a0/')
-
+  static connection: Connection = new Connection(clusterApiUrl('mainnet-beta'))
+ 
   static async init() {
     const balance = await this.getBalance()
     useWalletStore.setState({ balance: { sol: balance.sol, usdt: balance.usdt } })

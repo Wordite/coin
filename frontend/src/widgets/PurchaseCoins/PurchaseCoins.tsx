@@ -56,9 +56,9 @@ const PurchaseCoins = () => {
 
   const onSubmit = async (data: PurchaseFormData) => {
     if (!isConnected) return showError('Please connect your wallet')
-    const currentBalance = payCoin === 'SOL' ? balance.sol : balance.usdt
-    if (currentBalance <= 0) return showError(`You don't have this currency`)
-    if (data.pay > currentBalance) return showError(`You don't have enough ${payCoin}`)
+    // const currentBalance = payCoin === 'SOL' ? balance.sol : balance.usdt
+    // if (currentBalance <= 0) return showError(`You don't have this currency`)
+    // if (data.pay > currentBalance) return showError(`You don't have enough ${payCoin}`)
 
     try {
       console.log('Purchase form data:', data)  
