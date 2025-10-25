@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Req } from '@nestjs/common'
+import { Controller, Get, Post, Body, Put, Req, Query } from '@nestjs/common'
 import { CoinService, CoinPresaleSettings } from './coin.service'
 import { Auth } from 'src/auth/decorators/auth.decorator'
 import { Roles } from 'src/auth/constants/roles.constant'
@@ -49,17 +49,19 @@ export class CoinController {
   }
 
   @Auth({ public: true, fingerprint: true, antiSpam: true })
-  @Post('public/receive')
+  @Get('public/receive')
   async publicReceive(
-    @Body() body: { amount: number, coin: string },
+    @Query('amount') amount: string,
+    @Query('coin') coin: string,
     @Req() req: Request & { fingerprint: string }
   ) {
-    const receive = await this.coinService.calculateReceive(body.amount, body.coin)
+    const amountNum = parseFloat(amount)
+    const receive = await this.coinService.calculateReceive(amountNum, coin)
 
     this.antiSpamService.addPoints(req.fingerprint, 0.2, {
       reason: 'public_receive',
-      amount: body.amount,
-      coin: body.coin,
+      amount: amountNum,
+      coin: coin,
       ip: req.ip,
       ua: req.get('user-agent'),
       timestamp: Date.now()

@@ -1,6 +1,5 @@
 import type { HTMLAttributes } from 'react'
 import { type UseFormRegister, type FieldError, type Path, useFormContext } from 'react-hook-form'
-import { PayCoinInputUI } from './ui'
 import { useCalculatedReceive } from './model/useCalculatedReceive'
 import { useEffect, useRef } from 'react'
 
@@ -23,7 +22,7 @@ const PayCoinReceive = <T extends Record<string, any>>({
   error,
   ...props
 }: PayCoinReceiveProps<T>) => {
-  const { receive } = useCalculatedReceive()
+  const { receive, isLoading } = useCalculatedReceive()
   const { setValue, formState } = useFormContext<T>()
   const hasSubmittedRef = useRef(false)
 
@@ -41,16 +40,33 @@ const PayCoinReceive = <T extends Record<string, any>>({
   }, [receive, setValue, name])
 
   return (
-    <PayCoinInputUI
-      register={register}
-      name={name}
-      title={title}
-      placeholder={placeholder}
-      disabled={disabled}
-      error={error}
-      value={receive || ''}
-      {...props}
-    />
+    <div className='mt-[2.063rem] max-md:mt-[2.75rem]'>
+      <p className='text-[1.25rem] max-md:text-[1.76rem] mb-[.688rem] max-md:mb-[.96rem] font-semibold'>{title}</p>
+      <div className="w-full relative">
+        <input
+          {...register(name)}
+          {...props}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={`w-full p-[1rem] max-md:p-[1.375rem] h-[3.375rem] max-md:h-[5.08rem] border-1 text-[1.125rem] max-md:text-[1.54rem] font-semibold rounded-md ${
+            error 
+              ? 'border-red-500 focus:border-red-400' 
+              : 'border-stroke-dark'
+          } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          value={receive || ''}
+        />
+        {isLoading && (
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+        {error && (
+          <p className="text-red-400 text-sm max-md:text-[1.24rem] mt-1 max-md:mt-[1.375rem] ml-1">
+            {error.message}
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 

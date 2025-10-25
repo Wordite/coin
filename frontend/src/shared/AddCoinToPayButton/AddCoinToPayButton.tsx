@@ -2,6 +2,7 @@ import type { HTMLAttributes } from 'react'
 import { useWatch, useFormContext } from 'react-hook-form'
 import { useWalletStore } from '@/app/store/walletStore'
 import { useToastContext } from '@/shared/Toast'
+import { useCalculatedReceive } from '@/features/PayCoin/model/useCalculatedReceive'
 
 interface AddCoinToPayButton extends HTMLAttributes<HTMLButtonElement> {
   value: string
@@ -12,6 +13,7 @@ const AddCoinToPayButton = ({ value, control, ...props }: AddCoinToPayButton) =>
   const { balance, isConnected } = useWalletStore()
   const { showError } = useToastContext()
   const { setValue } = useFormContext()
+  const { maxPayAmount, setMaxPay } = useCalculatedReceive()
   
   const payCoin = useWatch({ control, name: 'payCoin' })
 
@@ -31,7 +33,15 @@ const AddCoinToPayButton = ({ value, control, ...props }: AddCoinToPayButton) =>
     let amountToAdd: number
 
     if (value === 'MAX') {
-      amountToAdd = currentBalance
+      // Use the maximum amount that can be spent based on available tokens
+      const maxBasedOnTokens = maxPayAmount || 0
+      const maxBasedOnBalance = currentBalance
+      amountToAdd = Math.min(maxBasedOnTokens, maxBasedOnBalance)
+      
+      if (amountToAdd <= 0) {
+        showError('No tokens available for purchase')
+        return
+      }
     } else {
       const multiplier = parseFloat(value)
       amountToAdd = multiplier * currentBalance

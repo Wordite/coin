@@ -11,17 +11,35 @@ const useCalculatedReceive = () => {
   const { watch, setValue } = useFormContext<PurchaseFormData>()
   const payCoin = watch('payCoin')
   const pay = watch('pay')
+  const receive = watch('receive')
   const { settings } = useSettings()
   const { presaleSettings } = usePresaleSettings()
   
-  const [receive, setReceive] = useState<number>(0)
+  const [serverReceive, setServerReceive] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [maxPayAmount, setMaxPayAmount] = useState<number>(0)
+
+  // Calculate maximum pay amount based on available balance
+  const calculateMaxPayAmount = useCallback(() => {
+    if (!settings || !presaleSettings) return 0
+    
+    const currentAmount = presaleSettings.total - presaleSettings.sold
+    if (currentAmount <= 0) return 0
+    
+    const rate = payCoin === 'SOL' ? settings.solToCoinRate : settings.usdtToCoinRate
+    const maxReceive = Math.min(currentAmount, presaleSettings.maxBuyAmount)
+    const maxPay = maxReceive / rate
+    
+    setMaxPayAmount(maxPay)
+    return maxPay
+  }, [settings, presaleSettings, payCoin])
 
   // Debounced function to call API
   const fetchReceiveFromServer = useCallback(async (amount: number, coin: string) => {
     if (!amount || amount <= 0) {
-      setReceive(0)
+      setServerReceive(0)
+      setValue('receive', 0)
       return
     }
 
@@ -29,14 +47,16 @@ const useCalculatedReceive = () => {
     setError(null)
     
     try {
-      const response = await api.post('/coin/public/receive', {
-        amount,
-        coin
+      const response = await api.get('/coin/public/receive', {
+        params: {
+          amount,
+          coin
+        }
       })
       
-      const serverReceive = response.data.receive || 0
-      setReceive(serverReceive)
-      setValue('receive', serverReceive)
+      const serverReceiveValue = response.data.receive || 0
+      setServerReceive(serverReceiveValue)
+      setValue('receive', serverReceiveValue)
     } catch (err) {
       console.error('Failed to fetch receive from server:', err)
       setError('Failed to calculate receive amount')
@@ -58,7 +78,7 @@ const useCalculatedReceive = () => {
         }
 
         const fallbackReceive = Math.min(calculatedReceive, maxBuyAmount, currentAmount)
-        setReceive(fallbackReceive)
+        setServerReceive(fallbackReceive)
         setValue('receive', fallbackReceive)
       }
     } finally {
@@ -66,13 +86,18 @@ const useCalculatedReceive = () => {
     }
   }, [settings, presaleSettings, setValue])
 
+  // Calculate max pay amount when dependencies change
+  useEffect(() => {
+    calculateMaxPayAmount()
+  }, [calculateMaxPayAmount])
+
   // Debounced effect to call API when pay amount changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (pay && payCoin) {
         fetchReceiveFromServer(Number(pay), payCoin)
       } else {
-        setReceive(0)
+        setServerReceive(0)
         setValue('receive', 0)
       }
     }, 500) // 500ms debounce
@@ -80,10 +105,26 @@ const useCalculatedReceive = () => {
     return () => clearTimeout(timeoutId)
   }, [pay, payCoin, fetchReceiveFromServer, setValue])
 
+  // Auto-adjust pay amount when receive exceeds available
+  useEffect(() => {
+    if (receive && presaleSettings && settings) {
+      const currentAmount = presaleSettings.total - presaleSettings.sold
+      const maxReceive = Math.min(currentAmount, presaleSettings.maxBuyAmount)
+      
+      if (receive > maxReceive) {
+        const rate = payCoin === 'SOL' ? settings.solToCoinRate : settings.usdtToCoinRate
+        const adjustedPay = maxReceive / rate
+        setValue('pay', adjustedPay)
+      }
+    }
+  }, [receive, presaleSettings, settings, payCoin, setValue])
+
   return {
-    receive,
+    receive: serverReceive,
     isLoading,
     error,
+    maxPayAmount,
+    setMaxPay: () => setValue('pay', maxPayAmount),
   }
 }
 
