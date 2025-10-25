@@ -20,8 +20,6 @@ import {
 } from '@solana/spl-token'
 import { WalletService } from 'src/wallet/wallet.service'
 import { RedisService } from 'src/redis/redis.service'
-import Bottleneck from 'bottleneck'
-import { makeProxyConnection } from './proxy-connection'
 import { EndpointManager, RpcEndpoint } from './endpoint-manager'
 
 
@@ -32,16 +30,12 @@ export class SolanaService {
   private readonly fallbackConnection: Connection = new Connection(clusterApiUrl('mainnet-beta'))
   private logger = new Logger(SolanaService.name)
 
-  private readLimiter: Bottleneck
-  private writeLimiter: Bottleneck
   private endpointManager: EndpointManager
   private connections: Map<string, Connection> = new Map()
-  private proxyConnections: Map<string, Connection> = new Map()
   private directConnections: Map<string, Connection> = new Map() // Non-rate-limited connections
 
   private isInitialized: Promise<void> | null = null
   private _resolveInitialized: (() => void) | null = null
-  private queueMonitorInterval: NodeJS.Timeout | null = null
 
   constructor(
     private readonly prisma: PrismaService,
@@ -125,85 +119,9 @@ export class SolanaService {
         this.logger.log(`[SOLANA INIT] Using fallback endpoints:`, fallbackEndpoints)
       }
 
-      // Create Redis-backed limiters
-      this.logger.log(`[SOLANA INIT] Creating Redis limiters...`)
-      this.logger.log(`[SOLANA INIT] Redis config:`, {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD ? '[HIDDEN]' : 'none'
-      })
-
-      try {
-        this.logger.log(`[SOLANA INIT] Creating read limiter with config:`, {
-          id: 'solana-read-limiter',
-          datastore: 'ioredis',
-          reservoir: rateLimits.readLimit,
-          maxConcurrent: Math.min(rateLimits.readLimit, 10),
-          minTime: Math.floor(1000 / rateLimits.readLimit),
-          redisHost: process.env.REDIS_HOST || 'localhost',
-          redisPort: parseInt(process.env.REDIS_PORT || '6379'),
-          hasPassword: !!process.env.REDIS_PASSWORD
-        })
-
-        // Completely disable rate limiting for read operations
-        this.readLimiter = new Bottleneck({
-          id: 'solana-read-limiter-disabled',
-          reservoir: 10000,
-          reservoirRefreshAmount: 10000,
-          reservoirRefreshInterval: 1,
-          maxConcurrent: 1000,
-          minTime: 0,
-        })
-        this.logger.log(`[SOLANA INIT] Redis-backed read limiter created successfully`)
-      } catch (redisError) {
-        this.logger.warn(`[SOLANA INIT] Redis not available, using local read limiter:`, redisError.message)
-        // Completely disable rate limiting for read operations
-        this.readLimiter = new Bottleneck({
-          id: 'solana-read-limiter-disabled',
-          reservoir: 10000,
-          reservoirRefreshAmount: 10000,
-          reservoirRefreshInterval: 1,
-          maxConcurrent: 1000,
-          minTime: 0,
-        })
-        this.logger.log(`[SOLANA INIT] Local read limiter created as fallback`)
-      }
-
-      try {
-        this.logger.log(`[SOLANA INIT] Creating write limiter with config:`, {
-          id: 'solana-write-limiter',
-          datastore: 'ioredis',
-          reservoir: rateLimits.writeLimit,
-          maxConcurrent: Math.min(rateLimits.writeLimit, 3),
-          minTime: Math.floor(1000 / rateLimits.writeLimit),
-          redisHost: process.env.REDIS_HOST || 'localhost',
-          redisPort: parseInt(process.env.REDIS_PORT || '6379'),
-          hasPassword: !!process.env.REDIS_PASSWORD
-        })
-
-        // Completely disable rate limiting for write operations
-        this.writeLimiter = new Bottleneck({
-          id: 'solana-write-limiter-disabled',
-          reservoir: 10000,
-          reservoirRefreshAmount: 10000,
-          reservoirRefreshInterval: 1,
-          maxConcurrent: 1000,
-          minTime: 0,
-        })
-        this.logger.log(`[SOLANA INIT] Redis-backed write limiter created successfully`)
-      } catch (redisError) {
-        this.logger.warn(`[SOLANA INIT] Redis not available, using local write limiter:`, redisError.message)
-        // Completely disable rate limiting for write operations
-        this.writeLimiter = new Bottleneck({
-          id: 'solana-write-limiter-disabled',
-          reservoir: 10000,
-          reservoirRefreshAmount: 10000,
-          reservoirRefreshInterval: 1,
-          maxConcurrent: 1000,
-          minTime: 0,
-        })
-        this.logger.log(`[SOLANA INIT] Local write limiter created as fallback`)
-      }
+      // Rate limiting disabled - using direct connections only
+      this.logger.log(`[SOLANA INIT] Rate limiting disabled, using direct connections`)
+      this.logger.log(`[SOLANA INIT] All operations will use direct connections without rate limiting`)
 
       // Initialize endpoint manager
       this.logger.log(`[SOLANA INIT] Initializing endpoint manager with ${endpoints.length} endpoints`)
@@ -217,58 +135,33 @@ export class SolanaService {
         throw error
       }
 
-      // Create connections for each endpoint
-      this.logger.log(`[SOLANA INIT] Creating connections for endpoints...`)
+      // Create direct connections for each endpoint
+      this.logger.log(`[SOLANA INIT] Creating direct connections for endpoints...`)
       for (const endpoint of endpoints) {
-        this.logger.log(`[SOLANA INIT] Creating connection for: ${endpoint.url}`)
+        this.logger.log(`[SOLANA INIT] Creating direct connection for: ${endpoint.url}`)
 
         try {
           const connection = new Connection(endpoint.url)
           this.connections.set(endpoint.url, connection)
-          this.logger.log(`[SOLANA INIT] Basic connection created for: ${endpoint.url}`)
-
-          // Create direct (non-rate-limited) connection for admin UI
           this.directConnections.set(endpoint.url, connection)
           this.logger.log(`[SOLANA INIT] Direct connection created for: ${endpoint.url}`)
-
-          // Create proxy connection with rate limiting
-          try {
-            const proxyConnection = makeProxyConnection(connection, {
-              readLimiter: this.readLimiter,
-              writeLimiter: this.writeLimiter,
-            })
-            this.proxyConnections.set(endpoint.url, proxyConnection)
-            this.logger.log(`[SOLANA INIT] Proxy connection created for: ${endpoint.url}`)
-          } catch (error) {
-            this.logger.error(`[SOLANA INIT] Failed to create proxy connection for ${endpoint.url}:`, error)
-            throw error
-          }
         } catch (error) {
-          this.logger.error(`[SOLANA INIT] Failed to create basic connection for ${endpoint.url}:`, error)
+          this.logger.error(`[SOLANA INIT] Failed to create direct connection for ${endpoint.url}:`, error)
           throw error
         }
       }
       
-      this.logger.log(`[SOLANA INIT] Total proxyConnections created: ${this.proxyConnections.size}`)
-      this.logger.log(`[SOLANA INIT] ProxyConnections keys:`, Array.from(this.proxyConnections.keys()))
+      this.logger.log(`[SOLANA INIT] Total direct connections created: ${this.directConnections.size}`)
+      this.logger.log(`[SOLANA INIT] Direct connections keys:`, Array.from(this.directConnections.keys()))
 
-      // Set the primary proxy connection
+      // Set the primary direct connection
       const primaryEndpoint = this.endpointManager.getNextEndpoint()
       if (primaryEndpoint) {
-        this.proxyConnection = this.proxyConnections.get(primaryEndpoint.url)!
         this.directConnection = this.directConnections.get(primaryEndpoint.url)!
       } else {
-        // Fallback to public RPC with rate limiting
-        const fallbackProxy = makeProxyConnection(this.fallbackConnection, {
-          readLimiter: this.readLimiter,
-          writeLimiter: this.writeLimiter,
-        })
-        this.proxyConnection = fallbackProxy
+        // Fallback to public RPC
         this.directConnection = this.fallbackConnection
       }
-
-      // Start queue monitoring
-      this.startQueueMonitoring()
 
       this._resolveInitialized?.()
       this.logger.log(`[SOLANA INIT] ✅ SolanaService initialized successfully with ${endpoints.length} endpoints and rate limits: ${rateLimits.readLimit} read/s, ${rateLimits.writeLimit} write/s`)
@@ -291,7 +184,6 @@ export class SolanaService {
     maxRetries: number = 4
   ): Promise<T> {
     this.logger.log(`[EXECUTE WITH RETRY] Starting executeWithRetry with maxRetries: ${maxRetries}`)
-    await this.logQueueStatus('executeWithRetry')
     
     // Ensure service is initialized
     await this.ensureInitialized()
@@ -302,9 +194,9 @@ export class SolanaService {
       throw new Error('SolanaService not initialized')
     }
     
-    if (!this.proxyConnections || this.proxyConnections.size === 0) {
-      this.logger.error(`[EXECUTE WITH RETRY] Service not initialized! proxyConnections is empty`)
-      throw new Error('SolanaService not initialized - no proxy connections')
+    if (!this.directConnections || this.directConnections.size === 0) {
+      this.logger.error(`[EXECUTE WITH RETRY] Service not initialized! directConnections is empty`)
+      throw new Error('SolanaService not initialized - no direct connections')
     }
     
     let lastError: any
@@ -348,10 +240,10 @@ export class SolanaService {
       attemptsOnCurrentEndpoint++
       
       try {
-        this.logger.log(`[EXECUTE WITH RETRY] Looking for connection in proxyConnections...`)
-        this.logger.log(`[EXECUTE WITH RETRY] Available connections:`, Array.from(this.proxyConnections.keys()))
+        this.logger.log(`[EXECUTE WITH RETRY] Looking for connection in directConnections...`)
+        this.logger.log(`[EXECUTE WITH RETRY] Available connections:`, Array.from(this.directConnections.keys()))
         
-        const connection = this.proxyConnections.get(currentEndpoint.url)
+        const connection = this.directConnections.get(currentEndpoint.url)
         this.logger.log(`[EXECUTE WITH RETRY] Connection found:`, connection ? 'yes' : 'no')
         
         if (!connection) {
@@ -395,14 +287,9 @@ export class SolanaService {
     // If all endpoints failed, try fallback
     this.logger.warn('[EXECUTE WITH RETRY] All configured endpoints failed, trying fallback connection...')
     try {
-      const fallbackProxy = makeProxyConnection(this.fallbackConnection, {
-        readLimiter: this.readLimiter,
-        writeLimiter: this.writeLimiter,
-      })
-      
-      // Add timeout to fallback as well
+      // Use direct fallback connection
       const result = await Promise.race([
-        operation(fallbackProxy),
+        operation(this.fallbackConnection),
         new Promise<never>((_, reject) => 
           setTimeout(() => reject(new Error('Fallback operation timeout after 30 seconds')), 30000)
         )
@@ -438,8 +325,8 @@ export class SolanaService {
     await this.ensureInitialized()
     const endpoints: string[] = []
     
-    // Add all configured proxy connections
-    for (const [url] of this.proxyConnections.entries()) {
+    // Add all configured direct connections
+    for (const [url] of this.directConnections.entries()) {
       endpoints.push(url)
     }
     
@@ -457,7 +344,7 @@ export class SolanaService {
    */
   async getTransactionFromRpc(signature: string, rpcUrl: string): Promise<ParsedTransactionWithMeta | null> {
     await this.ensureInitialized()
-    const conn = this.connections.get(rpcUrl) || this.proxyConnections.get(rpcUrl) || new Connection(rpcUrl)
+    const conn = this.connections.get(rpcUrl) || this.directConnections.get(rpcUrl) || new Connection(rpcUrl)
     
     try {
       // Use direct connection without rate limiting
@@ -763,53 +650,13 @@ export class SolanaService {
   }
 
   /**
-   * Get current rate limiter status
-   */
-  async getLimiterStatus() {
-    return {
-      read: {
-        queued: await this.readLimiter.queued(),
-        running: await this.readLimiter.running(),
-      },
-      write: {
-        queued: await this.writeLimiter.queued(),
-        running: await this.writeLimiter.running(),
-      },
-    }
-  }
-
-  /**
-   * Force clear all queues (emergency reset)
-   */
-  async clearAllQueues(): Promise<void> {
-    this.logger.warn('[QUEUE RESET] Force resetting all queues...')
-    try {
-      // Reset endpoints first
-      this.endpointManager.resetAll()
-      
-      // Log current queue status
-      const readQueued = await this.readLimiter.queued()
-      const writeQueued = await this.writeLimiter.queued()
-      this.logger.log(`[QUEUE RESET] Current status - Read: ${readQueued} queued, Write: ${writeQueued} queued`)
-      
-      this.logger.log('[QUEUE RESET] Queues will be cleared by endpoint reset')
-    } catch (error) {
-      this.logger.error('[QUEUE RESET] Failed to reset queues:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Reset all endpoints and clear queues
+   * Reset all endpoints
    */
   async resetAll(): Promise<void> {
-    this.logger.warn('[SYSTEM RESET] Resetting all endpoints and clearing queues...')
+    this.logger.warn('[SYSTEM RESET] Resetting all endpoints...')
     try {
       // Reset endpoints
       this.endpointManager.resetAll()
-      
-      // Clear queues
-      await this.clearAllQueues()
       
       this.logger.log('[SYSTEM RESET] System reset completed successfully')
     } catch (error) {
@@ -818,48 +665,6 @@ export class SolanaService {
     }
   }
 
-  /**
-   * Start periodic queue monitoring
-   */
-  private startQueueMonitoring(): void {
-    this.queueMonitorInterval = setInterval(async () => {
-      if (!this.readLimiter || !this.writeLimiter) {
-        return
-      }
-      
-      try {
-        const readQueued = await this.readLimiter.queued()
-        const readRunning = await this.readLimiter.running()
-        const writeQueued = await this.writeLimiter.queued()
-        const writeRunning = await this.writeLimiter.running()
-        
-        if (readQueued > 0 || writeQueued > 0 || readRunning > 0 || writeRunning > 0) {
-          this.logger.log(`[QUEUE STATUS] Read: ${readQueued} queued, ${readRunning} running | Write: ${writeQueued} queued, ${writeRunning} running`)
-          
-          // If queue is stuck for too long, log warning
-          if (readQueued > 10 && readRunning === 0) {
-            this.logger.warn(`[QUEUE STATUS] Read queue appears stuck (${readQueued} queued, 0 running) - this may indicate RPC issues`)
-          }
-          
-          if (writeQueued > 10 && writeRunning === 0) {
-            this.logger.warn(`[QUEUE STATUS] Write queue appears stuck (${writeQueued} queued, 0 running) - this may indicate RPC issues`)
-          }
-        }
-      } catch (error) {
-        this.logger.warn(`[QUEUE STATUS] Error getting queue status:`, error)
-      }
-    }, 30000) // Every 30 seconds
-  }
-
-  /**
-   * Stop queue monitoring
-   */
-  private stopQueueMonitoring(): void {
-    if (this.queueMonitorInterval) {
-      clearInterval(this.queueMonitorInterval)
-      this.queueMonitorInterval = null
-    }
-  }
 
   /**
    * Get direct (non-rate-limited) connection for admin UI
@@ -917,7 +722,6 @@ export class SolanaService {
   async getBalanceDirect(address?: string): Promise<{ sol: number; usdt: number; coin: number }> {
     if (!address) return { sol: 0, usdt: 0, coin: 0 }
     await this.ensureInitialized()
-    await this.logQueueStatus('getBalanceDirect')
 
     const [solBalance, usdtBalance, coinBalance] = await Promise.all([
       this.getSolBalanceDirect(address),
@@ -980,7 +784,6 @@ export class SolanaService {
   async getParsedTokenBalanceByMintDirect(address: string, mint: PublicKey): Promise<number> {
     await this.ensureInitialized()
     this.logger.log(`[GET TOKEN BALANCE DIRECT] Fetching balance for address: ${address}, mint: ${mint.toBase58()}`)
-    await this.logQueueStatus('getParsedTokenBalanceByMintDirect')
     
     try {
       const owner = new PublicKey(address)
@@ -1038,26 +841,6 @@ export class SolanaService {
     }
   }
 
-  /**
-   * Log current queue status
-   */
-  private async logQueueStatus(operation: string): Promise<void> {
-    if (!this.readLimiter || !this.writeLimiter) {
-      this.logger.log(`[QUEUE STATUS] ${operation} - Limiters not initialized yet`)
-      return
-    }
-    
-    try {
-      const readQueued = await this.readLimiter.queued()
-      const readRunning = await this.readLimiter.running()
-      const writeQueued = await this.writeLimiter.queued()
-      const writeRunning = await this.writeLimiter.running()
-      
-      this.logger.log(`[QUEUE STATUS] ${operation} - Read: ${readQueued} queued, ${readRunning} running | Write: ${writeQueued} queued, ${writeRunning} running`)
-    } catch (error) {
-      this.logger.warn(`[QUEUE STATUS] ${operation} - Error getting queue status:`, error)
-    }
-  }
 
   /**
    * Convert human-readable amount to raw BigInt
