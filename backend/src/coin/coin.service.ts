@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service'
 import { CoinStatus } from '@prisma/client'
 import { RedisService } from '../redis/redis.service'
 import { WalletService } from '../wallet/wallet.service'
+import { SolanaService } from '../solana/solana.service'
 
 export interface CoinPresaleSettings {
   totalAmount: number
@@ -27,7 +28,9 @@ export class CoinService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     @Inject(forwardRef(() => WalletService))
-    private readonly wallet: WalletService
+    private readonly wallet: WalletService,
+    @Inject(forwardRef(() => SolanaService))
+    private readonly solana: SolanaService
   ) {
     this.logger.log(`[COIN SERVICE] Initialized`)
   }
@@ -207,6 +210,18 @@ export class CoinService {
     console.log(`[CACHE INVALIDATION] Deleting cache key: ${cacheKey}`)
     await this.redis.del(cacheKey)
     console.log(`[CACHE INVALIDATION] Cache deleted successfully`)
+    
+    // If RPC settings changed, invalidate RPC cache and reload connections
+    if (settings.rpc !== undefined || settings.rpcEndpoints !== undefined) {
+      this.logger.log('[RPC SETTINGS] RPC or RPC endpoints changed. Invalidating caches and reloading connections...')
+      await this.redis.del('rpc_endpoints')
+      await this.redis.del('rpc_url')
+      try {
+        await this.solana.reloadRpcConnections()
+      } catch (e) {
+        this.logger.error('[RPC SETTINGS] Failed to reload RPC connections:', e)
+      }
+    }
 
     return result
   }
@@ -328,8 +343,18 @@ export class CoinService {
       },
     })
 
-    // Invalidate cache
+    // Invalidate caches
     await this.redis.del('presale_settings')
+    await this.redis.del('rpc_endpoints')
+    await this.redis.del('rpc_url')
+
+    // Reload connections to apply immediately
+    this.logger.log('[RPC SETTINGS] RPC endpoints updated via API. Reloading Solana connections...')
+    try {
+      await this.solana.reloadRpcConnections()
+    } catch (e) {
+      this.logger.error('[RPC SETTINGS] Failed to reload RPC connections after update:', e)
+    }
 
     return endpoints
   }

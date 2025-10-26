@@ -179,6 +179,54 @@ export class SolanaService {
     }
   }
 
+  /**
+   * Reload RPC endpoints and direct connections after settings change
+   */
+  async reloadRpcConnections(): Promise<void> {
+    this.logger.log('[SOLANA RELOAD] Requested RPC endpoints reload')
+    try {
+      await this.ensureInitialized()
+      const oldEndpoints = Array.from(this.directConnections?.keys?.() || [])
+      this.logger.log(`[SOLANA RELOAD] Old endpoints (${oldEndpoints.length}):`, oldEndpoints)
+
+      // Fetch fresh endpoints from settings (cache may be invalidated by settings update)
+      const endpoints = await this.coin.getRpcEndpoints()
+      this.logger.log(`[SOLANA RELOAD] New endpoints from settings (${endpoints.length}):`, endpoints)
+
+      // Rebuild endpoint manager
+      this.endpointManager = new EndpointManager(endpoints)
+
+      // Rebuild connection maps
+      const newConnections: Map<string, Connection> = new Map()
+      const newDirectConnections: Map<string, Connection> = new Map()
+      for (const endpoint of endpoints) {
+        try {
+          const connection = new Connection(endpoint.url)
+          newConnections.set(endpoint.url, connection)
+          newDirectConnections.set(endpoint.url, connection)
+        } catch (e) {
+          this.logger.warn(`[SOLANA RELOAD] Failed to create connection for ${endpoint.url}: ${e?.message}`)
+        }
+      }
+
+      this.connections = newConnections
+      this.directConnections = newDirectConnections
+
+      // Reset primary direct connection
+      const primaryEndpoint = this.endpointManager.getNextEndpoint()
+      if (primaryEndpoint) {
+        this.directConnection = this.directConnections.get(primaryEndpoint.url) ?? this.fallbackConnection
+      } else {
+        this.directConnection = this.fallbackConnection
+      }
+
+      const newEndpoints = Array.from(this.directConnections.keys())
+      this.logger.log(`[SOLANA RELOAD] Reload complete. New endpoints (${newEndpoints.length}):`, newEndpoints)
+    } catch (error) {
+      this.logger.error('[SOLANA RELOAD] Failed to reload RPC endpoints:', error)
+    }
+  }
+
   private async executeWithRetry<T>(
     operation: (conn: Connection) => Promise<T>,
     maxRetries: number = 4

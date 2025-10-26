@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Interval } from '@nestjs/schedule'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { Roles } from 'src/auth/constants/roles.constant'
 import { User } from '@prisma/client'
@@ -39,6 +40,77 @@ export class UserService {
   ) {}
 
   private readonly logger = new Logger(UserService.name)
+
+  // Try to confirm a transaction signature using primary check and multiple RPC endpoints as fallback
+  private async confirmSignatureWithFallback(signature: string): Promise<boolean> {
+    try {
+      const primaryCheck = await this.walletService.checkIsReceived(signature)
+      if (primaryCheck.exists && primaryCheck.isSuccessful && primaryCheck.isFinalized) {
+        return true
+      }
+    } catch (e) {
+      this.logger.warn(`[CONFIRM] Primary confirmation check failed for ${signature}: ${e?.message}`)
+    }
+    
+    try {
+      const rpcEndpoints = await this.solanaService.getAllRpcEndpoints()
+      for (const rpcUrl of rpcEndpoints) {
+        try {
+          const txData = await this.solanaService.getTransactionFromRpc(signature, rpcUrl)
+          if (txData && txData.meta && txData.meta.err === null && (txData.slot || txData.blockTime)) {
+            return true
+          }
+        } catch (inner) {
+          this.logger.warn(`[CONFIRM] RPC ${rpcUrl} confirmation check error for ${signature}: ${inner?.message}`)
+          continue
+        }
+      }
+    } catch (e) {
+      this.logger.warn(`[CONFIRM] Fallback confirmation enumeration failed: ${e?.message}`)
+    }
+    return false
+  }
+
+  // Periodic reconciler for pending issuances
+  @Interval(30000)
+  async reconcilePendingIssuances(): Promise<void> {
+    try {
+      const keys = await this.redis.keys('issue:pending:*')
+      if (!keys || keys.length === 0) return
+      this.logger.log(`[RECONCILE] Found ${keys.length} pending issuance records`)
+      
+      for (const key of keys) {
+        try {
+          const userId = key.replace('issue:pending:', '')
+          const raw = await this.redis.get(key)
+          if (!raw) continue
+          const payload = JSON.parse(raw) as { signature: string; amount: number; createdAt: number }
+          
+          const confirmed = await this.confirmSignatureWithFallback(payload.signature)
+          if (!confirmed) {
+            this.logger.warn(`[RECONCILE] Still pending: user=${userId}, signature=${payload.signature}`)
+            continue
+          }
+          
+          const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { transactions: true } })
+          if (!user) {
+            this.logger.warn(`[RECONCILE] User not found for pending key ${key}`)
+            await this.redis.del(key)
+            continue
+          }
+          const transactions = this.transactionService.parseTransactions(user.transactions)
+          const updatedTransactions = this.transactionService.markTransactionsAsReceived(transactions)
+          await this.prisma.user.update({ where: { id: userId }, data: { transactions: updatedTransactions } })
+          await this.redis.del(key)
+          this.logger.log(`[RECONCILE] Finalized issuance for user=${userId}, signature=${payload.signature}`)
+        } catch (e) {
+          this.logger.error(`[RECONCILE] Error processing ${key}: ${e?.message}`)
+        }
+      }
+    } catch (e) {
+      this.logger.error(`[RECONCILE] Failed to scan pending issuances: ${e?.message}`)
+    }
+  }
 
 
   async findById(id: string | number): Promise<User> {
@@ -765,6 +837,40 @@ export class UserService {
     const MAX_RETRIES = 3
     let lastError: Error | undefined
     
+    // Helper: Redis key for pending issuance
+    const pendingKey = (id: string) => `issue:pending:${id}`
+    
+    // Helper: Try to confirm a transaction signature using multiple RPC endpoints
+    const confirmSignatureWithFallback = async (signature: string): Promise<boolean> => {
+      try {
+        const primaryCheck = await this.walletService.checkIsReceived(signature)
+        if (primaryCheck.exists && primaryCheck.isSuccessful && primaryCheck.isFinalized) {
+          return true
+        }
+      } catch (e) {
+        this.logger.warn(`[ISSUE TOKENS] Primary confirmation check failed for ${signature}: ${e?.message}`)
+      }
+      
+      try {
+        const rpcEndpoints = await this.solanaService.getAllRpcEndpoints()
+        for (const rpcUrl of rpcEndpoints) {
+          try {
+            const txData = await this.solanaService.getTransactionFromRpc(signature, rpcUrl)
+            if (txData && txData.meta && txData.meta.err === null && (txData.slot || txData.blockTime)) {
+              // Treat as confirmed/finalized enough to proceed
+              return true
+            }
+          } catch (inner) {
+            this.logger.warn(`[ISSUE TOKENS] RPC ${rpcUrl} confirmation check error for ${signature}: ${inner?.message}`)
+            continue
+          }
+        }
+      } catch (e) {
+        this.logger.warn(`[ISSUE TOKENS] Fallback confirmation enumeration failed: ${e?.message}`)
+      }
+      return false
+    }
+    
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         this.logger.log(`[ISSUE TOKENS] Attempt ${attempt}/${MAX_RETRIES} for user: ${userId}`)
@@ -797,6 +903,25 @@ export class UserService {
           return { success: false, amount: 0 }
         }
         
+        // Check existing pending issuance (idempotency)
+        const existingPendingRaw = await this.redis.get(pendingKey(userId))
+        if (existingPendingRaw) {
+          const existingPending = JSON.parse(existingPendingRaw) as { signature: string; amount: number; createdAt: number }
+          this.logger.warn(`[ISSUE TOKENS] Found existing pending issuance for user ${userId}. Signature: ${existingPending.signature}, Amount: ${existingPending.amount}`)
+          
+          const confirmed = await confirmSignatureWithFallback(existingPending.signature)
+          if (confirmed) {
+            this.logger.log(`[ISSUE TOKENS] Pending issuance confirmed on retry for user ${userId}. Marking as received.`)
+            const updatedTransactions = this.transactionService.markTransactionsAsReceived(transactions)
+            await this.prisma.user.update({ where: { id: userId }, data: { transactions: updatedTransactions } })
+            await this.redis.del(pendingKey(userId))
+            return { success: true, amount: totalPending, signature: existingPending.signature }
+          }
+          // Not confirmed yet. Do not resend. Report pending.
+          this.logger.warn(`[ISSUE TOKENS] Confirmation still pending for user ${userId}. Avoiding duplicate send.`)
+          return { success: true, amount: existingPending.amount, signature: existingPending.signature }
+        }
+        
         // Check wallet balance
         const walletBalance = await this.walletService.getMintTokenBalance()
         this.logger.log(`[ISSUE TOKENS] Wallet balance: ${walletBalance}, Required: ${totalPending}`)
@@ -816,17 +941,22 @@ export class UserService {
         
         this.logger.log(`[ISSUE TOKENS] Tokens sent. Signature: ${signature}`)
         
-        // Update transactions using TransactionService - CRITICAL: Save immediately after successful send
-        const updatedTransactions = this.transactionService.markTransactionsAsReceived(transactions)
+        // Record pending issuance in Redis BEFORE confirmation to ensure idempotency
+        await this.redis.set(pendingKey(userId), JSON.stringify({ signature, amount: totalPending, createdAt: Date.now() }), 'EX', 60 * 30) // 30 min TTL
         
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: { transactions: updatedTransactions }
-        })
+        // Try to confirm the signature across RPC endpoints; do NOT fail issuance if confirmation path fails
+        const confirmed = await confirmSignatureWithFallback(signature)
+        if (confirmed) {
+          this.logger.log(`[ISSUE TOKENS] Confirmation succeeded for ${signature}. Marking as received.`)
+          const updatedTransactions = this.transactionService.markTransactionsAsReceived(transactions)
+          await this.prisma.user.update({ where: { id: userId }, data: { transactions: updatedTransactions } })
+          await this.redis.del(pendingKey(userId))
+          this.logger.log(`[ISSUE TOKENS] ✅ Successfully issued ${totalPending} tokens to user: ${userId}`)
+          return { success: true, amount: totalPending, signature }
+        }
         
-        this.logger.log(`[ISSUE TOKENS] Transaction records updated for user: ${userId}`)
-        this.logger.log(`[ISSUE TOKENS] ✅ Successfully issued ${totalPending} tokens to user: ${userId}`)
-        
+        // Confirmation did not succeed now; keep pending record and return success with pending confirmation
+        this.logger.warn(`[ISSUE TOKENS] Confirmation pending for ${signature}. Will not resend. Pending recorded.`)
         return { success: true, amount: totalPending, signature }
       } catch (error) {
         lastError = error
