@@ -57,7 +57,7 @@ export class TransactionService {
    */
   calculateTotalReceived(transactions: Transaction[]): number {
     return transactions
-      .filter((tx) => tx.isReceived && tx.coinsPurchased > 0)
+      .filter((tx) => tx.isSuccessful && tx.isReceived)
       .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
   }
 
