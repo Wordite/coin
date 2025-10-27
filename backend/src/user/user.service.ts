@@ -778,6 +778,7 @@ export class UserService {
   async getUsersStatistics(): Promise<{
     totalUsers: number
     usersWithPurchases: number
+    usersWithPendingTokens: number
     totalCoinsPurchased: number
     totalPendingTokens: number
     totalSpentSOL: number
@@ -799,6 +800,7 @@ export class UserService {
     let totalUsers = users.length
     let usersWithPurchases = 0
     let totalCoinsPurchased = 0
+    let usersWithPendingTokens = 0
     let totalPendingTokens = 0
     let totalSpentSOL = 0
     let totalSpentUSDT = 0
@@ -814,11 +816,16 @@ export class UserService {
       totalPendingTokens += userStats.totalPendingTokens
       totalSpentSOL += userStats.totalSpentSOL
       totalSpentUSDT += userStats.totalSpentUSDT
+
+      if (userStats.totalPendingTokens > 0) {
+        usersWithPendingTokens++
+      }
     })
 
     const result = {
       totalUsers,
       usersWithPurchases,
+      usersWithPendingTokens,
       totalCoinsPurchased,
       totalPendingTokens,
       totalSpentSOL,
