@@ -57,6 +57,11 @@ jobs:
             sudo iptables -C FORWARD -s 172.20.0.0/16 -d 172.20.0.0/16 -j ACCEPT 2>/dev/null || sudo iptables -I FORWARD -s 172.20.0.0/16 -d 172.20.0.0/16 -j ACCEPT
             sudo iptables -C DOCKER-USER -s 172.20.0.0/16 -d 172.20.0.0/16 -j ACCEPT 2>/dev/null || sudo iptables -I DOCKER-USER -s 172.20.0.0/16 -d 172.20.0.0/16 -j ACCEPT
 
+            echo "🗄️ Preparing backups directory..."
+            sudo mkdir -p /home/coin/backups
+            sudo chown 1001:1001 /home/coin/backups || true
+            sudo chmod 775 /home/coin/backups || true
+
             echo "🐳 Building and starting services..."
             docker compose -f docker-compose.yml --env-file .env.prod up -d --build
             
@@ -90,6 +95,9 @@ jobs:
             # Get the docker group GID from the container
             DOCKER_GID=$(docker exec backend getent group docker | cut -d: -f3) || echo "1002"
             sudo chown :$DOCKER_GID /var/run/docker.sock || echo "Docker group permissions set"
+
+            echo "🧪 Verifying backups directory after deploy..."
+            ls -la /home/coin/backups || true
             
             echo "✅ Deployment complete!"
             docker compose ps
