@@ -1,5 +1,6 @@
 import { useStageTimer } from '@/hooks/useStageTimer'
 import { Stage } from './ui/Stage'
+import { useSettings } from '@/hooks/useSettings'
 
 interface StageTimerProps {
   endDate: number
@@ -9,6 +10,17 @@ interface StageTimerProps {
 
 const StageTimer = ({ endDate, title = 'Presale ends in', timezone = 'UTC' }: StageTimerProps) => {
   const timeLeft = useStageTimer({ endDate: new Date(endDate) })
+  const { settings } = useSettings()
+
+  if (!settings?.presaleActive) {
+    return (
+      <div className='mt-[2rem] p-[1.188rem] rounded-xl bg-gray-transparent-10 border-1 border-stroke-light'>
+        <div className='flex items-center justify-center'>
+          <p className='text-[1rem] font-semibold text-white max-md:text-[1.875rem]'>Presale ended</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className='mt-[2rem] p-[1.188rem] rounded-xxl bg-gray-transparent-10 border-1 border-stroke-light'>

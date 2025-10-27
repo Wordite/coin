@@ -67,11 +67,8 @@ services:
         vault status >/dev/null 2>&1 && break || true;
         sleep 1;
       done;
-      echo 'Enabling solana kv (v2) at path=solana with retries...';
-      for i in $(seq 1 10); do
-        vault secrets enable -path=solana -version=2 kv && break || true;
-        sleep 1;
-      done;
+      echo 'Vault is ready, enabling solana kv (v2) at path=solana...';
+      vault secrets enable -path=solana -version=2 kv || echo 'KV already enabled';
       echo 'Verifying by writing a test key...';
       vault kv put solana/root-wallet init_check=ok || true;
       echo 'Listing secrets:';
