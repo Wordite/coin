@@ -31,6 +31,7 @@ const Presale = () => {
     handleCloseIssueModal,
     activeProcessId,
     showIssueModal,
+    setShowIssueModal,
     openSolscan
   } = usePresale()
 
@@ -67,7 +68,7 @@ const Presale = () => {
 
   // Use total statistics from all users, not just current page
   const totalPendingTokens = usersStatistics?.totalPendingTokens || 0
-  const usersWithPendingTokens = usersStatistics?.usersWithPurchases || 0
+  const usersWithPendingTokens = usersStatistics?.usersWithPendingTokens || 0
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">

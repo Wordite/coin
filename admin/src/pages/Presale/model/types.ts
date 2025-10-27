@@ -4,6 +4,7 @@ import type { UserWithTransactions } from '@/services/usersApi'
 export interface UsersStatistics {
   totalUsers: number
   usersWithPurchases: number
+  usersWithPendingTokens: number
   totalCoinsPurchased: number
   totalPendingTokens: number
   totalSpentSOL: number

@@ -79,6 +79,7 @@ class UsersApiService {
   async getUsersStatistics(): Promise<{
     totalUsers: number
     usersWithPurchases: number
+    usersWithPendingTokens: number
     totalCoinsPurchased: number
     totalPendingTokens: number
     totalSpentSOL: number

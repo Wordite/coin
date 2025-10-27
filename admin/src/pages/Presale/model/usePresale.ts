@@ -226,6 +226,7 @@ export const usePresale = () => {
     filterType,
     activeProcessId,
     showIssueModal,
+    setShowIssueModal,
     
     // Actions
     loadInitialData,
