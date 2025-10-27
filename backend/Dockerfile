@@ -2,7 +2,7 @@
 FROM node:22-alpine AS base
 # Prisma requires OpenSSL; sharp requires vips and build tools on Alpine
 # Also install docker-compose for documentation rebuild
-RUN apk add --no-cache openssl ca-certificates vips-dev docker-compose curl
+RUN apk add --no-cache openssl ca-certificates vips-dev docker-compose curl postgresql-client gzip
 
 # Install dependencies only when needed
 FROM base AS deps

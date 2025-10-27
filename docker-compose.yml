@@ -89,6 +89,7 @@ services:
       - ./docs:/home/coin/docs:ro
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - ./scripts/rebuild-docs.sh:/app/scripts/rebuild-docs.sh:rw
+      - /home/coin/backups:/home/coin/backups
     depends_on:
       postgres:
         condition: service_healthy
