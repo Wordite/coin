@@ -62,30 +62,43 @@ export class TransactionService {
   }
 
   /**
-   * Calculate total pending tokens (successful but not received)
+   * Calculate total pending tokens with temporal ordering.
+   * Rules:
+   *  - Pending comes from successful purchases that are not received yet (positive coins only).
+   *  - Negative ADMIN_ADJUSTMENT (received) may reduce currently pending amount at the time it occurs,
+   *    but cannot push pending below zero. This prevents old large negative adjustments from wiping out
+   *    new pending purchases made later.
    */
   calculatePendingTokens(transactions: Transaction[]): number {
-    // Base pending = sum of successful transactions that are not yet received
-    // Additionally, take into account admin adjustments that decrease coins
-    // (txHash === 'ADMIN_ADJUSTMENT' and coinsPurchased < 0). Those should
-    // immediately reduce the pending amount even if they are marked as received.
-    const pendingBase = transactions
-      .filter((tx) => tx.isSuccessful && !tx.isReceived)
-      .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
+    const txs = [...transactions]
+      .filter((t) => t && typeof t === 'object')
+      .sort((a, b) => {
+        const ta = new Date(a.timestamp || 0).getTime()
+        const tb = new Date(b.timestamp || 0).getTime()
+        return ta - tb
+      })
 
-    const negativeAdjustments = transactions
-      .filter(
-        (tx) =>
-          tx.isSuccessful &&
-          tx.isReceived &&
-          tx.txHash === 'ADMIN_ADJUSTMENT' &&
-          tx.coinsPurchased < 0
-      )
-      .reduce((sum, tx) => sum + tx.coinsPurchased, 0)
+    let pending = 0
+    for (const tx of txs) {
+      if (!tx.isSuccessful) continue
 
-    // pendingBase is >= 0; negativeAdjustments is <= 0.
-    // Ensure pending amount is never negative.
-    return Math.max(0, pendingBase + negativeAdjustments)
+      // Add positive, successful, not-received purchases to pending
+      if (!tx.isReceived && tx.coinsPurchased > 0) {
+        pending += tx.coinsPurchased
+        continue
+      }
+
+      // Apply negative admin adjustments to reduce current pending only
+      if (
+        tx.isReceived &&
+        tx.txHash === 'ADMIN_ADJUSTMENT' &&
+        tx.coinsPurchased < 0
+      ) {
+        pending = Math.max(0, pending + tx.coinsPurchased)
+      }
+    }
+
+    return Math.max(0, pending)
   }
 
   /**
