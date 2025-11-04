@@ -4,20 +4,26 @@ import { ContactForm } from '@/features/ContactForm/ContactForm'
 import { ContactInfo } from '@/entities/ContactInfo'
 import { BackgroundLight } from '@/shared/BackgroundLight/BackgroundLight'
 import { useSectionData } from '@/hooks/useSectionData'
+import { useIsDesktopSafari } from '@/hooks/useIsDesktopSafari'
 
 const Contact = React.memo(() => {
   const { data } = useSectionData('SocialsAndContact')
+  const isDesktopSafari = useIsDesktopSafari()
 
   return (
     <section id='contact' className='mt-[6.25rem] relative'>
-      <BackgroundLight
-        className='!w-[6rem] !h-[6rem] blur-[6.125rem] bottom-[2rem] left-[15.938rem]'
-        color='green'
-      />
-      <BackgroundLight
-        className='!w-[6rem] !h-[6rem]  bottom-[-9rem] right-[15.938rem]'
-        color='purple'
-      />
+      {!isDesktopSafari && (
+        <>
+          <BackgroundLight
+            className='!w-[6rem] !h-[6rem] blur-[6.125rem] bottom-[2rem] left-[15.938rem]'
+            color='green'
+          />
+          <BackgroundLight
+            className='!w-[6rem] !h-[6rem]  bottom-[-9rem] right-[15.938rem]'
+            color='purple'
+          />
+        </>
+      )}
 
       <SectionHead title={data?.title} withUnderline underlineWidth='w-[7.813rem]' />
 

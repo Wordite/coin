@@ -5,10 +5,12 @@ import { useFAQStore } from '@/app/store/faqStore'
 import { BackgroundLight } from '@/shared/BackgroundLight/BackgroundLight'
 import { useSectionData } from '@/hooks/useSectionData'
 import { FAQSkeleton } from './ui/FAQSkeleton'
+import { useIsDesktopSafari } from '@/hooks/useIsDesktopSafari'
 
 const FAQ = React.memo(() => {
   const { openQuestions, toggleQuestion } = useFAQStore()
   const { data, isLoading, error } = useSectionData('FAQ')
+  const isDesktopSafari = useIsDesktopSafari()
 
   const createToggleHandler = useCallback(
     (index: number) => {
@@ -26,11 +28,15 @@ const FAQ = React.memo(() => {
 
   return (
     <section id='faq' className='mt-[6.25rem] relative transform-gpu will-change-contents max-md:mt-[12rem]'>
-      <BackgroundLight
-        className='!w-[6rem] !h-[6rem] blur-[6.125rem] bottom-[-3rem] left-[15.938rem] max-md:w-[6rem] max-md:h-[6rem]'
-        color='purple'
-      />
-      <BackgroundLight className='!w-[6rem] !h-[6rem]  top-1/2 right-[15.938rem] max-md:w-[6rem] max-md:h-[6rem]' color='green' />
+      {!isDesktopSafari && (
+        <>
+          <BackgroundLight
+            className='!w-[6rem] !h-[6rem] blur-[6.125rem] bottom-[-3rem] left-[15.938rem] max-md:w-[6rem] max-md:h-[6rem]'
+            color='purple'
+          />
+          <BackgroundLight className='!w-[6rem] !h-[6rem]  top-1/2 right-[15.938rem] max-md:w-[6rem] max-md:h-[6rem]' color='green' />
+        </>
+      )}
       <SectionHead
         title={data.title}
         withUnderline

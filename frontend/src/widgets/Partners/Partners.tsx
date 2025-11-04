@@ -3,18 +3,22 @@ import { BackgroundLight } from '@/shared/BackgroundLight/BackgroundLight'
 import styles from './Partners.module.scss'
 import { useSectionData } from '@/hooks/useSectionData'
 import { Section } from '@/services/section.service'
+import { useIsDesktopSafari } from '@/hooks/useIsDesktopSafari'
 
 const Partners = React.memo(() => {
   const { data } = useSectionData('Partners')
+  const isDesktopSafari = useIsDesktopSafari()
 
   return (
     <section id='partners' className='h-[8.75rem] mt-[12.8rem] rounded-xxl'>
       <div className='absolute left-0 w-screen h-[8.75rem] bg-gray-transparent-10 rounded-xxl overflow-hidden'>
         <div className='min-w-full h-[7.5rem] relative top-1/2 -translate-y-1/2 overflow-hidden'>
-          <BackgroundLight
-            color='green'
-            className='left-[60%] -top-3/4 blur-[7.5rem] -translate-x-1/2 -translate-y-1/2'
-          />
+          {!isDesktopSafari && (
+            <BackgroundLight
+              color='green'
+              className='left-[60%] -top-3/4 blur-[7.5rem] -translate-x-1/2 -translate-y-1/2'
+            />
+          )}
 
           <div className={styles.sliderContainer}>
             <div className={styles.sliderTrack}>

@@ -10,18 +10,20 @@ import { useTransformLinksRow } from './model/useTransformLinksRow'
 import { FooterSkeleton } from './ui/FooterSkeleton'
 import { useSettings } from '@/hooks'
 import { Section } from '@/services/section.service'
+import { useIsDesktopSafari } from '@/hooks/useIsDesktopSafari'
 
 
 const Footer = () => {
   const { data, isLoading, error } = useSectionData('Footer')
   const { transformLinks } = useTransformLinksRow()
   const { settings, isLoading: isSettingsLoading, error: isSettingsError } = useSettings()
+  const isDesktopSafari = useIsDesktopSafari()
 
   if (isLoading || error || isSettingsLoading || isSettingsError) return <FooterSkeleton />
 
   return (
     <footer id='footer' className='mt-[7rem] pb-[4.063rem] max-md:mt-[12rem] max-md:pb-[6rem]'>
-      <FooterBackground />
+      {!isDesktopSafari && <FooterBackground />}
       <TitleUnderline color='purple' width='w-[48.5rem] max-md:w-[90%] mx-auto' />
 
       <div className='mt-[5.625rem] max-md:mt-[8rem] flex max-md:flex-col max-md:gap-[4.5rem]'>

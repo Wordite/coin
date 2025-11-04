@@ -4,9 +4,11 @@ import { Advantage } from '@/entities/Advantage/Advantage'
 import { SectionHead } from '@/shared/SectionHead/SectionHead'
 import { useSectionData } from '@/hooks/useSectionData'
 import { OurBenefitsSkeleton } from './ui/OurBenefitsSkeleton'
+import { useIsDesktopSafari } from '@/hooks/useIsDesktopSafari'
 
 const OurBenefits = React.memo(() => {
   const { data, isLoading, error } = useSectionData('Benefits')
+  const isDesktopSafari = useIsDesktopSafari()
   
   if (isLoading || error) {
     return <OurBenefitsSkeleton />
@@ -14,7 +16,7 @@ const OurBenefits = React.memo(() => {
 
   return (
     <section id='our-benefits' className='flex flex-col mt-[6rem]'>
-      <OurBenefitsBackground />
+      {!isDesktopSafari && <OurBenefitsBackground />}
 
       <SectionHead
         title={data?.title}

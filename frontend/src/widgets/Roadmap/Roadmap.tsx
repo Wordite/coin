@@ -5,23 +5,29 @@ import Button from '@/shared/Button'
 import { BackgroundLight } from '@/shared/BackgroundLight/BackgroundLight'
 import { useSectionData } from '@/hooks/useSectionData'
 import { RoadmapSkeleton } from './ui/RoadmapSkeleton'
+import { useIsDesktopSafari } from '@/hooks/useIsDesktopSafari'
 
 const Roadmap = React.memo(() => {
   const { data, isLoading, error } = useSectionData('Roadmap')
+  const isDesktopSafari = useIsDesktopSafari()
 
   if (isLoading || error) return <RoadmapSkeleton />
 
   return (
     <section id='roadmap' className='mt-[18.75rem] relative max-md:mt-[14rem]'>
-      <BackgroundLight
-        className='!w-[10rem] !h-[10rem] blur-[8.125rem] top-[10rem] left-[15.938rem] max-md:w-[6rem] max-md:h-[6rem]'
-        color='purple'
-      />
+      {!isDesktopSafari && (
+        <>
+          <BackgroundLight
+            className='!w-[10rem] !h-[10rem] blur-[8.125rem] top-[10rem] left-[15.938rem] max-md:w-[6rem] max-md:h-[6rem]'
+            color='purple'
+          />
 
-      <BackgroundLight
-        className='!w-[6rem] !h-[6rem] blur-[6.125rem] bottom-[2rem] right-[15.938rem] max-md:w-[6rem] max-md:h-[6rem]'
-        color='green'
-      />
+          <BackgroundLight
+            className='!w-[6rem] !h-[6rem] blur-[6.125rem] bottom-[2rem] right-[15.938rem] max-md:w-[6rem] max-md:h-[6rem]'
+            color='green'
+          />
+        </>
+      )}
 
       <SectionHead title={data.title} withUnderline underlineWidth='w-[7.813rem]' />
       <RoadmapItems className='mt-[2.5rem]' />

@@ -20,7 +20,7 @@ import { useToast } from '@/shared/Toast'
 import { useWalletStore } from '@/app/store/walletStore'
 import { useServerAccount } from './model/useServerAccount'
 import { ReactSVG } from 'react-svg'
-import { useIsSafari } from './model/useIsSafari'
+// import { useIsSafari } from './model/useIsSafari'
 import './Header.scss'
 
 const Header = () => {
@@ -37,7 +37,9 @@ const Header = () => {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useHeaderStore()
   const { showError} = useToast()
   useServerAccount()
-  const isSafari = useIsSafari()
+  
+  const isSafari = false
+  // const isSafari = useIsSafari()
 
   useEffect(() => {
     if (!isMobile && isMobileMenuOpen) {

@@ -10,11 +10,13 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useSettings } from '@/hooks/useSettings'
 import { ReactSVG } from 'react-svg'
 import { Section } from '@/services/section.service'
+import { useIsDesktopSafari } from '@/hooks/useIsDesktopSafari'
 
 const Tokenomics = React.memo(() => {
   const { data, isLoading, error } = useSectionData('Tokenomics')
   const { settings, isLoading: isSettingsLoading, error: isSettingsError } = useSettings()
   const isMobile = useIsMobile()
+  const isDesktopSafari = useIsDesktopSafari()
 
   if (isLoading || error || isSettingsLoading || isSettingsError) {
     return <TokenomicsSkeleton />
@@ -24,7 +26,7 @@ const Tokenomics = React.memo(() => {
   
   return (
     <>
-      <TokenomicsBackground />
+      {!isDesktopSafari && <TokenomicsBackground />}
       <section id='tokenomics' className='mt-[14.875rem]'>
         <SectionHead title={data.title} withUnderline underlineWidth='w-[7.813rem]' />
 
