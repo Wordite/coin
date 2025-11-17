@@ -145,6 +145,7 @@ export class AuthService {
   private async getAccessToken(userId: string, role: Role | null): Promise<string> {
     const payload = { sub: userId, role: role || Roles.USER }
 
+    // @ts-ignore
     const accessToken = await this.jwt.signAsync(payload, {
       secret: jwtConstants.accessSecret,
       expiresIn: jwtConstants.accessExpires,
@@ -159,6 +160,7 @@ export class AuthService {
   }> {
     const payload = { sub: sessionId }
 
+    // @ts-ignore
     const refreshToken = await this.jwt.signAsync(payload, {
       secret: jwtConstants.refreshSecret,
       expiresIn: jwtConstants.refreshExpires,

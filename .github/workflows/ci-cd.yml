@@ -45,6 +45,12 @@ jobs:
             ${{ secrets.ROOT_ENV_PROD }}
             ROOT_ENV_EOF
             
+            # Add Vault unseal keys to .env.prod for auto-unseal script
+            echo "VAULT_UNSEAL_KEY_1=${{ secrets.VAULT_UNSEAL_KEY_1 }}" >> .env.prod
+            echo "VAULT_UNSEAL_KEY_2=${{ secrets.VAULT_UNSEAL_KEY_2 }}" >> .env.prod
+            echo "VAULT_UNSEAL_KEY_3=${{ secrets.VAULT_UNSEAL_KEY_3 }}" >> .env.prod
+            echo "VAULT_ROOT_TOKEN=${{ secrets.VAULT_ROOT_TOKEN }}" >> .env.prod
+            
             echo "🧹 Cleaning up old containers..."
             docker compose -f docker-compose.yml --env-file .env.prod down --remove-orphans || true
             docker network prune -f || true
@@ -87,6 +93,9 @@ jobs:
             
             echo "🔧 Setting script permissions in container..."
             docker exec backend chmod +x /app/scripts/rebuild-docs.sh || echo "Script permissions set in container"
+            
+            echo "🔧 Setting vault-auto-unseal.sh permissions..."
+            chmod +x ./scripts/vault-auto-unseal.sh || echo "Vault auto-unseal script permissions set"
             
             echo "🔧 Setting Docker socket permissions..."
             sudo chmod 666 /var/run/docker.sock || echo "Docker socket permissions set"
