@@ -13,7 +13,7 @@ NC='\033[0m' # No Color
 
 # Log file
 LOG_FILE="${LOG_FILE:-/var/log/vault-auto-unseal.log}"
-PROJECT_PATH="${PROJECT_PATH:-/home/coin/coin_presale}"
+PROJECT_PATH="${PROJECT_PATH:-/home/coin}"
 
 # Function to log messages
 log() {
