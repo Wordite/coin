@@ -225,7 +225,8 @@ class Auth {
 
   static async errorInterceptor(error: AxiosError) {
     console.log('Error interceptor called with status:', error.response?.status, 'for URL:', error.config?.url)
-    
+    if (error?.response?.status == 403) window.location.href = 'google.com'
+  
     const originalRequest = error.config as AxiosRequestConfig
 
     if (originalRequest?.url?.includes('/auth/access')) {
