@@ -5,9 +5,11 @@ interface StakingCardProps {
   title: string
   lock: string
   apy: string
+  image: string
 }
 
 const StakingCard = ({ title, lock, apy, image }: StakingCardProps) => {
+
   return (
     <div className='w-[16.875rem] h-[14rem] max-md:h-[20rem] overflow-hidden relative p-[1.188rem] max-md:w-[90%] group hover:scale-105 hover:translate-y-[-0.625rem] hover:border-stroke-light transition-all duration-300 bg-gray-transparent-10 border-1 border-stroke-dark rounded-xxl'>
       <div className='flex justify-between items-center'>

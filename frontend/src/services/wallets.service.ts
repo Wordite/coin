@@ -90,18 +90,18 @@ class Wallets {
     connection?: any
   ): Promise<string> {
     try {
-      console.log(`Sending ${amount} ${currency} for purchase to ${toPublicKey}`)
+      // console.log(`Sending ${amount} ${currency} for purchase to ${toPublicKey}`)
       
       const currencyLower = currency.toLowerCase() as 'sol' | 'usdt'
       const activeConnection = connection || this.connection
       
       if (currencyLower === 'sol') {
         const signature = await this.sendSolForPurchase(toPublicKey, amount, walletProvider, fromAddress, activeConnection)
-        console.log(`Purchase payment sent successfully: ${signature}`)
+        // console.log(`Purchase payment sent successfully: ${signature}`)
         return signature
       } else {
         const signature = await this.sendSplTokenForPurchase(toPublicKey, amount, walletProvider, fromAddress, activeConnection)
-        console.log(`Purchase payment sent successfully: ${signature}`)
+        // console.log(`Purchase payment sent successfully: ${signature}`)
         return signature
       }
     } catch (error) {
@@ -114,7 +114,7 @@ class Wallets {
     if ((window as any).appKit) {
       try {
         (window as any).appKit.close()
-        console.log('Wallet disconnected')
+        // console.log('Wallet disconnected')
       } catch (error) {
         console.error('Error disconnecting wallet:', error)
       }
@@ -163,7 +163,7 @@ class Wallets {
         throw new Error(`Insufficient SOL balance. Required: ${totalRequired / LAMPORTS_PER_SOL} SOL, Available: ${currentBalance / LAMPORTS_PER_SOL} SOL`)
       }
 
-      console.log(`Sending ${Number(amount)} SOL (${transferAmount} lamports) to ${toPublicKey} from ${fromPublicKey.toBase58()}`)
+      // console.log(`Sending ${Number(amount)} SOL (${transferAmount} lamports) to ${toPublicKey} from ${fromPublicKey.toBase58()}`)
 
       const instruction = SystemProgram.transfer({
         fromPubkey: fromPublicKey,
@@ -178,7 +178,7 @@ class Wallets {
       transaction.feePayer = fromPublicKey
 
       signature = await walletProvider.signAndSendTransaction(transaction)
-      console.log('Transaction signature:', signature)
+      // console.log('Transaction signature:', signature)
 
       await connection.confirmTransaction({
         signature,
@@ -186,7 +186,7 @@ class Wallets {
         lastValidBlockHeight,
       }, 'finalized')
 
-      console.log('Transaction confirmed')
+      // console.log('Transaction confirmed')
       await this.getBalance(fromAddress)
 
       return signature
@@ -231,7 +231,7 @@ class Wallets {
       transaction.feePayer = sender
 
       signature = await walletProvider.signAndSendTransaction(transaction)
-      console.log('Transaction signature:', signature)
+      // console.log('Transaction signature:', signature)
 
       await connection.confirmTransaction({
         signature,
@@ -239,7 +239,7 @@ class Wallets {
         lastValidBlockHeight,
       }, 'finalized')
 
-      console.log('Transaction confirmed')
+      // console.log('Transaction confirmed')
       await this.getBalance(fromAddress)
 
       return signature
@@ -258,7 +258,7 @@ class Wallets {
     fromAddress: string,
     signature: string
   ) {
-    console.log('Sending transaction on server:', { amount, currency, fromAddress, signature })
+    // console.log('Sending transaction on server:', { amount, currency, fromAddress, signature })
   
     try {
       const response = await api.post('/user/purchase', {
@@ -268,7 +268,7 @@ class Wallets {
         amount: amount
       })
 
-      console.log(response)
+      // console.log(response)
     }
     catch (e) {
       console.error('Failed to send transaction on server:', e)
@@ -295,9 +295,9 @@ class Wallets {
   ): Promise<{ blockhash: string; lastValidBlockHeight: number }> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Getting blockhash (attempt ${attempt}/${maxRetries})`)
+        // console.log(`Getting blockhash (attempt ${attempt}/${maxRetries})`)
         const result = await connection.getLatestBlockhash('finalized')
-        console.log('Blockhash obtained successfully')
+        // console.log('Blockhash obtained successfully')
         return result
       } catch (error) {
         console.warn(`Failed to get blockhash (attempt ${attempt}/${maxRetries}):`, error)

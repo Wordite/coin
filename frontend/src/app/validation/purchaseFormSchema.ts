@@ -28,7 +28,7 @@ export const createPurchaseFormSchema = (
       .required('Receive amount is required')
       .test('min-amount', `Minimum amount is ${formatNumber(minBuyAmount)}`, (value) => {
         if (value === undefined || value === null) return false
-        console.log('value', value)
+        // console.log('value', value)
         const num = value
         return num >= minBuyAmount
       })

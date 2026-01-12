@@ -8,6 +8,8 @@ import { StakingSkeleton } from './ui/StakingSkeleton'
 const Staking = React.memo(() => {
   const { data, isLoading, error } = useSectionData('Staking')
 
+  console.log(data)
+
   if (isLoading || error) {
     return <StakingSkeleton />
   }
@@ -23,7 +25,7 @@ const Staking = React.memo(() => {
 
       <div className='flex justify-between mt-[4.375rem] max-md:gap-[2rem] max-md:justify-center max-md:flex-col max-md:items-center'>
         
-        {data.tiers.map(({textField1: title, textField2: lock, textField3: apy, textField4: image }: {textField1: string, textField2: string, textField3: string, textField4: string}) => (
+        {data.tiers.map(({textField1: title, textField2: lock, textField3: apy, image }: {textField1: string, textField2: string, textField3: string, image: string }) => (
           <StakingCard key={title} title={title} lock={lock} apy={apy} image={image} />
         ))}
       </div>

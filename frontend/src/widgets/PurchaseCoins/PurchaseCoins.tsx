@@ -61,7 +61,7 @@ const PurchaseCoins = () => {
     // if (data.pay > currentBalance) return showError(`You don't have enough ${payCoin}`)
 
     try {
-      console.log('Purchase form data:', data)  
+      // console.log('Purchase form data:', data)  
       const payAmount = data.pay
       
       const signature = await purchaseCoins({
@@ -72,7 +72,7 @@ const PurchaseCoins = () => {
 
       if (signature) {
         reset()
-        console.log('Purchase completed with signature:', signature)
+        // console.log('Purchase completed with signature:', signature)
       }
     } catch (error) {
       console.error('Error purchasing coins:', error)

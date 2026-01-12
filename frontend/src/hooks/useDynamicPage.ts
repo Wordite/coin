@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 
 const useDynamicPage = () => {
   const { url } = useParams()
-  console.log('url', url)
+  // console.log('url', url)
   if (!url) return { data: null, isLoading: false, isNotFound: true }
 
   const { data, isLoading, error } = useQuery({
@@ -13,9 +13,9 @@ const useDynamicPage = () => {
     select: (data) => data.data.data.content.content,
   })
 
-  console.log(data)
-  console.log('error', error)
-  console.log('isLoading', isLoading)
+  // console.log(data)
+  // console.log('error', error)
+  // console.log('isLoading', isLoading)
   return { data, isLoading, isNotFound: !isLoading && error }
 }
 
