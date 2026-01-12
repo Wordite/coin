@@ -68,6 +68,11 @@ jobs:
             sudo chown 1001:1001 /home/coin/backups || true
             sudo chmod 775 /home/coin/backups || true
 
+            echo "🔧 Detecting Docker socket GID for container access..."
+            DOCKER_GID=$(stat -c '%g' /var/run/docker.sock)
+            echo "Docker socket GID: $DOCKER_GID"
+            echo "DOCKER_GID=$DOCKER_GID" >> .env.prod
+
             echo "🐳 Building and starting services..."
             docker compose -f docker-compose.yml --env-file .env.prod up -d --build
             
@@ -97,13 +102,8 @@ jobs:
             echo "🔧 Setting vault-auto-unseal.sh permissions..."
             chmod +x ./scripts/vault-auto-unseal.sh || echo "Vault auto-unseal script permissions set"
             
-            echo "🔧 Setting Docker socket permissions..."
-            sudo chmod 666 /var/run/docker.sock || echo "Docker socket permissions set"
-            
-            echo "🔧 Setting Docker group permissions..."
-            # Get the docker group GID from the container
-            DOCKER_GID=$(docker exec backend getent group docker | cut -d: -f3) || echo "1002"
-            sudo chown :$DOCKER_GID /var/run/docker.sock || echo "Docker group permissions set"
+            echo "🔧 Verifying Docker socket access..."
+            docker exec backend docker version --format '{{.Server.Version}}' && echo "✅ Docker socket accessible from backend container" || echo "⚠️ Docker socket not accessible"
 
             echo "🧪 Verifying backups directory after deploy..."
             ls -la /home/coin/backups || true
