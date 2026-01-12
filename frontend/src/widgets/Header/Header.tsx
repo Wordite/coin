@@ -77,7 +77,7 @@ const Header = () => {
                 src={Section.getImageUrl(settings!.siteLogo)}
                 className='w-full h-full'
               /> */}
-              <span className='text-white text-[1.35rem] max-md:text-[1.5rem] font-semibold'>{settings!.siteName}</span>
+              <span className='text-white text-[1.35rem] max-md:text-[1.8rem] font-semibold'>{settings!.siteName}</span>
             </div>
           </AnchorLink>
 
