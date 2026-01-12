@@ -1,5 +1,4 @@
 import Button from '@/shared/Button'
-import PlayIcon from '@/assets/icons/play.svg'
 import { useSectionData } from '@/hooks/useSectionData'
 import HeroInformationSkeleton from './ui/HeroInformationSkeleton'
 import { useSettings } from '@/hooks'
@@ -8,6 +7,7 @@ import { Section } from '@/services/section.service'
 const HeroInformation = () => {
   const { data, isLoading, error } = useSectionData('Hero')
   const { settings } = useSettings()
+
   if (isLoading || error) return <HeroInformationSkeleton />
 
   return (
@@ -33,17 +33,6 @@ const HeroInformation = () => {
           className='w-[12.8rem] h-[3.43rem] max-md:w-full max-md:h-[4.62rem]'
         >
           Documentation
-        </Button>
-
-        <Button
-          isLink
-          to={data?.videoUrl}
-          target='_blank'
-          color='dark'
-          className='w-[12.8rem] h-[3.43rem] max-md:w-full max-md:h-[4.62rem]'
-        >
-          <PlayIcon className='w-[1.688rem] h-[1.688rem]' />
-          Video Intro
         </Button>
       </div>
     </div>

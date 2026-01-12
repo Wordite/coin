@@ -6,9 +6,15 @@ const HeroInformationSkeleton = () => {
 
   return (
     <div className='max-md:h-screen flex flex-col max-md:justify-center'>
+      {/* Logo skeleton */}
+      <Skeleton
+        height='14rem'
+        width='14rem'
+        className='max-md:w-[15rem] max-md:h-[15rem] mb-[2rem]'
+      />
+
       {/* Title skeleton */}
       <div className='max-md:mt-0 pb-[.313rem]'>
-        <Skeleton height='4rem' width='36rem' className='max-md:h-[4rem] max-md:w-[90%] mb-2' />
         <Skeleton height='4rem' width='36rem' className='max-md:h-[4rem] max-md:w-[90%] mb-2' />
         <Skeleton height='4rem' width='28rem' className='max-md:h-[4rem] max-md:w-[80%]' />
       </div>
