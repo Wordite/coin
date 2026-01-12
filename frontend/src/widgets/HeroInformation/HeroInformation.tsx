@@ -14,7 +14,7 @@ const HeroInformation = () => {
     <div className='max-md:min-h-screen flex flex-col max-md:justify-center'>
       <img
         src={Section.getImageUrl(settings!.siteLogo)}
-        className='w-[14rem] h-[14rem] max-md:w-[10rem]  max-md:h-[10rem] mb-[2rem]'
+        className='w-[14rem] h-[14rem] max-md:w-[20rem] max-md:h-[20rem] mb-[2rem]'
       />
 
       <h1 className='text-[4rem] max-md:text-[4rem] font-bold max-md:mt-0 pb-[.313rem] leading-[105%] text-transparent bg-clip-text [background-image:var(--color-gradient-purple-blue)]'>
