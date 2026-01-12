@@ -80,7 +80,7 @@ const Header = () => {
                 src={Section.getImageUrl(settings!.siteLogo)}
                 className='w-full h-full'
               /> */}
-              <span className='text-white text-[1.35rem] max-md:text-[1.5rem] font-semibold'>
+              <span className='hidden max-md:blocktext-white text-[1.35rem] max-md:text-[1.5rem] font-semibold'>
                 {settings!.siteName}
               </span>
             </div>
