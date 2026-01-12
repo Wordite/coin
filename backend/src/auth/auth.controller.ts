@@ -31,7 +31,7 @@ export class AuthController {
   ) {}
 
   @Post('sign-in')
-  @Auth({ fingerprint: true, public: true, antiSpam: false })
+  @Auth({ fingerprint: true, public: true, antiSpam: true })
   async signIn(@Body() signInDto: SignInEmailDto, @Req() req: Request, @Res({ passthrough: true }) res: Response, @Headers('fingerprint') fingerprint: string) {
     const key = getFingerprintFromReq(req, fingerprint)
 

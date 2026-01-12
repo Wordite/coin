@@ -69,15 +69,20 @@ const Header = () => {
       >
         <div className='container flex items-center h-full justify-between'>
           <AnchorLink href={LinksConfig.Home} onClick={() => setIsMobileMenuOpen(false)}>
-            <div className='clickable cursor-pointer w-[3.188rem] h-[3.188rem]'>
-            <ReactSVG
+            <div className='clickable cursor-pointer'>
+            {/* <div className='clickable cursor-pointer w-[3.188rem] h-[3.188rem]'> */}
+            {/* Changed logo image to sitename */}
+            {/* <ReactSVG
                 beforeInjection={(svg) => {
                   svg.removeAttribute('width')
                   svg.removeAttribute('height')
                 }}
                 src={Section.getImageUrl(settings!.siteLogo)}
                 className='w-full h-full'
-              />
+              /> */}
+              <span className='text-white text-[1.35rem] max-md:text-[1.5rem] font-semibold'>
+                {settings!.siteName}
+              </span>
             </div>
           </AnchorLink>
 

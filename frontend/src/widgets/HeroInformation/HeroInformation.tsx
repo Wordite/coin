@@ -2,13 +2,26 @@ import Button from '@/shared/Button'
 import PlayIcon from '@/assets/icons/play.svg'
 import { useSectionData } from '@/hooks/useSectionData'
 import HeroInformationSkeleton from './ui/HeroInformationSkeleton'
+import { useSettings } from '@/hooks'
+import { ReactSVG } from 'react-svg'
+import { Section } from '@/services/section.service'
 
 const HeroInformation = () => {
   const { data, isLoading, error } = useSectionData('Hero')
+  const { settings } = useSettings()
   if (isLoading || error) return <HeroInformationSkeleton />
 
   return (
-    <div className='max-md:h-screen flex flex-col max-md:justify-center'>
+    <div className='max-md:min-h-screen flex flex-col max-md:justify-center'>
+      <ReactSVG
+        beforeInjection={(svg) => {
+          svg.removeAttribute('width')
+          svg.removeAttribute('height')
+        }}
+        src={Section.getImageUrl(settings!.siteLogo)}
+        className='w-[14rem] h-[14rem] max-md:w-[10rem]  max-md:h-[10rem] mb-[2rem]'
+      />
+
       <h1 className='text-[4rem] max-md:text-[4rem] font-bold max-md:mt-0 pb-[.313rem] leading-[105%] text-transparent bg-clip-text [background-image:var(--color-gradient-purple-blue)]'>
         {data?.title}
       </h1>
