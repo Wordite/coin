@@ -30,14 +30,11 @@ const Header = () => {
   const { settings, isLoading, error } = useSettings()
   const isMobile = useIsMobile()
   const [isConnecting, setIsConnecting] = useState(false)
-  const {
-    isLoading: isHeaderLinksLoading,
-    error: headerLinksError,
-  } = useSectionData('HeaderLinks')
+  const { isLoading: isHeaderLinksLoading, error: headerLinksError } = useSectionData('HeaderLinks')
   const { isMobileMenuOpen, setIsMobileMenuOpen } = useHeaderStore()
-  const { showError} = useToast()
+  const { showError } = useToast()
   useServerAccount()
-  
+
   const isSafari = false
   // const isSafari = useIsSafari()
 
@@ -68,11 +65,11 @@ const Header = () => {
         } ${isSafari ? 'safari' : ''}`}
       >
         <div className='container flex items-center h-full justify-between'>
-          <AnchorLink href={LinksConfig.Home} onClick={() => setIsMobileMenuOpen(false)}>
+          <AnchorLink className='max-md:block hidden' href={LinksConfig.Home} onClick={() => setIsMobileMenuOpen(false)}>
             <div className='clickable cursor-pointer'>
-            {/* <div className='clickable cursor-pointer w-[3.188rem] h-[3.188rem]'> */}
-            {/* Changed logo image to sitename */}
-            {/* <ReactSVG
+              {/* <div className='clickable cursor-pointer w-[3.188rem] h-[3.188rem]'> */}
+              {/* Changed logo image to sitename */}
+              {/* <ReactSVG
                 beforeInjection={(svg) => {
                   svg.removeAttribute('width')
                   svg.removeAttribute('height')
@@ -80,9 +77,7 @@ const Header = () => {
                 src={Section.getImageUrl(settings!.siteLogo)}
                 className='w-full h-full'
               /> */}
-              <span className='hidden max-md:blocktext-white text-[1.35rem] max-md:text-[1.5rem] font-semibold'>
-                {settings!.siteName}
-              </span>
+              <span className='text-white text-[1.35rem] max-md:text-[1.5rem] font-semibold'>{settings!.siteName}</span>
             </div>
           </AnchorLink>
 
