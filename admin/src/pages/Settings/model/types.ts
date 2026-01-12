@@ -3,14 +3,17 @@ export interface SettingsData {
   siteName: string
   siteLogo: string
   siteDescription: string
-  
+
   // Presale Settings
   presaleEndDateTime: string // ISO string format
   presaleActive: boolean
-  
+
   // Exchange Rates
   usdtToCoinRate: number
   solToCoinRate: number
+
+  // Receiver Wallet (for payments)
+  receiverWalletPublicKey: string
 }
 
 export interface RootWalletInfo {
@@ -61,6 +64,11 @@ export interface PresaleSettingsSectionProps {
 }
 
 export interface ExchangeRatesSectionProps {
+  settings: SettingsData
+  setSettings: (settings: SettingsData) => void
+}
+
+export interface ReceiverWalletSectionProps {
   settings: SettingsData
   setSettings: (settings: SettingsData) => void
 }

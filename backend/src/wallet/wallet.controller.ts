@@ -1,6 +1,7 @@
 import { Controller, Get, Post } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { VaultService } from '../vault/vault.service';
+import { SettingsService } from '../settings/settings.service';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { Roles } from '../auth/constants/roles.constant';
 
@@ -8,12 +9,19 @@ import { Roles } from '../auth/constants/roles.constant';
 export class WalletController {
   constructor(
     private readonly walletService: WalletService,
-    private readonly vaultService: VaultService
+    private readonly vaultService: VaultService,
+    private readonly settingsService: SettingsService
   ) {}
 
   @Get('public-key')
-  @Auth({ public: true, antiSpam: false }) // TODO: Remove antiSpam: false
+  @Auth({ public: true, antiSpam: true })
   async getPublicKey() {
+    // First check if there's a configured receiver wallet
+    const receiverWallet = await this.settingsService.getReceiverWalletPublicKey()
+    if (receiverWallet) {
+      return { publicKey: receiverWallet }
+    }
+    // Fallback to root wallet public key
     const publicKey = await this.walletService.getPublicKey()
     return { publicKey }
   }

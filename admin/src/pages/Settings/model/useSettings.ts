@@ -14,6 +14,7 @@ export const useSettings = () => {
     presaleActive: false,
     usdtToCoinRate: 0,
     solToCoinRate: 0,
+    receiverWalletPublicKey: '',
   })
   
   const [presaleSettings, setPresaleSettings] = useState<CoinPresaleSettings>({

@@ -8,6 +8,7 @@ import {
   ExchangeRatesSection,
   CoinSettingsSection,
   RpcEndpointsSection,
+  ReceiverWalletSection,
   WalletModal,
   DeleteWalletModal,
   useSettings
@@ -148,6 +149,12 @@ const Settings = () => {
       <RpcEndpointsSection
         presaleSettings={presaleSettings}
         setPresaleSettings={setPresaleSettings}
+      />
+
+      {/* Receiver Wallet */}
+      <ReceiverWalletSection
+        settings={settings}
+        setSettings={setSettings}
       />
 
           {/* Vault Root Wallet Management */}

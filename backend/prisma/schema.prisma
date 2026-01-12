@@ -163,6 +163,9 @@ model Settings {
   usdtToCoinRate Float @default(0.001) @map("usdt_to_coin_rate")
   solToCoinRate  Float @default(0.0001) @map("sol_to_coin_rate")
 
+  // Wallet for receiving payments (separate from root wallet)
+  receiverWalletPublicKey String? @map("receiver_wallet_public_key")
+
   @@map("settings")
 }
 

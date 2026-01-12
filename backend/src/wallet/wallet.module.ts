@@ -6,9 +6,11 @@ import { VaultModule } from '../vault/vault.module';
 import { SessionModule } from '../session/session.module';
 import { AuthModule } from '../auth/auth.module';
 import { CoinModule } from '../coin/coin.module';
+import { SettingsModule } from '../settings/settings.module';
+import { AntiSpamModule } from '../anti-spam/anti-spam.module';
 
 @Module({
-  imports: [forwardRef(() => SolanaModule), VaultModule, SessionModule, forwardRef(() => AuthModule), forwardRef(() => CoinModule)],
+  imports: [forwardRef(() => SolanaModule), VaultModule, SessionModule, forwardRef(() => AuthModule), forwardRef(() => CoinModule), SettingsModule, AntiSpamModule],
   controllers: [WalletController],
   providers: [WalletService],
   exports: [WalletService],

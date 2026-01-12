@@ -13,7 +13,7 @@ const StakingSkeleton = () => {
 
       <div className='flex justify-between mt-[4.375rem] max-md:gap-[2rem] max-md:justify-center max-md:flex-col max-md:items-center'>
         {Array.from({ length: 5 }).map((_, index) => (
-          <div key={index} className='w-[16.875rem] h-[8.375rem] max-md:h-[10.23rem] p-[1.188rem] bg-gray-transparent-10 border-1 border-stroke-dark rounded-xxl max-md:w-[90%]'>
+          <div key={index} className='w-[16.875rem] h-[14rem] max-md:h-[20rem] overflow-hidden relative p-[1.188rem] bg-gray-transparent-10 border-1 border-stroke-dark rounded-xxl max-md:w-[90%]'>
             <div className='flex justify-between items-center'>
               <div className='h-[1.125rem] w-[8rem] bg-gray-300 rounded animate-pulse max-md:h-[1.65rem]' />
               
@@ -27,9 +27,8 @@ const StakingSkeleton = () => {
               <div className='h-[1.25rem] w-[6rem] bg-gray-300 rounded animate-pulse max-md:h-[1.54rem]' />
             </div>
             
-            <div className='mt-[.125rem]'>
-              <div className='h-[0.813rem] w-[4rem] bg-gray-300 rounded animate-pulse max-md:h-[1.21rem]' />
-            </div>
+            {/* Image skeleton at the bottom */}
+            <div className='w-full h-[7rem] max-md:h-[11rem] bg-gray-300 rounded animate-pulse absolute bottom-0 left-0' />
           </div>
         ))}
       </div>

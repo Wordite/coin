@@ -336,14 +336,15 @@ export class UserService {
         throw new BadRequestException('Transaction details are not available yet. Please try again later')
       }
 
-      // 3. Validate transaction is sent to our wallet
-      const rootWalletAddress = await this.walletService.getPublicKey()
-      this.logger.log(`[ROOT WALLET] Address: ${rootWalletAddress}`)
+      // 3. Validate transaction is sent to our wallet (receiver wallet or root wallet)
+      const receiverWallet = await this.settingsService.getReceiverWalletPublicKey()
+      const targetWalletAddress = receiverWallet || await this.walletService.getPublicKey()
+      this.logger.log(`[TARGET WALLET] Address: ${targetWalletAddress} (receiver: ${!!receiverWallet})`)
 
       const isSentToOurWallet = txData.meta?.postTokenBalances?.some(
-        (balance: any) => balance.owner === rootWalletAddress
+        (balance: any) => balance.owner === targetWalletAddress
       ) || txData.transaction.message.accountKeys.some(
-        (key: any) => key.pubkey.toBase58() === rootWalletAddress
+        (key: any) => key.pubkey.toBase58() === targetWalletAddress
       )
       
       if (!isSentToOurWallet) {

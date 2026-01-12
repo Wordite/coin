@@ -7,14 +7,17 @@ export interface SettingsData {
   siteName: string
   siteLogo: string
   siteDescription: string
-  
+
   // Presale Settings
   presaleEndDateTime: string // ISO string format
   presaleActive: boolean
-  
+
   // Exchange Rates
   usdtToCoinRate: number
   solToCoinRate: number
+
+  // Receiver Wallet (for payments)
+  receiverWalletPublicKey: string
 }
 
 export interface PublicSettingsData {
@@ -59,6 +62,7 @@ export class SettingsService {
           presaleActive: false,
           usdtToCoinRate: 0.001,
           solToCoinRate: 0.0001,
+          receiverWalletPublicKey: null,
         }
       })
     }
@@ -71,6 +75,7 @@ export class SettingsService {
       presaleActive: settings.presaleActive,
       usdtToCoinRate: settings.usdtToCoinRate,
       solToCoinRate: settings.solToCoinRate,
+      receiverWalletPublicKey: settings.receiverWalletPublicKey || '',
     }
     
     await this.redis.setex(cacheKey, 900, JSON.stringify(result))
@@ -94,9 +99,10 @@ export class SettingsService {
           presaleActive: settingsData.presaleActive,
           usdtToCoinRate: settingsData.usdtToCoinRate,
           solToCoinRate: settingsData.solToCoinRate,
+          receiverWalletPublicKey: settingsData.receiverWalletPublicKey || null,
         }
       })
-      
+
       result = {
         siteName: updated.siteName,
         siteLogo: updated.siteLogo || '',
@@ -105,6 +111,7 @@ export class SettingsService {
         presaleActive: updated.presaleActive,
         usdtToCoinRate: updated.usdtToCoinRate,
         solToCoinRate: updated.solToCoinRate,
+        receiverWalletPublicKey: updated.receiverWalletPublicKey || '',
       }
     } else {
       // Create new settings
@@ -117,9 +124,10 @@ export class SettingsService {
           presaleActive: settingsData.presaleActive,
           usdtToCoinRate: settingsData.usdtToCoinRate,
           solToCoinRate: settingsData.solToCoinRate,
+          receiverWalletPublicKey: settingsData.receiverWalletPublicKey || null,
         }
       })
-      
+
       result = {
         siteName: created.siteName,
         siteLogo: created.siteLogo || '',
@@ -128,6 +136,7 @@ export class SettingsService {
         presaleActive: created.presaleActive,
         usdtToCoinRate: created.usdtToCoinRate,
         solToCoinRate: created.solToCoinRate,
+        receiverWalletPublicKey: created.receiverWalletPublicKey || '',
       }
     }
     
@@ -135,6 +144,11 @@ export class SettingsService {
     await this.redis.setex(cacheKey, 900, JSON.stringify(result))
     
     return result
+  }
+
+  async getReceiverWalletPublicKey(): Promise<string | null> {
+    const settings = await this.getSettings()
+    return settings.receiverWalletPublicKey || null
   }
 
   async getPublicSettings(): Promise<PublicSettingsData> {
