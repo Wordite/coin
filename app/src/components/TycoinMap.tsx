@@ -1,269 +1,29 @@
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Html, Line } from '@react-three/drei'
+import { useRef, Suspense, useState, useCallback, useEffect } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { CameraControls, useTexture } from '@react-three/drei'
+import type CameraControlsType from 'camera-controls'
 import * as THREE from 'three'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import 'swiper/css'
+import MarkerCard from './MarkerCard'
+import ConnectWallet from '../features/ConnectWallet'
+import Button from '../shared/Button'
 
-// Continent regions - designed to fit together like puzzle pieces
-// Coordinates form connected territories sharing borders
-const continentRegions = [
-  {
-    id: 'suburbs',
-    name: 'Suburbs',
-    color: '#6B3D5C',
-    // Bottom-left region
-    vertices: [
-      [-4.5, -3], [-4.2, -2], [-3.5, -1.5], [-2.8, -1.8], [-2.2, -1.2],
-      [-1.8, -1.5], [-1.5, -2.2], [-2, -2.8], [-2.5, -3.2], [-3.5, -3.5], [-4.2, -3.3]
-    ],
-    labelPos: [-3, -2.3],
-    points: [
-      [-3.8, -2.5], [-3, -2], [-3.5, -2.8], [-2.5, -2.5], [-2.2, -1.8]
-    ]
-  },
-  {
-    id: 'urban-town',
-    name: 'Urban Town',
-    color: '#5C3D4D',
-    // Left region, above suburbs
-    vertices: [
-      [-4.5, -2], [-4.3, -1], [-4, 0], [-3.5, 0.5], [-2.8, 0.8],
-      [-2.2, 0.5], [-2, 0], [-2.2, -0.5], [-2.5, -1], [-2.8, -1.2],
-      [-3.5, -1.5], [-4.2, -2]
-    ],
-    labelPos: [-3.2, -0.3],
-    points: [
-      [-3.8, -0.5], [-3, 0], [-3.5, -1], [-2.8, -0.3]
-    ]
-  },
-  {
-    id: 'the-hills',
-    name: 'The Hills',
-    color: '#9B3DB5',
-    // Top region
-    vertices: [
-      [-2.8, 0.8], [-2.2, 1.5], [-1.5, 2.2], [-0.5, 2.8], [0.5, 3],
-      [1.5, 2.8], [2.2, 2.2], [2.5, 1.5], [2.2, 0.8], [1.5, 0.5],
-      [0.5, 0.3], [-0.5, 0.2], [-1.5, 0.3], [-2.2, 0.5]
-    ],
-    labelPos: [0, 1.8],
-    points: [
-      [-1.5, 1.5], [0, 2.2], [1.2, 1.8], [0.5, 1], [-0.8, 1.2]
-    ]
-  },
-  {
-    id: 'downtown',
-    name: 'Downtown',
-    color: '#E83DAA',
-    // Center region
-    vertices: [
-      [-2.2, -1.2], [-2, 0], [-2.2, 0.5], [-1.5, 0.3], [-0.5, 0.2],
-      [0.5, 0.3], [1.5, 0.5], [1.8, 0], [1.5, -0.8], [1, -1.2],
-      [0.3, -1.5], [-0.5, -1.5], [-1.2, -1.3], [-1.8, -1.5]
-    ],
-    labelPos: [-0.2, -0.5],
-    points: [
-      [-1, -0.5], [0.5, 0], [0, -1], [-1.5, -0.8], [1, -0.5]
-    ]
-  },
-  {
-    id: 'marina',
-    name: 'Marina',
-    color: '#C88DAA',
-    // Bottom-right region
-    vertices: [
-      [-1.5, -2.2], [-0.5, -1.5], [0.3, -1.5], [1, -1.2], [1.5, -0.8],
-      [2.2, -1], [2.8, -1.5], [3, -2.2], [2.8, -2.8], [2.2, -3.2],
-      [1.2, -3.3], [0.2, -3.2], [-0.8, -3], [-1.5, -2.8]
-    ],
-    labelPos: [1, -2.2],
-    points: [
-      [0, -2.2], [1.5, -2], [2, -2.5], [0.8, -2.8], [1.8, -1.5]
-    ]
-  }
-]
-
-// Island - separate from continent
-const islandRegion = {
-  id: 'the-island',
-  name: 'The Island',
-  color: '#7B8BC5',
-  vertices: [
-    [5, 1.8], [5.5, 1.2], [5.8, 0.5], [5.8, -0.3], [5.5, -1],
-    [5, -1.5], [4.5, -1.3], [4.2, -0.8], [4, 0], [4.2, 0.8], [4.5, 1.5]
-  ],
-  labelPos: [5, 0],
-  points: [
-    [4.5, 0.8], [5.2, 0.3], [5, -0.8], [4.8, -0.2]
-  ]
-}
-
-// Create shape from vertices
-function createShapeFromVertices(vertices: number[][]): THREE.Shape {
-  const shape = new THREE.Shape()
-  shape.moveTo(vertices[0][0], vertices[0][1])
-  for (let i = 1; i < vertices.length; i++) {
-    shape.lineTo(vertices[i][0], vertices[i][1])
-  }
-  shape.closePath()
-  return shape
-}
-
-interface PointMarkerProps {
+// Target point for camera animation
+interface CameraTarget {
   position: [number, number, number]
-  onClick: () => void
-  isSelected?: boolean
+  active: boolean
 }
 
-function PointMarker({ position, onClick, isSelected }: PointMarkerProps) {
-  const [hovered, setHovered] = useState(false)
-  const groupRef = useRef<THREE.Group>(null)
-  const pulseRef = useRef<THREE.Mesh>(null)
-
-  useFrame((state) => {
-    if (groupRef.current) {
-      const scale = hovered || isSelected ? 1.4 : 1
-      groupRef.current.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.15)
-    }
-    if (pulseRef.current && isSelected) {
-      const pulse = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.15
-      pulseRef.current.scale.set(pulse, pulse, 1)
-    }
-  })
-
-  return (
-    <group ref={groupRef} position={position}>
-      {isSelected && (
-        <mesh ref={pulseRef} position={[0, 0, -0.01]}>
-          <circleGeometry args={[0.25, 24]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.3} />
-        </mesh>
-      )}
-      <mesh
-        onClick={(e) => {
-          e.stopPropagation()
-          onClick()
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation()
-          setHovered(true)
-          document.body.style.cursor = 'pointer'
-        }}
-        onPointerOut={() => {
-          setHovered(false)
-          document.body.style.cursor = 'auto'
-        }}
-      >
-        <ringGeometry args={[0.08, 0.14, 8]} />
-        <meshBasicMaterial color="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[0, 0, 0.01]}>
-        <circleGeometry args={[0.06, 16]} />
-        <meshBasicMaterial color="#1a1a1a" />
-      </mesh>
-    </group>
-  )
-}
-
-interface RegionMeshProps {
-  vertices: number[][]
-  color: string
-  name: string
-  labelPos: number[]
-  points: number[][]
-  onPointClick: (point: { x: number; y: number }, regionName: string) => void
-  selectedPoint: { x: number; y: number } | null
-  selectedRegion: string | null
-}
-
-function RegionMesh({
-  vertices,
-  color,
-  name,
-  labelPos,
-  points,
-  onPointClick,
-  selectedPoint,
-  selectedRegion
-}: RegionMeshProps) {
-  const [hovered, setHovered] = useState(false)
-  const isThisRegion = selectedRegion === name
-
-  const geometry = useMemo(() => {
-    const shape = createShapeFromVertices(vertices)
-    return new THREE.ShapeGeometry(shape, 1)
-  }, [vertices])
-
-  // Border line points
-  const borderPoints = useMemo(() => {
-    const pts = vertices.map(v => new THREE.Vector3(v[0], v[1], 0.02))
-    pts.push(pts[0].clone()) // Close the loop
-    return pts
-  }, [vertices])
-
-  return (
-    <group>
-      {/* Region fill */}
-      <mesh
-        geometry={geometry}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      >
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={hovered ? 0.95 : 0.85}
-        />
-      </mesh>
-
-      {/* Region border */}
-      <Line
-        points={borderPoints}
-        color="#0a0a0a"
-        lineWidth={2}
-      />
-
-      {/* Region label */}
-      <Html
-        position={[labelPos[0], labelPos[1], 0.1]}
-        center
-        style={{
-          color: 'white',
-          fontSize: '12px',
-          fontWeight: 600,
-          fontFamily: 'Inter, sans-serif',
-          textShadow: '0 2px 8px rgba(0,0,0,0.9)',
-          pointerEvents: 'none',
-          whiteSpace: 'nowrap',
-          userSelect: 'none'
-        }}
-      >
-        {name}
-      </Html>
-
-      {/* Points */}
-      {points.map((point, idx) => {
-        const isSelected = isThisRegion &&
-          selectedPoint &&
-          Math.abs(selectedPoint.x - point[0]) < 0.1 &&
-          Math.abs(selectedPoint.y - point[1]) < 0.1
-
-        return (
-          <PointMarker
-            key={idx}
-            position={[point[0], point[1], 0.05]}
-            isSelected={isSelected}
-            onClick={() => onPointClick({ x: point[0], y: point[1] }, name)}
-          />
-        )
-      })}
-    </group>
-  )
-}
+// Import full map texture
+import mapTexture from '../assets/pful1.png'
+// Import map configuration (edit this file to adjust coordinates)
+import { MAP_CONFIG } from '../config/mapConfig'
 
 function Grid() {
   return (
     <gridHelper
-      args={[24, 36, '#5a2070', '#3a1850']}
+      args={[48, 72, '#5a2070', '#3a1850']}
       rotation={[Math.PI / 2, 0, 0]}
       position={[0.5, -0.5, -0.2]}
     />
@@ -280,210 +40,362 @@ function Water() {
   )
 }
 
-interface MapContentProps {
-  onPointClick: (point: { x: number; y: number }, regionName: string) => void
-  targetPoint: { x: number; y: number } | null
-  selectedRegion: string | null
+// Interactive marker component
+interface MarkerProps {
+  position: [number, number, number]
+  color?: string
+  size?: number
+  onClick?: () => void
+  isActive?: boolean
 }
 
-function MapContent({ onPointClick, targetPoint, selectedRegion }: MapContentProps) {
+function Marker({ position, color = '#ff3333', size = 0.25, onClick, isActive = false }: MarkerProps) {
   const groupRef = useRef<THREE.Group>(null)
-  const { camera } = useThree()
-  const animationProgress = useRef(0)
-  const isAnimating = useRef(false)
-  const previousTarget = useRef<{ x: number; y: number } | null>(null)
+  const meshRef = useRef<THREE.Mesh>(null)
+  const glowRef = useRef<THREE.Mesh>(null)
+  const [hovered, setHovered] = useState(false)
 
-  useEffect(() => {
-    if (targetPoint !== previousTarget.current) {
-      animationProgress.current = 0
-      isAnimating.current = true
-      previousTarget.current = targetPoint
+  useFrame((state) => {
+    if (!meshRef.current || !groupRef.current) return
+
+    // Hover animation - scale up
+    const targetScale = hovered || isActive ? 1.3 : 1
+    meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1)
+
+    // Floating animation
+    const floatAmount = 0.05
+    meshRef.current.position.z = Math.sin(state.clock.elapsedTime * 2) * floatAmount
+
+    // Glow pulse
+    if (glowRef.current) {
+      const glowScale = (hovered || isActive) ? 1.8 + Math.sin(state.clock.elapsedTime * 4) * 0.2 : 1.5
+      glowRef.current.scale.set(glowScale, glowScale, glowScale)
+      ;(glowRef.current.material as THREE.MeshBasicMaterial).opacity = (hovered || isActive) ? 0.5 : 0.2
     }
-  }, [targetPoint])
-
-  useFrame((_, delta) => {
-    if (!groupRef.current) return
-
-    if (isAnimating.current) {
-      animationProgress.current = Math.min(animationProgress.current + delta * 1.5, 1)
-      if (animationProgress.current >= 1) {
-        isAnimating.current = false
-      }
-    }
-
-    const progress = animationProgress.current
-    const eased = 1 - Math.pow(1 - progress, 3)
-
-    if (targetPoint) {
-      const maxRotation = 0.35
-      const targetRotX = (targetPoint.y / 8) * maxRotation
-      const targetRotY = -(targetPoint.x / 8) * maxRotation
-
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(
-        groupRef.current.rotation.x,
-        targetRotX * eased,
-        0.08
-      )
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(
-        groupRef.current.rotation.y,
-        targetRotY * eased,
-        0.08
-      )
-
-      const targetCamX = targetPoint.x * 0.35
-      const targetCamY = targetPoint.y * 0.35
-      const targetCamZ = 7
-
-      camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetCamX, 0.06)
-      camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetCamY, 0.06)
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetCamZ, 0.06)
-    } else {
-      groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, 0, 0.05)
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(groupRef.current.rotation.y, 0, 0.05)
-
-      camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0.5, 0.04)
-      camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0, 0.04)
-      camera.position.z = THREE.MathUtils.lerp(camera.position.z, 10, 0.04)
-    }
-
-    camera.lookAt(0, 0, 0)
   })
 
   return (
-    <group ref={groupRef}>
-      <Water />
-      <Grid />
-
-      {/* Continent regions */}
-      {continentRegions.map(region => (
-        <RegionMesh
-          key={region.id}
-          vertices={region.vertices}
-          color={region.color}
-          name={region.name}
-          labelPos={region.labelPos}
-          points={region.points}
-          onPointClick={onPointClick}
-          selectedPoint={targetPoint}
-          selectedRegion={selectedRegion}
+    <group ref={groupRef} position={[position[0], position[1], position[2]]}>
+      {/* Glow effect */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[size, 16, 16]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.2}
+          depthWrite={false}
         />
-      ))}
+      </mesh>
 
-      {/* Island - separate */}
-      <RegionMesh
-        vertices={islandRegion.vertices}
-        color={islandRegion.color}
-        name={islandRegion.name}
-        labelPos={islandRegion.labelPos}
-        points={islandRegion.points}
-        onPointClick={onPointClick}
-        selectedPoint={targetPoint}
-        selectedRegion={selectedRegion}
-      />
+      {/* Main sphere */}
+      <mesh
+        ref={meshRef}
+        onClick={(e) => {
+          e.stopPropagation()
+          onClick?.()
+        }}
+        onPointerOver={(e) => {
+          e.stopPropagation()
+          setHovered(true)
+          document.body.style.cursor = 'pointer'
+        }}
+        onPointerOut={() => {
+          setHovered(false)
+          document.body.style.cursor = 'auto'
+        }}
+      >
+        <sphereGeometry args={[size, 32, 32]} />
+        <meshPhongMaterial
+          color={color}
+          shininess={100}
+          specular={new THREE.Color('#ffffff')}
+          emissive={new THREE.Color(color)}
+          emissiveIntensity={(hovered || isActive) ? 0.4 : 0.2}
+        />
+      </mesh>
     </group>
   )
 }
 
-export interface SelectedPoint {
-  x: number
-  y: number
-  regionName: string
+// Full map texture component
+function MapTextureLayer() {
+  const texture = useTexture(mapTexture)
+
+  // Configure texture for transparency
+  texture.minFilter = THREE.LinearFilter
+  texture.magFilter = THREE.LinearFilter
+
+  const { x, y, width, height, z } = MAP_CONFIG.texture
+
+  return (
+    <mesh position={[x, y, z]}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial
+        map={texture}
+        transparent
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  )
 }
 
-interface TycoinMapProps {
-  onPointSelect?: (point: SelectedPoint | null) => void
+interface MapContentProps {
+  cameraTarget: CameraTarget | null
+  onMarkerClick: (position: [number, number, number]) => void
+  isAnimating: boolean
 }
 
-export default function TycoinMap({ onPointSelect }: TycoinMapProps) {
-  const [targetPoint, setTargetPoint] = useState<{ x: number; y: number } | null>(null)
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
+function MapContent({ cameraTarget, onMarkerClick, isAnimating }: MapContentProps) {
+  const groupRef = useRef<THREE.Group>(null)
+  const cameraControlsRef = useRef<CameraControlsType>(null)
+  const prevTarget = useRef<string | null>(null)
 
-  const handlePointClick = useCallback((point: { x: number; y: number }, regionName: string) => {
-    setTargetPoint(point)
-    setSelectedRegion(regionName)
-    onPointSelect?.({ ...point, regionName })
-  }, [onPointSelect])
+  // Animate camera when target changes
+  useEffect(() => {
+    if (!cameraControlsRef.current) return
 
-  const handleReset = useCallback(() => {
-    setTargetPoint(null)
-    setSelectedRegion(null)
-    onPointSelect?.(null)
-  }, [onPointSelect])
+    const controls = cameraControlsRef.current
+    const targetKey = cameraTarget?.active ? cameraTarget.position.join(',') : null
+
+    // Only animate if target changed
+    if (targetKey === prevTarget.current) return
+    prevTarget.current = targetKey
+
+    // Disable user input during animation
+    controls.enabled = false
+
+    if (cameraTarget?.active) {
+      const [tx, ty, tz] = cameraTarget.position
+
+      // Camera position: behind marker, slightly higher
+      const camX = tx
+      const camY = ty - 3
+      const camZ = 1.2
+
+      // Look at point: ahead of camera, same height (parallel view)
+      const lookX = tx
+      const lookY = ty + 5
+      const lookZ = 1.2
+
+      // Smooth transition (duration in seconds)
+      controls.setLookAt(camX, camY, camZ, lookX, lookY, lookZ, true)
+    } else {
+      // Return to default view - force reset
+      controls.setLookAt(0.5, 0, 7, 0, 0, 0, true)
+    }
+
+    // Re-enable after animation completes
+    setTimeout(() => {
+      if (cameraControlsRef.current && !cameraTarget?.active) {
+        cameraControlsRef.current.enabled = true
+      }
+    }, 600)
+  }, [cameraTarget])
+
+  return (
+    <>
+      <CameraControls
+        ref={cameraControlsRef}
+        smoothTime={0.5}
+        draggingSmoothTime={0.2}
+        minPolarAngle={Math.PI / 2 - 0.3}
+        maxPolarAngle={Math.PI / 2 + 0.3}
+        minAzimuthAngle={-0.3}
+        maxAzimuthAngle={0.3}
+        minDistance={5}
+        maxDistance={10}
+      />
+      <group ref={groupRef}>
+        <Water />
+        <Grid />
+
+        {/* Full map texture */}
+        <MapTextureLayer />
+
+        {/* Interactive markers */}
+        <Marker
+          position={[0, 0, 0.1]}
+          color="#ff3333"
+          size={0.12}
+          onClick={() => onMarkerClick([0, 0, 0.1])}
+          isActive={cameraTarget?.active && cameraTarget.position[0] === 0 && cameraTarget.position[1] === 0}
+        />
+        <Marker
+          position={[-2.5, 1.5, 0.1]}
+          color="#33ff88"
+          size={0.12}
+          onClick={() => onMarkerClick([-2.5, 1.5, 0.1])}
+          isActive={cameraTarget?.active && cameraTarget.position[0] === -2.5 && cameraTarget.position[1] === 1.5}
+        />
+        <Marker
+          position={[2, -1, 0.1]}
+          color="#3388ff"
+          size={0.12}
+          onClick={() => onMarkerClick([2, -1, 0.1])}
+          isActive={cameraTarget?.active && cameraTarget.position[0] === 2 && cameraTarget.position[1] === -1}
+        />
+        <Marker
+          position={[-3, -1.5, 0.1]}
+          color="#ffaa33"
+          size={0.12}
+          onClick={() => onMarkerClick([-3, -1.5, 0.1])}
+          isActive={cameraTarget?.active && cameraTarget.position[0] === -3 && cameraTarget.position[1] === -1.5}
+        />
+        <Marker
+          position={[4, 0.5, 0.1]}
+          color="#aa33ff"
+          size={0.12}
+          onClick={() => onMarkerClick([4, 0.5, 0.1])}
+          isActive={cameraTarget?.active && cameraTarget.position[0] === 4 && cameraTarget.position[1] === 0.5}
+        />
+      </group>
+    </>
+  )
+}
+
+export default function TycoinMap() {
+  const [cameraTarget, setCameraTarget] = useState<CameraTarget | null>(null)
+  const [showCards, setShowCards] = useState(false)
+  const [cardsAnimating, setCardsAnimating] = useState<'in' | 'out' | null>(null)
+  const isAnimatingRef = useRef(false)
+
+  const handleMarkerClick = useCallback((position: [number, number, number]) => {
+    if (isAnimatingRef.current) return // Block clicks during animation
+
+    isAnimatingRef.current = true
+    setCameraTarget({ position, active: true })
+    setShowCards(true)
+    setCardsAnimating('in')
+
+    // Unlock after camera animation completes
+    setTimeout(() => {
+      isAnimatingRef.current = false
+    }, 600)
+  }, [])
+
+  const handleResetView = useCallback(() => {
+    if (isAnimatingRef.current) return // Block during animation
+
+    isAnimatingRef.current = true
+    setCardsAnimating('out')
+    setCameraTarget(null) // Start camera animation immediately
+
+    // Wait for animations to complete before cleanup
+    setTimeout(() => {
+      setShowCards(false)
+      setCardsAnimating(null)
+      isAnimatingRef.current = false
+    }, 500)
+  }, [])
+
+  // Handle Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && cameraTarget?.active && !isAnimatingRef.current) {
+        handleResetView()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [cameraTarget, handleResetView])
+
+  // Handle click outside (on canvas background)
+  const handleCanvasClick = useCallback(() => {
+    if (cameraTarget?.active && !isAnimatingRef.current) {
+      handleResetView()
+    }
+  }, [cameraTarget, handleResetView])
 
   return (
     <div className="relative w-full h-full min-h-[600px]">
       {/* Header left */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-        <div className="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg border border-purple-500/30">
-          <span className="text-purple-300 text-sm">Amount:</span>
-          <span className="text-white ml-2 font-semibold">Null</span>
+        <div className="bg-gray-transparent-10 backdrop-blur-sm px-4 py-2 rounded-lg border border-stroke-light">
+          <span className="text-white-transparent-75 text-sm">Amount:</span>
+          <span className="text-white ml-2 font-semibold">0</span>
         </div>
-        <div className="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-lg border border-purple-500/30">
-          <span className="text-purple-300 text-sm">VIP:</span>
+        <div className="bg-gray-transparent-10 backdrop-blur-sm px-4 py-2 rounded-lg border border-stroke-light">
+          <span className="text-white-transparent-75 text-sm">VIP:</span>
           <span className="text-white ml-2 font-semibold">None</span>
         </div>
       </div>
 
       {/* Title */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-        <h1
-          className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-300 bg-clip-text text-transparent drop-shadow-lg"
-          style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic' }}
-        >
-          Tycoin-LAND
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-300 bg-clip-text text-transparent drop-shadow-lg">
+          Tycoin Land
         </h1>
       </div>
 
       {/* Connect button */}
       <div className="absolute top-4 right-4 z-10">
-        <button className="bg-purple-600/80 backdrop-blur-sm px-5 py-2.5 rounded-lg text-white font-medium hover:bg-purple-500 transition border border-purple-400/50 shadow-lg shadow-purple-500/20">
-          Connect
-        </button>
+        <ConnectWallet />
       </div>
 
-      {/* Selected region info */}
-      {selectedRegion && (
-        <div className="absolute bottom-4 left-4 z-10 bg-black/70 backdrop-blur-sm px-5 py-4 rounded-lg border border-purple-500/30">
-          <p className="text-purple-300 text-sm mb-1">Selected Region:</p>
-          <p className="text-white font-bold text-lg">{selectedRegion}</p>
-          <button
-            onClick={handleReset}
-            className="mt-3 text-purple-400 text-sm hover:text-purple-300 underline underline-offset-2"
+      {/* Cards swiper - show when marker is focused */}
+      {showCards && (
+        <div
+          className={`fixed left-0 z-[5] w-screen ${cardsAnimating === 'out' ? 'animate-cards-slide-up' : 'animate-cards-slide-down'}`}
+          style={{
+            perspective: '1000px',
+          }}
+        >
+          <Swiper
+            spaceBetween={24}
+            slidesPerView="auto"
+            centeredSlides={true}
+            initialSlide={1}
+            className="w-full !overflow-visible"
           >
-            Reset view
-          </button>
+            <SwiperSlide className="!w-auto">
+              <MarkerCard />
+            </SwiperSlide>
+            <SwiperSlide className="!w-auto">
+              <MarkerCard />
+            </SwiperSlide>
+            <SwiperSlide className="!w-auto">
+              <MarkerCard />
+            </SwiperSlide>
+          </Swiper>
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="absolute bottom-4 right-4 z-10 text-white/50 text-xs">
-        Click on points to focus
-      </div>
+      {/* Reset view button - show when focused */}
+      {cameraTarget?.active && (
+        <div className="absolute bottom-4 left-4 z-10">
+          <Button
+            color="dark"
+            onClick={handleResetView}
+            className="!py-2 !px-4 text-sm"
+          >
+            ← Reset view
+          </Button>
+        </div>
+      )}
 
       {/* 3D Canvas */}
       <Canvas
-        camera={{ position: [0.5, 0, 10], fov: 50 }}
+        camera={{ position: [0.5, 0, 7], fov: 50 }}
         style={{ background: 'linear-gradient(180deg, #1a0a25 0%, #0a0510 100%)' }}
+        onPointerMissed={handleCanvasClick}
       >
-        <ambientLight intensity={0.6} />
+        <ambientLight intensity={0.4} />
+        <directionalLight
+          position={[5, 5, 10]}
+          intensity={1.2}
+          color="#ffffff"
+        />
         <pointLight position={[10, 10, 10]} intensity={0.8} />
+        <pointLight position={[-5, 5, 8]} intensity={0.5} color="#ffaaaa" />
         <pointLight position={[-10, -10, 5]} intensity={0.3} color="#9b3db5" />
 
-        <MapContent
-          onPointClick={handlePointClick}
-          targetPoint={targetPoint}
-          selectedRegion={selectedRegion}
-        />
-
-        <OrbitControls
-          enablePan={false}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={5}
-          maxDistance={15}
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={Math.PI / 1.5}
-        />
+        <Suspense fallback={null}>
+          <MapContent
+            cameraTarget={cameraTarget}
+            onMarkerClick={handleMarkerClick}
+            isAnimating={isAnimatingRef.current}
+          />
+        </Suspense>
       </Canvas>
     </div>
   )

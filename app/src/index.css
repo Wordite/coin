@@ -105,3 +105,32 @@ wui-card {
   }
 }
 
+/* 3D Card animations for map */
+@keyframes cards-slide-down {
+  from {
+    top: -200px;
+  }
+  to {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes cards-slide-up {
+  from {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  to {
+    top: -200px;
+  }
+}
+
+.animate-cards-slide-down {
+  animation: cards-slide-down 0.6s ease-out forwards;
+}
+
+.animate-cards-slide-up {
+  animation: cards-slide-up 0.5s ease-in forwards;
+}
+

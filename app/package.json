@@ -13,10 +13,13 @@
     "@fontsource/inter": "^5.2.8",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@reown/appkit": "^1.8.17",
+    "@reown/appkit-adapter-solana": "^1.8.17",
     "@tailwindcss/vite": "^4.1.18",
     "@types/three": "^0.182.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "swiper": "^12.1.0",
     "tailwindcss": "^4.1.18",
     "three": "^0.182.0"
   },
