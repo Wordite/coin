@@ -39,8 +39,9 @@ const HeroInformation = () => {
 
         <Button
           isLink
-          to={data?.docsUrl}
+          to='https://docs.tycoin.app'
           color='white'
+          target='_blank'
           className='w-[12.8rem] h-[3.43rem] max-md:w-full max-md:h-[4.62rem]'
         >
           Documentation
