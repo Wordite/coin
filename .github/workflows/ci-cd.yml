@@ -62,6 +62,14 @@ jobs:
             echo "🧹 Force removing app container if exists..."
             docker stop app || true
             docker rm app || true
+
+            echo "🧹 Force removing nginx container if exists..."
+            docker stop nginx || true
+            docker rm nginx || true
+
+            echo "🧹 Killing any process using port 80..."
+            sudo fuser -k 80/tcp || true
+            sudo fuser -k 443/tcp || true
             
             echo "🔐 Ensuring inter-container networking rules..."
             sudo iptables -C FORWARD -s 172.20.0.0/16 -d 172.20.0.0/16 -j ACCEPT 2>/dev/null || sudo iptables -I FORWARD -s 172.20.0.0/16 -d 172.20.0.0/16 -j ACCEPT
