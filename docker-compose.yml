@@ -12,6 +12,7 @@ services:
       - ./frontend/dist:/usr/share/nginx/html/frontend:ro
       - ./admin/dist:/usr/share/nginx/html/admin:ro
       - ./docs/dist:/usr/share/nginx/html/docs:ro
+      - ./app/dist:/usr/share/nginx/html/app:ro
       - ./certbot/www:/var/www/certbot:rw
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
@@ -19,6 +20,7 @@ services:
       - frontend
       - admin
       - docs
+      - app
     restart: unless-stopped
 
   vault:
@@ -137,6 +139,17 @@ services:
       - PORT=3000
     volumes:
       - ./docs/content:/app/content
+    restart: unless-stopped
+
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-/api}
+    container_name: app
+    ports:
+      - '5176:80'
     restart: unless-stopped
 
 networks:

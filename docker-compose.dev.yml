@@ -148,6 +148,20 @@ services:
       - ./frontend/public:/app/public
     restart: unless-stopped
 
+  app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile.dev
+    container_name: app_dev
+    ports:
+      - "5176:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    volumes:
+      - ./app/src:/app/src
+      - ./app/public:/app/public
+    restart: unless-stopped
+
 volumes:
   postgres_data:
     name: coin_postgres_data

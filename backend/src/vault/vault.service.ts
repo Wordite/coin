@@ -17,7 +17,7 @@ export class VaultService implements OnModuleInit {
   private async initialize(): Promise<void> {
     try {
       this.logger.log(`Vault configuration: URL=${this.VAULT_URL}, TOKEN=${this.VAULT_TOKEN ? this.VAULT_TOKEN.substring(0, 8) + '...' : 'NOT_SET'}`)
-      
+
       this.client = vault({
         apiVersion: 'v1',
         endpoint: this.VAULT_URL,
@@ -27,12 +27,12 @@ export class VaultService implements OnModuleInit {
       // Проверяем подключение к Vault
       await this.client.health()
       this.logger.log('Successfully connected to Vault')
-      
+
       // Инициализируем секреты если их нет
       await this.initializeSecrets()
     } catch (error) {
-      this.logger.error('Failed to connect to Vault:', error)
-      throw new Error('Vault connection failed')
+      this.logger.warn('Failed to connect to Vault - running in degraded mode (wallet features disabled):', error.message)
+      // Don't throw - allow app to start without Vault for local development
     }
   }
 

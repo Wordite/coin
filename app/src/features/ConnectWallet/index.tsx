@@ -35,18 +35,18 @@ const ConnectWallet = () => {
     return (
       <button
         onClick={handleOpenAccount}
-        className="flex items-center gap-3 px-4 py-2 rounded-lg bg-black/50 backdrop-blur-sm border border-purple-500/30 hover:bg-black/70 transition-all duration-200 cursor-pointer"
+        className="flex items-center gap-[.5rem] px-[1rem] py-[.6rem] max-md:px-[1rem] max-md:py-[.7rem] rounded-lg bg-gray-transparent-10 backdrop-blur-sm border-1 border-stroke-light hover:bg-black/70 transition-all duration-200 cursor-pointer"
       >
         <div className="flex flex-col items-start">
-          <span className="text-white text-sm font-medium">
+          <span className="text-white text-[.875rem] max-md:text-[1.2rem] font-medium">
             {formatAddress(address)}
           </span>
-          <span className="text-purple-300 text-xs">Connected</span>
+          <span className="text-white-transparent-50 text-[.75rem] max-md:text-[1rem]">Connected</span>
         </div>
         <svg
           viewBox="0 0 12 12"
           fill="none"
-          className="text-purple-300 w-4 h-4"
+          className="text-white-transparent-50 w-[1rem] h-[1rem] max-md:w-[1.3rem] max-md:h-[1.3rem]"
         >
           <path
             d="M4.5 3L7.5 6L4.5 9"
@@ -65,10 +65,10 @@ const ConnectWallet = () => {
       color="purple"
       onClick={handleConnect}
       isLoading={isConnecting}
-      loadingText="Connecting..."
-      className="px-5 py-2.5 text-sm"
+      loadingText="..."
+      className="!px-[1.5rem] !py-[.7rem] max-md:!px-[1.5rem] max-md:!py-[.9rem] max-md:w-full"
     >
-      Connect
+      Connect wallet
     </Button>
   )
 }

@@ -26,6 +26,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { TransactionService } from './transaction/transaction.service';
 import { LiveLogsModule } from './live-logs/live-logs.module';
 import { BackupModule } from './backup/backup.module';
+import { MapModule } from './map/map.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { BackupModule } from './backup/backup.module';
     WalletModule,
     LiveLogsModule,
     BackupModule,
+    MapModule,
   ],
   providers: [SolanaService, TransactionService],
 })

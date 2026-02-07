@@ -18,6 +18,7 @@ import {
   CurrencyDollarIcon,
   EnvelopeIcon,
   CommandLineIcon,
+  MapIcon,
 } from '@heroicons/react/24/outline'
 import { Link as RouterLink } from 'react-router'
 import { Auth } from '@/services/auth'
@@ -177,6 +178,15 @@ const Aside = () => {
               >
                 <CommandLineIcon className='w-4 h-4' />
                 Live Logs
+              </RouterLink>
+
+              {/* Map Editor Link */}
+              <RouterLink
+                to='/map-editor'
+                className='w-full flex items-center gap-3 px-3 py-2 text-sm text-foreground/60 hover:text-foreground hover:bg-default-100 rounded-lg transition-colors'
+              >
+                <MapIcon className='w-4 h-4' />
+                Map Editor
               </RouterLink>
 
               {/* Documentation Link */}

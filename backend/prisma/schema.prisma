@@ -275,3 +275,82 @@ enum DocType {
   DOCUMENT
   CATEGORY
 }
+
+// ============================================
+// Map Configuration for Tycoin Land App
+// ============================================
+
+model MapSettings {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  title     String   @default("Tycoin Land") @map("title")
+
+  zones     MapZone[]
+  markers   MapMarker[]
+
+  @@map("map_settings")
+}
+
+model MapZone {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  name      String   @map("name")
+  // Position as percentage of map dimensions (0-100)
+  x         Float    @map("x")
+  y         Float    @map("y")
+  // Text styling
+  fontSize  Float    @default(1.5) @map("font_size")
+  color     String   @default("#ffffff") @map("color")
+
+  mapSettingsId String @map("map_settings_id")
+  mapSettings   MapSettings @relation(fields: [mapSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("map_zones")
+}
+
+model MapMarker {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Position as percentage of map dimensions (0-100), like zones
+  x         Float    @map("x")
+  y         Float    @map("y")
+
+  // Marker appearance
+  color     String   @default("#ff3333") @map("color")
+  size      Float    @default(0.12) @map("size")
+
+  // Marker title (displayed in list)
+  title     String?  @map("title")
+
+  // Cards for this marker (array of cards)
+  cards     MapMarkerCard[]
+
+  mapSettingsId String @map("map_settings_id")
+  mapSettings   MapSettings @relation(fields: [mapSettingsId], references: [id], onDelete: Cascade)
+
+  @@map("map_markers")
+}
+
+model MapMarkerCard {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  photo       String?  @map("photo")
+  title       String?  @map("title")
+  description String?  @map("description")
+  apy         Float    @default(60) @map("apy")
+  vip         String   @default("Gold") @map("vip")
+  price       Float    @default(1234) @map("price")
+
+  markerId    String   @map("marker_id")
+  marker      MapMarker @relation(fields: [markerId], references: [id], onDelete: Cascade)
+
+  @@map("map_marker_cards")
+}
