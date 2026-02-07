@@ -1,11 +1,5 @@
-# Use Node.js Debian-based image to support native module builds
-FROM node:22-bullseye-slim AS builder
-
-# Install build tools and headers for native modules
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-    python3 make g++ pkg-config \
-  && rm -rf /var/lib/apt/lists/*
+# Use Node.js Alpine image (lighter, no native build tools needed)
+FROM node:22-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -21,9 +15,6 @@ COPY src ./src
 COPY index.html ./index.html
 COPY vite.config.ts ./vite.config.ts
 COPY tsconfig*.json ./
-
-# Ensure index.html is a file
-RUN if [ -d index.html ]; then rm -rf index.html; fi && test -f index.html
 
 # Ensure public exists even if repo doesn't have it
 RUN mkdir -p public

@@ -1,5 +1,5 @@
-# Use Node.js for development
-FROM node:22-bullseye-slim
+# Use Node.js Alpine for development
+FROM node:22-alpine
 
 # Set working directory
 WORKDIR /app
