@@ -4,7 +4,7 @@ import { CameraControls, useTexture, useProgress, Html } from '@react-three/drei
 import type CameraControlsType from 'camera-controls'
 import * as THREE from 'three'
 import { Swiper, SwiperSlide } from 'swiper/react'
-import 'swiper/css'
+import 'swiper/swiper-bundle.css'
 import MarkerCard from './MarkerCard'
 import ConnectWallet from '../features/ConnectWallet'
 import Modal from '../shared/Modal'
@@ -247,14 +247,13 @@ function ZoneLabel({ name, x, y, fontSize, color }: ZoneLabelProps) {
 interface MapContentProps {
   cameraTarget: CameraTarget | null
   onMarkerClick: (position: [number, number, number], markerId: string) => void
-  isAnimating: boolean
   isMobile: boolean
   markers: ApiMapMarker[]
   zones: MapSettings['zones']
   isLoading: boolean
 }
 
-function MapContent({ cameraTarget, onMarkerClick, isAnimating, isMobile, markers, zones, isLoading }: MapContentProps) {
+function MapContent({ cameraTarget, onMarkerClick, isMobile, markers, zones, isLoading }: MapContentProps) {
   const groupRef = useRef<THREE.Group>(null)
   const cameraControlsRef = useRef<CameraControlsType>(null)
   const prevTarget = useRef<string | null>(null)
@@ -289,7 +288,7 @@ function MapContent({ cameraTarget, onMarkerClick, isAnimating, isMobile, marker
     controls.enabled = false
 
     if (cameraTarget?.active) {
-      const [tx, ty, tz] = cameraTarget.position
+      const [tx, ty] = cameraTarget.position
 
       // Camera position: behind marker, slightly higher (further on mobile)
       const camX = tx
@@ -346,9 +345,9 @@ function MapContent({ cameraTarget, onMarkerClick, isAnimating, isMobile, marker
         maxDistance={isMobile ? 10 : 7}
         // Touch controls: only panning, no zoom
         touches={{
-          one: 2,  // TOUCH.TRUCK - one finger pan
-          two: 2,  // TOUCH.TRUCK - two finger pan (no zoom)
-          three: 0
+          one: 2 as const,  // TOUCH.TRUCK - one finger pan
+          two: 2 as const,  // TOUCH.TRUCK - two finger pan (no zoom)
+          three: 0 as const
         }}
         // Mouse controls: no zoom
         mouseButtons={{
@@ -415,13 +414,13 @@ export default function TycoinMap() {
   const [showCards, setShowCards] = useState(false)
   const [cardsAnimating, setCardsAnimating] = useState<'in' | 'out' | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [sceneReady, setSceneReady] = useState(false)
   const [mapSettings, setMapSettings] = useState<MapSettings | null>(null)
   const [selectedMarker, setSelectedMarker] = useState<ApiMapMarker | null>(null)
   const isAnimatingRef = useRef(false)
   const isMobile = useIsMobile()
   const { isConnected } = useAppKitAccount()
-  const { settings: siteSettings } = useSettings()
+  // useSettings handles favicon and document title as side effects
+  useSettings()
 
   // Fetch map settings on mount
   useEffect(() => {
@@ -435,7 +434,7 @@ export default function TycoinMap() {
   }, [])
 
   const handleSceneReady = useCallback(() => {
-    setSceneReady(true)
+    // Scene is ready - can be used for additional initialization if needed
   }, [])
 
   const handleMarkerClick = useCallback((position: [number, number, number], markerId: string) => {
@@ -618,7 +617,6 @@ export default function TycoinMap() {
           <MapContent
             cameraTarget={cameraTarget}
             onMarkerClick={handleMarkerClick}
-            isAnimating={isAnimatingRef.current}
             isMobile={isMobile}
             markers={mapSettings?.markers || []}
             zones={mapSettings?.zones || []}
