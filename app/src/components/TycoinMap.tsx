@@ -224,6 +224,7 @@ function ZoneLabel({ name, x, y, fontSize, color }: ZoneLabelProps) {
     <Html
       position={[posX, posY, 0.5]}
       center
+      zIndexRange={[1, 10]}
       style={{
         pointerEvents: 'none',
         userSelect: 'none',
