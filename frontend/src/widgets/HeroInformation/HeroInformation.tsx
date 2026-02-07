@@ -1,12 +1,13 @@
 import Button from '@/shared/Button'
 import { useSectionData } from '@/hooks/useSectionData'
 import HeroInformationSkeleton from './ui/HeroInformationSkeleton'
-import { useSettings } from '@/hooks'
+import { useSettings, useMapSettings } from '@/hooks'
 import { Section } from '@/services/section.service'
 
 const HeroInformation = () => {
   const { data, isLoading, error } = useSectionData('Hero')
   const { settings } = useSettings()
+  const { mapSettings } = useMapSettings()
 
   if (isLoading || error) return <HeroInformationSkeleton />
 
@@ -26,6 +27,16 @@ const HeroInformation = () => {
       </p>
 
       <div className='flex max-md:flex-col items-center gap-[1.8rem] mt-[4.3rem] max-md:mt-[10rem]'>
+        <Button
+          isLink
+          to='https://app.tycoin.app'
+          color='purple'
+          target='_blank'
+          className='w-[12.8rem] h-[3.43rem] max-md:w-full max-md:h-[4.62rem]'
+        >
+          {mapSettings?.title || 'Tycoin Land'}
+        </Button>
+
         <Button
           isLink
           to={data?.docsUrl}

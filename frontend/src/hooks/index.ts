@@ -10,3 +10,4 @@ export { useTransactionsTable, type TransactionItem } from './useTransactionsTab
 export { useSendContactForm } from './useSendContactForm'
 export { usePurchaseCoins } from './usePurchaseCoins'
 export { useIsSoldOut } from './useIsSoldOut'
+export { useMapSettings } from './useMapSettings'

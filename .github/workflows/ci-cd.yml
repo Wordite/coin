@@ -113,6 +113,13 @@ jobs:
             
             echo "🔧 Setting vault-auto-unseal.sh permissions..."
             chmod +x ./scripts/vault-auto-unseal.sh || echo "Vault auto-unseal script permissions set"
+
+            echo "🔧 Setting startup.sh permissions..."
+            chmod +x ./scripts/startup.sh || echo "Startup script permissions set"
+
+            echo "🔧 Setting up crontab for startup script..."
+            # Add @reboot entry for startup script if not exists
+            (crontab -l 2>/dev/null | grep -v "startup.sh" ; echo "@reboot sleep 30 && /home/coin/scripts/startup.sh >> /var/log/coin-startup.log 2>&1") | crontab - || echo "Crontab entry added"
             
             echo "🔧 Verifying Docker socket access..."
             docker exec backend docker version --format '{{.Server.Version}}' && echo "✅ Docker socket accessible from backend container" || echo "⚠️ Docker socket not accessible"
