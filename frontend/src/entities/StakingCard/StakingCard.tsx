@@ -24,7 +24,7 @@ const StakingCard = ({ title, lock, apy, image }: StakingCardProps) => {
         {apy} 
       </p>
 
-      <img src={Section.getImageUrl(image)} alt={title} className='w-full h-[7rem] max-md:h-[13.5rem] object-cover absolute bottom-0 left-0' />
+      <img src={Section.getImageUrl(image)} alt={title} className='w-full h-[7rem] max-md:h-[16rem] object-cover absolute bottom-0 left-0' />
     </div>
   )
 }
