@@ -11,7 +11,7 @@ interface StakingCardProps {
 const StakingCard = ({ title, lock, apy, image }: StakingCardProps) => {
 
   return (
-    <div className='w-[16.875rem] h-[14rem] max-md:h-[20rem] overflow-hidden relative p-[1.188rem] max-md:w-[90%] group hover:scale-105 hover:translate-y-[-0.625rem] hover:border-stroke-light transition-all duration-300 bg-gray-transparent-10 border-1 border-stroke-dark rounded-xxl'>
+    <div className='w-[16.875rem] h-[14rem] max-md:h-[23rem] overflow-hidden relative p-[1.188rem] max-md:w-[90%] group hover:scale-105 hover:translate-y-[-0.625rem] hover:border-stroke-light transition-all duration-300 bg-gray-transparent-10 border-1 border-stroke-dark rounded-xxl'>
       <div className='flex justify-between items-center'>
         <p className='text-[1.125rem] max-md:text-[1.65rem]  font-bold [text-rendering:geometricPrecision]'>{title}</p>
         <div className='flex gap-[0.5rem] justify-center items-center px-[0.5rem] py-[.375rem] border-1 border-stroke-dark rounded-sm bg-gray-transparent-70'>
@@ -24,7 +24,7 @@ const StakingCard = ({ title, lock, apy, image }: StakingCardProps) => {
         {apy} 
       </p>
 
-      <img src={Section.getImageUrl(image)} alt={title} className='w-full h-[7rem] max-md:h-[16rem] object-cover absolute bottom-0 left-0' />
+      <img src={Section.getImageUrl(image)} alt={title} className='w-full h-[7rem] max-md:h-[14rem] object-cover absolute bottom-0 left-0' />
     </div>
   )
 }
