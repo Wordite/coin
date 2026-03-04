@@ -172,9 +172,9 @@ export class MapService {
       photo?: string
       title?: string
       description?: string
-      apy?: number
+      apy?: string
       vip?: string
-      price?: number
+      price?: string
     },
   ) {
     return this.prisma.mapMarkerCard.create({
@@ -182,9 +182,9 @@ export class MapService {
         photo: data.photo,
         title: data.title,
         description: data.description,
-        apy: data.apy || 60,
+        apy: data.apy || '60%',
         vip: data.vip || 'Gold',
-        price: data.price || 1234,
+        price: data.price || '$1,234',
         markerId,
       },
     })
@@ -196,9 +196,9 @@ export class MapService {
       photo?: string
       title?: string
       description?: string
-      apy?: number
+      apy?: string
       vip?: string
-      price?: number
+      price?: string
     },
   ) {
     return this.prisma.mapMarkerCard.update({

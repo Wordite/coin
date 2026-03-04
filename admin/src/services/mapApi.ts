@@ -14,9 +14,9 @@ export interface MapMarkerCard {
   photo?: string
   title?: string
   description?: string
-  apy: number
+  apy: string
   vip: string
-  price: number
+  price: string
 }
 
 export interface MapMarker {
@@ -114,9 +114,9 @@ class MapApiService {
       photo?: string
       title?: string
       description?: string
-      apy?: number
+      apy?: string
       vip?: string
-      price?: number
+      price?: string
     },
   ): Promise<MapMarkerCard> {
     const response = await api.post(`/map/markers/${markerId}/cards`, data)
@@ -129,9 +129,9 @@ class MapApiService {
       photo?: string
       title?: string
       description?: string
-      apy?: number
+      apy?: string
       vip?: string
-      price?: number
+      price?: string
     },
   ): Promise<MapMarkerCard> {
     const response = await api.put(`/map/cards/${id}`, data)

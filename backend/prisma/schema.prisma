@@ -345,9 +345,9 @@ model MapMarkerCard {
   photo       String?  @map("photo")
   title       String?  @map("title")
   description String?  @map("description")
-  apy         Float    @default(60) @map("apy")
+  apy         String   @default("60%") @map("apy")
   vip         String   @default("Gold") @map("vip")
-  price       Float    @default(1234) @map("price")
+  price       String   @default("$1,234") @map("price")
 
   markerId    String   @map("marker_id")
   marker      MapMarker @relation(fields: [markerId], references: [id], onDelete: Cascade)

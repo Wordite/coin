@@ -565,7 +565,11 @@ export default function TycoinMap() {
       {/* Cards swiper - show when marker is focused, display all cards from marker */}
       {showCards && selectedMarker && selectedMarker.cards && selectedMarker.cards.length > 0 && (
         <div
-          className={`fixed left-0 z-[5] w-screen ${cardsAnimating === 'out' ? 'animate-cards-slide-up' : 'animate-cards-slide-down'}`}
+          className="fixed inset-0 z-[5]"
+          onClick={() => handleResetView()}
+        >
+        <div
+          className={`absolute left-0 w-screen ${cardsAnimating === 'out' ? 'animate-cards-slide-up' : 'animate-cards-slide-down'}`}
           style={{
             perspective: '1000px',
           }}
@@ -575,7 +579,7 @@ export default function TycoinMap() {
             slidesPerView="auto"
             centeredSlides={true}
             initialSlide={Math.floor((selectedMarker.cards?.length || 1) / 2)}
-            className="w-full !overflow-visible"
+            className="w-full !overflow-visible [&_.swiper-wrapper]:items-stretch"
             breakpoints={{
               768: {
                 spaceBetween: 24,
@@ -583,17 +587,21 @@ export default function TycoinMap() {
             }}
           >
             {selectedMarker.cards.map((card) => (
-              <SwiperSlide key={card.id} className="!w-auto">
-                <MarkerCard
-                  photo={card.photo}
-                  description={card.description}
-                  apy={card.apy}
-                  vip={card.vip}
-                  price={card.price}
-                />
+              <SwiperSlide key={card.id} className="!w-auto !h-auto">
+                <div className="h-full" onClick={(e) => e.stopPropagation()}>
+                  <MarkerCard
+                    photo={card.photo}
+                    title={card.title}
+                    description={card.description}
+                    apy={card.apy}
+                    vip={card.vip}
+                    price={card.price}
+                  />
+                </div>
               </SwiperSlide>
             ))}
           </Swiper>
+        </div>
         </div>
       )}
 

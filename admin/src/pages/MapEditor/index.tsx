@@ -63,9 +63,9 @@ const MapEditor = () => {
     photo: '',
     title: '',
     description: '',
-    apy: 60,
+    apy: '60%',
     vip: 'Gold',
-    price: 1234,
+    price: '$1,234',
   })
   const [cardMarkerId, setCardMarkerId] = useState<string | null>(null)
 
@@ -214,9 +214,9 @@ const MapEditor = () => {
       photo: '',
       title: '',
       description: '',
-      apy: 60,
+      apy: '60%',
       vip: 'Gold',
-      price: 1234,
+      price: '$1,234',
     })
     setCardMarkerId(null)
   }
@@ -267,9 +267,9 @@ const MapEditor = () => {
       photo: '',
       title: '',
       description: '',
-      apy: 60,
+      apy: '60%',
       vip: 'Gold',
-      price: 1234,
+      price: '$1,234',
     })
     setCardMarkerId(markerId)
     onCardOpen()
@@ -282,9 +282,9 @@ const MapEditor = () => {
       photo: card.photo || '',
       title: card.title || '',
       description: card.description || '',
-      apy: card.apy,
-      vip: card.vip,
-      price: card.price,
+      apy: card.apy || '60%',
+      vip: card.vip || 'Gold',
+      price: card.price || '$1,234',
     })
     onCardOpen()
   }
@@ -575,7 +575,7 @@ const MapEditor = () => {
                           <div>
                             <span className="text-sm font-medium">{card.title || 'Untitled'}</span>
                             <div className="flex gap-1 mt-0.5">
-                              <Chip size="sm" color="success" variant="flat">{card.apy}% APY</Chip>
+                              <Chip size="sm" color="success" variant="flat">{card.apy} APY</Chip>
                               <Chip size="sm" color="secondary" variant="flat">{card.vip}</Chip>
                             </div>
                           </div>
@@ -770,10 +770,10 @@ const MapEditor = () => {
 
             <div className="grid grid-cols-3 gap-4">
               <Input
-                type="number"
-                label="APY (%)"
-                value={cardForm.apy.toString()}
-                onChange={e => setCardForm(prev => ({ ...prev, apy: parseFloat(e.target.value) || 60 }))}
+                label="APY"
+                placeholder="e.g., 60%"
+                value={cardForm.apy}
+                onChange={e => setCardForm(prev => ({ ...prev, apy: e.target.value }))}
               />
               <Input
                 label="VIP Level"
@@ -782,10 +782,10 @@ const MapEditor = () => {
                 onChange={e => setCardForm(prev => ({ ...prev, vip: e.target.value }))}
               />
               <Input
-                type="number"
-                label="Price ($)"
-                value={cardForm.price.toString()}
-                onChange={e => setCardForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 1234 }))}
+                label="Price"
+                placeholder="e.g., $1,234"
+                value={cardForm.price}
+                onChange={e => setCardForm(prev => ({ ...prev, price: e.target.value }))}
               />
             </div>
           </ModalBody>

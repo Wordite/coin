@@ -14,9 +14,9 @@ export interface MapMarkerCard {
   photo?: string
   title?: string
   description?: string
-  apy: number
+  apy: string
   vip: string
-  price: number
+  price: string
 }
 
 export interface MapMarker {

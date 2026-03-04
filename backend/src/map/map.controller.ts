@@ -130,9 +130,9 @@ export class MapController {
       photo?: string
       title?: string
       description?: string
-      apy?: number
+      apy?: string
       vip?: string
-      price?: number
+      price?: string
     },
   ) {
     return this.mapService.createMarkerCard(markerId, data)
@@ -148,9 +148,9 @@ export class MapController {
       photo?: string
       title?: string
       description?: string
-      apy?: number
+      apy?: string
       vip?: string
-      price?: number
+      price?: string
     },
   ) {
     return this.mapService.updateMarkerCard(id, data)

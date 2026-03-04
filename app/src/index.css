@@ -108,7 +108,7 @@ wui-card {
 /* 3D Card animations for map */
 @keyframes cards-slide-down {
   from {
-    top: -200px;
+    top: -100vh;
   }
   to {
     top: 50%;
@@ -122,7 +122,7 @@ wui-card {
     transform: translateY(-50%);
   }
   to {
-    top: -200px;
+    top: -100vh;
   }
 }
 
